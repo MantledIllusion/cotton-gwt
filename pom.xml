@@ -4,8 +4,27 @@
 
 	<groupId>com.mantledillusion.vaadin</groupId>
 	<artifactId>cotton</artifactId>
-	<name>cotton</name>
 	<version>1.0.0-SNAPSHOT</version>
+
+	<name>Cotton</name>
+	<description>Cotton is a Vaadin extension for automatic url pathing, MVP injection and advanced data binding.</description>
+	<url>http://www.mantledillusion.com</url>
+
+	<licenses>
+		<license>
+			<name>The Apache License, Version 2.0</name>
+			<url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+		</license>
+	</licenses>
+
+	<developers>
+		<developer>
+			<name>Tobias Weber</name>
+			<email>tobias.weber@mantledillusion.com</email>
+			<organization>Mantled Illusion</organization>
+			<organizationUrl>http://www.mantledillusion.com</organizationUrl>
+		</developer>
+	</developers>
 
 	<properties>
 		<!-- java compiler version -->
@@ -23,6 +42,23 @@
 		<junit.version>4.12</junit.version>
 		<javax.servlet.api.version>4.0.0</javax.servlet.api.version>
 	</properties>
+
+	<scm>
+		<connection>scm:git:git://github.com/MantledIllusion/cotton.git</connection>
+		<developerConnection>scm:git:ssh://github.com:MantledIllusion/cotton.git</developerConnection>
+		<url>http://github.com/MantledIllusion/cotton</url>
+	</scm>
+
+	<distributionManagement>
+		<snapshotRepository>
+			<id>ossrh</id>
+			<url>https://oss.sonatype.org/content/repositories/snapshots</url>
+		</snapshotRepository>
+		<repository>
+			<id>ossrh</id>
+			<url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+		</repository>
+	</distributionManagement>
 
 	<dependencies>
 		<!-- com.vaadin dependencies -->
@@ -94,4 +130,51 @@
 			</resource>
 		</resources>
 	</build>
+
+	<profiles>
+		<profile>
+			<id>deploy</id>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-source-plugin</artifactId>
+						<executions>
+							<execution>
+								<id>attach-sources</id>
+								<goals>
+									<goal>jar-no-fork</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-javadoc-plugin</artifactId>
+						<executions>
+							<execution>
+								<id>attach-javadocs</id>
+								<goals>
+									<goal>jar</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-gpg-plugin</artifactId>
+						<executions>
+							<execution>
+								<id>sign-artifacts</id>
+								<phase>verify</phase>
+								<goals>
+									<goal>sign</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
 </project>
