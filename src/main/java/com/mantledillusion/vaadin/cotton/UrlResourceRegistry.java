@@ -15,7 +15,7 @@ import com.mantledillusion.essentials.reflection.TypeEssentials;
 import com.mantledillusion.injection.hura.Blueprint.TypedBlueprint;
 import com.mantledillusion.vaadin.cotton.exception.WebException;
 import com.mantledillusion.vaadin.cotton.exception.WebException.HttpErrorCodes;
-import com.mantledillusion.vaadin.cotton.viewpresenter.Addressable;
+import com.mantledillusion.vaadin.cotton.viewpresenter.Addressed;
 import com.mantledillusion.vaadin.cotton.viewpresenter.View;
 
 /**
@@ -155,13 +155,13 @@ public final class UrlResourceRegistry {
 
 	/**
 	 * Registers the given {@link TypedBlueprint}'s root type {@link View}
-	 * implementation at the URL in the view's @{@link Addressable} annotation.
+	 * implementation at the URL in the view's @{@link Addressed} annotation.
 	 * 
 	 * @param viewBlueprint
 	 *            The {@link TypedBlueprint} whose view to register; might
 	 *            <b>not</b> be null, also the view has to be annotated
-	 *            with @{@link Addressable} somewhere, view the documentation of
-	 *            {@link Addressable} for reference.
+	 *            with @{@link Addressed} somewhere, view the documentation of
+	 *            {@link Addressed} for reference.
 	 */
 	public void registerViewResource(TypedBlueprint<? extends View> viewBlueprint) {
 		if (viewBlueprint == null) {
@@ -169,21 +169,21 @@ public final class UrlResourceRegistry {
 					"Cannot register a null blueprint as view resoruce.");
 		}
 		List<Class<?>> urls = TypeEssentials.getSuperClassesAnnotatedWith(viewBlueprint.getRootType(),
-				Addressable.class);
+				Addressed.class);
 
 		if (urls.isEmpty()) {
 			throw new WebException(HttpErrorCodes.HTTP905_ILLEGAL_INTERFACE_USE,
 					"Views that are registered as resources have to be annotated with @"
-							+ Addressable.class.getSimpleName()
+							+ Addressed.class.getSimpleName()
 							+ " somewhere along its classes' hierarchy; however, the view type "
 							+ viewBlueprint.getRootType().getSimpleName() + " isn't.");
 		}
 
-		Addressable url = urls.stream().skip(urls.size() - 1).findFirst().get().getAnnotation(Addressable.class);
+		Addressed url = urls.stream().skip(urls.size() - 1).findFirst().get().getAnnotation(Addressed.class);
 
 		register(url.value(), new ViewResource(viewBlueprint));
 
-		for (Addressable.Redirect redirect : url.redirects()) {
+		for (Addressed.Redirect redirect : url.redirects()) {
 			registerRedirect(redirect.value(), url.value());
 		}
 	}

@@ -1,11 +1,5 @@
 package com.mantledillusion.vaadin.cotton.viewpresenter;
 
-import static java.lang.annotation.ElementType.TYPE;
-import static java.lang.annotation.RetentionPolicy.RUNTIME;
-
-import java.lang.annotation.Annotation;
-import java.lang.annotation.Retention;
-import java.lang.annotation.Target;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -26,9 +20,7 @@ import com.mantledillusion.injection.hura.Injector;
 import com.mantledillusion.injection.hura.Injector.TemporalInjectorCallback;
 import com.mantledillusion.injection.hura.annotation.Define;
 import com.mantledillusion.injection.hura.annotation.Process;
-import com.mantledillusion.injection.hura.annotation.Validated;
 import com.mantledillusion.vaadin.cotton.UrlResourceRegistry;
-import com.mantledillusion.vaadin.cotton.User;
 import com.mantledillusion.vaadin.cotton.WebEnv;
 import com.mantledillusion.vaadin.cotton.exception.WebException;
 import com.mantledillusion.vaadin.cotton.exception.WebException.HttpErrorCodes;
@@ -43,8 +35,8 @@ import com.vaadin.ui.Composite;
  * life cycles.
  * <p>
  * Might be controlled by an {@link Presenter} implementation
- * using @{@link Present} on the {@link View} implementing type; see the
- * documentation of @{@link Present} for reference.
+ * using @{@link Presented} on the {@link View} implementing type; see the
+ * documentation of @{@link Presented} for reference.
  */
 public abstract class View extends Composite {
 
@@ -54,13 +46,13 @@ public abstract class View extends Composite {
 	// ############################################################# ADDRESSABLE ###############################################################
 	// #########################################################################################################################################
 
-	static class AddressableValidator implements AnnotationValidator<Addressable, Class<?>> {
+	static class AddressableValidator implements AnnotationValidator<Addressed, Class<?>> {
 
 		@Override
-		public void validate(Addressable annotationInstance, Class<?> annotatedElement) throws Exception {
+		public void validate(Addressed annotationInstance, Class<?> annotatedElement) throws Exception {
 			if (!View.class.isAssignableFrom(annotatedElement)) {
 				throw new WebException(HttpErrorCodes.HTTP904_ILLEGAL_ANNOTATION_USE,
-						"The @" + Addressable.class.getSimpleName() + " annotation can only be used on "
+						"The @" + Addressed.class.getSimpleName() + " annotation can only be used on "
 								+ View.class.getSimpleName() + " implementations; the type '"
 								+ annotatedElement.getSimpleName() + "' however is not.");
 			}
@@ -68,7 +60,7 @@ public abstract class View extends Composite {
 			UrlResourceRegistry.checkUrlPattern(annotationInstance.value());
 
 			Set<String> redirects = new HashSet<>();
-			for (Addressable.Redirect redirect : annotationInstance.redirects()) {
+			for (Addressed.Redirect redirect : annotationInstance.redirects()) {
 				UrlResourceRegistry.checkUrlPattern(redirect.value());
 				if (annotationInstance.value().equals(redirect.value())) {
 					throw new WebException(HttpErrorCodes.HTTP901_ILLEGAL_ARGUMENT_ERROR,
@@ -88,29 +80,7 @@ public abstract class View extends Composite {
 	// ############################################################## RESTRICTED ###############################################################
 	// #########################################################################################################################################
 
-	/**
-	 * {@link Annotation} for {@link View} implementations that require a logged in
-	 * {@link User} with certain rights in order to be displayed.
-	 */
-	@Retention(RUNTIME)
-	@Target(TYPE)
-	@Validated(RestrictedValidator.class)
-	public @interface Restricted {
-
-		/**
-		 * Defines the rightIds of the rights the {@link User} has to have upon
-		 * injection of the {@link View}.
-		 * <P>
-		 * If no rightIds are specified the annotated {@link View} just requires a
-		 * {@link User} to be logged in.
-		 * 
-		 * @return The rightIds the logged in user has to have to be allowed to view the
-		 *         annotated {@link View}; never null, might be empty, empty by default
-		 */
-		String[] value() default {};
-	}
-
-	private static class RestrictedValidator implements AnnotationValidator<Restricted, Class<?>> {
+	static class RestrictedValidator implements AnnotationValidator<Restricted, Class<?>> {
 
 		@Override
 		public void validate(Restricted annotationInstance, Class<?> annotatedElement) throws Exception {
@@ -127,35 +97,13 @@ public abstract class View extends Composite {
 	// ################################################################ PRESENT ################################################################
 	// #########################################################################################################################################
 
-	/**
-	 * {@link Annotation} for {@link View} implementations that need controlling by
-	 * an {@link Presenter} implementation.
-	 * <P>
-	 * {@link Presenter}s for {@link View}s are instantiated to be completely
-	 * autonomous, without any possibility to be injected elsewhere.
-	 */
-	@Retention(RUNTIME)
-	@Target(TYPE)
-	@Validated(PresentValidator.class)
-	public @interface Present {
-
-		/**
-		 * Defines the {@link Presenter}'s implementation type that will be instantiated
-		 * for instances of the annotated {@link View}.
-		 *
-		 * @return The {@link Presenter} implementation that presents instances of this
-		 *         {@link View} implementation; never null
-		 */
-		Class<? extends Presenter<? extends View>> value();
-	}
-
-	private static class PresentValidator implements AnnotationValidator<Present, Class<?>> {
+	static class PresentValidator implements AnnotationValidator<Presented, Class<?>> {
 
 		@Override
-		public void validate(Present annotationInstance, Class<?> annotatedElement) throws Exception {
+		public void validate(Presented annotationInstance, Class<?> annotatedElement) throws Exception {
 			if (!View.class.isAssignableFrom(annotatedElement)) {
 				throw new WebException(HttpErrorCodes.HTTP904_ILLEGAL_ANNOTATION_USE,
-						"The @" + Present.class.getSimpleName() + " annotation can only be used on "
+						"The @" + Presented.class.getSimpleName() + " annotation can only be used on "
 								+ View.class.getSimpleName() + " implementations; the type '"
 								+ annotatedElement.getSimpleName() + "' however is not.");
 			}
@@ -269,10 +217,10 @@ public abstract class View extends Composite {
 
 		TemporalActiveComponentRegistry reg = buildUI();
 
-		if (getClass().isAnnotationPresent(Present.class)) {
+		if (getClass().isAnnotationPresent(Presented.class)) {
 
 			@SuppressWarnings("unchecked")
-			Class<T3> presenterType = (Class<T3>) getClass().getAnnotation(Present.class).value();
+			Class<T3> presenterType = (Class<T3>) getClass().getAnnotation(Presented.class).value();
 
 			Processor<T3> postProcessor = new Processor<T3>() {
 

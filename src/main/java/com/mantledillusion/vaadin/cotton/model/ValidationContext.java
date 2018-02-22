@@ -34,13 +34,13 @@ import com.mantledillusion.vaadin.cotton.exception.WebException.HttpErrorCodes;
  */
 public final class ValidationContext<ModelType> {
 
-	static final class PreEvaluateValidator implements AnnotationValidator<PreEvaluate, Class<?>> {
+	static final class PreEvaluateValidator implements AnnotationValidator<PreEvaluated, Class<?>> {
 
 		@Override
-		public void validate(PreEvaluate annotationInstance, Class<?> annotatedElement) throws Exception {
+		public void validate(PreEvaluated annotationInstance, Class<?> annotatedElement) throws Exception {
 			if (!Validator.class.isAssignableFrom(annotatedElement)) {
 				throw new WebException(HttpErrorCodes.HTTP904_ILLEGAL_ANNOTATION_USE,
-						"The @" + PreEvaluate.class.getSimpleName() + " annotation can only be used on "
+						"The @" + PreEvaluated.class.getSimpleName() + " annotation can only be used on "
 								+ Validator.class.getSimpleName() + " implementations; the type '"
 								+ annotatedElement.getSimpleName() + "' however is not.");
 			}
@@ -183,9 +183,9 @@ public final class ValidationContext<ModelType> {
 			this.validators.put(validator, Pair.of(instance, prerequisites));
 
 			Map<TypeVariable<?>, Type> args = TypeUtils.getTypeArguments(validator, Validator.class);
-			for (Class<?> type : TypeEssentials.getSuperClassesAnnotatedWith(validator, PreEvaluate.class)) {
-				PreEvaluate preevaluate = type.getAnnotation(PreEvaluate.class);
-				for (PreEvaluate.Prerequisite prerequisite : preevaluate.value()) {
+			for (Class<?> type : TypeEssentials.getSuperClassesAnnotatedWith(validator, PreEvaluated.class)) {
+				PreEvaluated preevaluate = type.getAnnotation(PreEvaluated.class);
+				for (PreEvaluated.Prerequisite prerequisite : preevaluate.value()) {
 					if (args.equals(TypeUtils.getTypeArguments(prerequisite.value(), Validator.class))) {
 						@SuppressWarnings("unchecked")
 						Class<? extends Validator<ModelType>> prerequisiteType = (Class<? extends Validator<ModelType>>) prerequisite

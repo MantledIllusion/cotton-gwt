@@ -6,7 +6,7 @@ import java.util.Set;
 
 import com.mantledillusion.vaadin.cotton.exception.WebException;
 import com.mantledillusion.vaadin.cotton.exception.WebException.HttpErrorCodes;
-import com.mantledillusion.vaadin.cotton.viewpresenter.View.Restricted;
+import com.mantledillusion.vaadin.cotton.viewpresenter.Restricted;
 import com.mantledillusion.vaadin.cotton.viewpresenter.View;
 
 /**

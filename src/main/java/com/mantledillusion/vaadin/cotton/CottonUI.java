@@ -42,7 +42,7 @@ import com.mantledillusion.vaadin.cotton.User.SessionLogEntry;
 import com.mantledillusion.vaadin.cotton.User.SessionLogType;
 import com.mantledillusion.vaadin.cotton.exception.WebException;
 import com.mantledillusion.vaadin.cotton.exception.WebException.HttpErrorCodes;
-import com.mantledillusion.vaadin.cotton.viewpresenter.Addressable;
+import com.mantledillusion.vaadin.cotton.viewpresenter.Addressed;
 import com.mantledillusion.vaadin.cotton.viewpresenter.View;
 import com.vaadin.server.ErrorHandler;
 import com.vaadin.server.Page;

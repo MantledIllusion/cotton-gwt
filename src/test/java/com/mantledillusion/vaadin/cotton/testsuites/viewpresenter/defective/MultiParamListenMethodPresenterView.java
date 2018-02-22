@@ -1,11 +1,11 @@
 package com.mantledillusion.vaadin.cotton.testsuites.viewpresenter.defective;
 
 import com.mantledillusion.vaadin.cotton.component.ComponentFactory;
-import com.mantledillusion.vaadin.cotton.viewpresenter.View.Present;
+import com.mantledillusion.vaadin.cotton.viewpresenter.Presented;
 import com.mantledillusion.vaadin.cotton.viewpresenter.View;
 import com.vaadin.ui.Component;
 
-@Present(MultiParamListenMethodPresenter.class)
+@Presented(MultiParamListenMethodPresenter.class)
 public class MultiParamListenMethodPresenterView extends View {
 
 	private static final long serialVersionUID = 1L;

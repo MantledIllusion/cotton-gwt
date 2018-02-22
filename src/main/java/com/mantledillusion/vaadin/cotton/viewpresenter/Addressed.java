@@ -20,7 +20,7 @@ import com.mantledillusion.vaadin.cotton.viewpresenter.View.AddressableValidator
 @Retention(RUNTIME)
 @Target(TYPE)
 @Validated(AddressableValidator.class)
-public @interface Addressable {
+public @interface Addressed {
 
 	/**
 	 * Defines a segmented URL path whose requests will be redirected.
