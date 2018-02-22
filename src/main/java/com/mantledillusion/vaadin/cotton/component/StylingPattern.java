@@ -100,7 +100,7 @@ public final class StylingPattern extends OptionPattern<AbstractComponent> {
 	 * @return A new {@link StylingPattern}; never null
 	 */
 	public static StylingPattern ofIcon(Resource icon) {
-		return new StylingPattern(icon, null);
+		return new StylingPattern(icon, Collections.emptySet());
 	}
 
 	/**
