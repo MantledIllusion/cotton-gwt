@@ -666,7 +666,7 @@ public abstract class CottonUI extends com.vaadin.ui.UI {
 	public static enum NavigationType {
 
 		/**
-		 * Change type of URL -&gt; another {@link Addressable}.
+		 * Change type of URL -&gt; another {@link Addressed}.
 		 */
 		SEGMENT_CHANGE,
 
