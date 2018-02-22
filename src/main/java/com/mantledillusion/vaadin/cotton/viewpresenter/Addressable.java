@@ -26,11 +26,12 @@ public @interface Addressable {
 	 * Defines a segmented URL path whose requests will be redirected.
 	 */
 	public @interface Redirect {
-	
+
 		/**
 		 * The segmented URL path that will be redirected.
 		 * <P>
-		 * The URL has to match the {@link Pattern} {@value View.AddressableValidator#URL_PATH_REGEX}.
+		 * The URL has to be validateable by
+		 * {@link UrlResourceRegistry#checkUrlPattern(String)}.
 		 * 
 		 * @return The URL that is redirected; never null
 		 */
@@ -38,13 +39,13 @@ public @interface Addressable {
 	}
 
 	/**
-	 * The segmented URL path the annotated {@link View} has to be
-	 * addressable by.
+	 * The segmented URL path the annotated {@link View} has to be addressable by.
 	 * <P>
-	 * The URL has to match the {@link Pattern} {@value AddressableValidator#URL_PATH_REGEX}.
+	 * The URL has to match the {@link Pattern}
+	 * {@link UrlResourceRegistry#URL_PATH_REGEX}.
 	 * 
-	 * @return The URL the annotated {@link View} has to be addressable by;
-	 *         never null
+	 * @return The URL the annotated {@link View} has to be addressable by; never
+	 *         null
 	 */
 	String value();
 

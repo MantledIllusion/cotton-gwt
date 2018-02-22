@@ -247,6 +247,8 @@ public final class ValidationContext<ModelType> {
 	 * instantiation causes a new {@link Injector} to be created with the given
 	 * {@link Singleton}s as {@link SingletonMode#GLOBAL} {@link Singleton}s.
 	 * 
+	 * @param <ModelType>
+	 *            The model type to begin a {@link ValidationContextBuilder} for.
 	 * @param validator
 	 *            The first {@link Validator} to give to the builder; <b>not</b>
 	 *            allowed to be null.
@@ -271,6 +273,8 @@ public final class ValidationContext<ModelType> {
 	 * instantiation enables the {@link Validator} instances to retrieve singletons
 	 * out of the given {@link Injector}s contexts.
 	 * 
+	 * @param <ModelType>
+	 *            The model type to begin a {@link ValidationContextBuilder} for.
 	 * @param injector
 	 *            The {@link Injector} to inject the {@link Validator}
 	 *            implementations with; might <b>not</b> be null.

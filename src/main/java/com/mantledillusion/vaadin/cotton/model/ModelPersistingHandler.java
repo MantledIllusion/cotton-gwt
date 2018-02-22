@@ -9,8 +9,8 @@ import com.mantledillusion.vaadin.cotton.exception.WebException;
  * {@link ModelProperty}s.
  *
  * @param <ModelType>
- *            The root type of the data model the
- *            {@link ModelValidationHandler} is able to persist.
+ *            The root type of the data model the {@link ModelValidationHandler}
+ *            is able to persist.
  */
 abstract class ModelPersistingHandler<ModelType> implements ModelHandler<ModelType> {
 
@@ -44,13 +44,16 @@ abstract class ModelPersistingHandler<ModelType> implements ModelHandler<ModelTy
 	 * <P>
 	 * For determination on changes, this handler's own index context is used.
 	 * 
+	 * @param <TargetPropertyType>
+	 *            The type of the property to check for changes.
 	 * @param property
 	 *            The property to check for changes for; <b>not</b> allowed to be
 	 *            null.
 	 * @return True if there are pending changes to the given property, false
 	 *         otherwise or if there is no current model
 	 */
-	public abstract <TargetPropertyType> boolean isPropertyChanged(ModelProperty<ModelType, TargetPropertyType> property);
+	public abstract <TargetPropertyType> boolean isPropertyChanged(
+			ModelProperty<ModelType, TargetPropertyType> property);
 
 	/**
 	 * Returns whether the given specific property of the model instance currently
@@ -65,15 +68,19 @@ abstract class ModelPersistingHandler<ModelType> implements ModelHandler<ModelTy
 	 * <P>
 	 * For determination on changes, the given index context is used.
 	 * 
+	 * @param <TargetPropertyType>
+	 *            The type of the property to check for changes.
 	 * @param property
 	 *            The property to check for changes for; <b>not</b> allowed to be
 	 *            null.
 	 * @param context
-	 *            The context which is used for determining the correct property; might be null.
+	 *            The context which is used for determining the property to check;
+	 *            might be null.
 	 * @return True if there are pending changes to the given property, false
 	 *         otherwise or if there is no current model
 	 */
-	public abstract <TargetPropertyType> boolean isPropertyChanged(ModelProperty<ModelType, TargetPropertyType> property, IndexContext context);
+	public abstract <TargetPropertyType> boolean isPropertyChanged(
+			ModelProperty<ModelType, TargetPropertyType> property, IndexContext context);
 
 	// ######################################################################################################################################
 	// ############################################################ PERSISTING ##############################################################
@@ -90,15 +97,15 @@ abstract class ModelPersistingHandler<ModelType> implements ModelHandler<ModelTy
 	 * Note that the index context used has an impact on the execution for every of
 	 * the models properties whose paths from the property model's root are indexed.
 	 * <P>
-	 * For determining the instances to persist, this
-	 * {@link ModelContainer}'s own index context is used.
+	 * For determining the properties to persist, this {@link ModelContainer}'s own
+	 * index context is used.
 	 * <P>
 	 * For the whole set of changed instances to persist, the registered
-	 * {@link ModelPersistor}s are used to determine the most effective way
-	 * to persist all of them without having to persist data that is unchanged. For
-	 * example, if there are two {@link ModelPersistor}s for the root model
-	 * and one sub property, and that sub property is the only thing changed, only
-	 * that sub properties' {@link ModelPersistor} will be used.
+	 * {@link ModelPersistor}s are used to determine the most effective way to
+	 * persist all of them without having to persist data that is unchanged. For
+	 * example, if there are two {@link ModelPersistor}s for the root model and one
+	 * sub property, and that sub property is the only thing changed, only that sub
+	 * properties' {@link ModelPersistor} will be used.
 	 * <P>
 	 * Since the pending changes combined with the {@link ModelPersistor}s
 	 * registered determine what parts of the model will be persisted, it is not
@@ -120,20 +127,23 @@ abstract class ModelPersistingHandler<ModelType> implements ModelHandler<ModelTy
 	 * Note that the index context used has an impact on the execution for every of
 	 * the models properties whose paths from the property model's root are indexed.
 	 * <P>
-	 * For determining the instances to persist, the given index context is used.
+	 * For determining the properties to persist, the given index context is used.
 	 * <P>
 	 * For the whole set of changed instances to persist, the registered
-	 * {@link ModelPersistor}s are used to determine the most effective way
-	 * to persist all of them without having to persist data that is unchanged. For
-	 * example, if there are two {@link ModelPersistor}s for the root model
-	 * and one sub property, and that sub property is the only thing changed, only
-	 * that sub properties' {@link ModelPersistor} will be used.
+	 * {@link ModelPersistor}s are used to determine the most effective way to
+	 * persist all of them without having to persist data that is unchanged. For
+	 * example, if there are two {@link ModelPersistor}s for the root model and one
+	 * sub property, and that sub property is the only thing changed, only that sub
+	 * properties' {@link ModelPersistor} will be used.
 	 * <P>
 	 * Since the pending changes combined with the {@link ModelPersistor}s
 	 * registered determine what parts of the model will be persisted, it is not
 	 * possible to know beforehand if the whole model or just parts are going to be
 	 * persisted, so the whole persisted model is returned.
 	 * 
+	 * @param context
+	 *            The context which is used for determining the properties to
+	 *            persist property; might be null.
 	 * @return The persisted and updated model.
 	 */
 	public abstract ModelType persist(IndexContext context);

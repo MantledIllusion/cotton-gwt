@@ -117,7 +117,7 @@ public final class Cookie {
 	/**
 	 * Sets the given value as the value of this {@link Cookie}.
 	 * 
-	 * @param values
+	 * @param value
 	 *            The values to set; might <b>not</b> be null
 	 */
 	public void setValue(String value) {

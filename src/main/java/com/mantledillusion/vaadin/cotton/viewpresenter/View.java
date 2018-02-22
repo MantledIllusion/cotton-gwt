@@ -49,11 +49,11 @@ import com.vaadin.ui.Composite;
 public abstract class View extends Composite {
 
 	private static final long serialVersionUID = 1L;
-	
+
 	// #########################################################################################################################################
 	// ############################################################# ADDRESSABLE ###############################################################
 	// #########################################################################################################################################
-	
+
 	static class AddressableValidator implements AnnotationValidator<Addressable, Class<?>> {
 
 		@Override
@@ -83,11 +83,11 @@ public abstract class View extends Composite {
 			}
 		}
 	}
-	
+
 	// #########################################################################################################################################
 	// ############################################################## RESTRICTED ###############################################################
 	// #########################################################################################################################################
-	
+
 	/**
 	 * {@link Annotation} for {@link View} implementations that require a logged in
 	 * {@link User} with certain rights in order to be displayed.
@@ -101,16 +101,15 @@ public abstract class View extends Composite {
 		 * Defines the rightIds of the rights the {@link User} has to have upon
 		 * injection of the {@link View}.
 		 * <P>
-		 * If no rightIds are specified the annotated {@link View} just requires
-		 * a {@link User} to be logged in.
+		 * If no rightIds are specified the annotated {@link View} just requires a
+		 * {@link User} to be logged in.
 		 * 
 		 * @return The rightIds the logged in user has to have to be allowed to view the
-		 *         annotated {@link View}; never null, might be empty, empty by
-		 *         default
+		 *         annotated {@link View}; never null, might be empty, empty by default
 		 */
 		String[] value() default {};
 	}
-	
+
 	private static class RestrictedValidator implements AnnotationValidator<Restricted, Class<?>> {
 
 		@Override
@@ -123,17 +122,17 @@ public abstract class View extends Composite {
 			}
 		}
 	}
-	
+
 	// #########################################################################################################################################
 	// ################################################################ PRESENT ################################################################
 	// #########################################################################################################################################
-	
+
 	/**
-	 * {@link Annotation} for {@link View} implementations that need
-	 * controlling by an {@link Presenter} implementation.
+	 * {@link Annotation} for {@link View} implementations that need controlling by
+	 * an {@link Presenter} implementation.
 	 * <P>
-	 * {@link Presenter}s for {@link View}s are instantiated to be
-	 * completely autonomous, without any possibility to be injected elsewhere.
+	 * {@link Presenter}s for {@link View}s are instantiated to be completely
+	 * autonomous, without any possibility to be injected elsewhere.
 	 */
 	@Retention(RUNTIME)
 	@Target(TYPE)
@@ -141,15 +140,15 @@ public abstract class View extends Composite {
 	public @interface Present {
 
 		/**
-		 * Defines the {@link Presenter}'s implementation type that will be
-		 * instantiated for instances of the annotated {@link View}.
+		 * Defines the {@link Presenter}'s implementation type that will be instantiated
+		 * for instances of the annotated {@link View}.
 		 *
-		 * @return The {@link Presenter} implementation that presents instances
-		 *         of this {@link View} implementation; never null
+		 * @return The {@link Presenter} implementation that presents instances of this
+		 *         {@link View} implementation; never null
 		 */
 		Class<? extends Presenter<? extends View>> value();
 	}
-	
+
 	private static class PresentValidator implements AnnotationValidator<Present, Class<?>> {
 
 		@Override
@@ -162,18 +161,18 @@ public abstract class View extends Composite {
 			}
 		}
 	}
-	
+
 	// #########################################################################################################################################
 	// ########################################################## COMPONENT REGISTRY ###########################################################
 	// #########################################################################################################################################
 
 	/**
-	 * Temporarily active registry for {@link AbstractComponent}s on an
-	 * {@link View} that are active (fire component events that the
-	 * controlling {@link Presenter} has to react on).
+	 * Temporarily active registry for {@link AbstractComponent}s on an {@link View}
+	 * that are active (fire component events that the controlling {@link Presenter}
+	 * has to react on).
 	 * <P>
-	 * May only be used during the initialization of the {@link View} it is
-	 * given to.
+	 * May only be used during the initialization of the {@link View} it is given
+	 * to.
 	 */
 	protected final class TemporalActiveComponentRegistry {
 
@@ -182,9 +181,11 @@ public abstract class View extends Composite {
 
 		/**
 		 * Registers the given {@link AbstractComponent} with the given componentId,
-		 * which will make the component's events listenable to for
-		 * {@link Presenter} methods annotated with @Listen.
+		 * which will make the component's events listenable to for {@link Presenter}
+		 * methods annotated with @Listen.
 		 * 
+		 * @param <T>
+		 *            The type of the {@link AbstractComponent} to register.
 		 * @param componentId
 		 *            The componentId to register an {@link AbstractComponent} under;
 		 *            <b>not</b> allowed to be null.
@@ -230,7 +231,7 @@ public abstract class View extends Composite {
 			}
 		}
 	}
-	
+
 	// #########################################################################################################################################
 	// ################################################################# TYPE ##################################################################
 	// #########################################################################################################################################
@@ -239,8 +240,7 @@ public abstract class View extends Composite {
 
 	@SuppressWarnings("rawtypes")
 	@Process
-	private <T2 extends View, T3 extends Presenter<T2>> void initialize(
-			TemporalInjectorCallback callback) {
+	private <T2 extends View, T3 extends Presenter<T2>> void initialize(TemporalInjectorCallback callback) {
 
 		List<Class<?>> restrictions = TypeEssentials.getSuperClassesAnnotatedWith(getClass(), Restricted.class);
 
@@ -312,9 +312,9 @@ public abstract class View extends Composite {
 	/**
 	 * Framework internal method <b>(DO NOT USE!)</b>
 	 * <P>
-	 * The composition root of an {@link View} is set by the framework to
-	 * the result of {@link #buildUI(TemporalActiveComponentRegistry)}; any other
-	 * use of this {@link Method} is forbidden.
+	 * The composition root of an {@link View} is set by the framework to the result
+	 * of {@link #buildUI(TemporalActiveComponentRegistry)}; any other use of this
+	 * {@link Method} is forbidden.
 	 */
 	@Override
 	protected void setCompositionRoot(Component compositionRoot) {
@@ -358,7 +358,7 @@ public abstract class View extends Composite {
 	 * 
 	 * @param reg
 	 *            The {@link TemporalActiveComponentRegistry} the view may register
-	 *            its active components to; may <B>not</B> be null.
+	 *            its active components to; may <b>not</b> be null.
 	 * @return The component containing the UI that represents this view; never null
 	 * @throws Throwable
 	 *             For convenience, this method may throw any {@link Throwable} it

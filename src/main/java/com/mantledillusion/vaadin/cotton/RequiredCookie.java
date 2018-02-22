@@ -37,7 +37,7 @@ public @interface RequiredCookie {
 	 * The period is measured from the moment the {@link RequiredCookie}'s parent
 	 * bean is destroyed.
 	 * <p>
-	 * Setting this to a value < 0 defines this cookie as a session cookie that
+	 * Setting this to a value &lt;0 defines this cookie as a session cookie that
 	 * lasts until the session is closed.
 	 * 
 	 * @return The period in relation to the unit until the annotated cookie

@@ -8,6 +8,7 @@ import com.mantledillusion.vaadin.cotton.CottonUI;
 import com.mantledillusion.vaadin.cotton.User;
 import com.mantledillusion.vaadin.cotton.CottonUI.LoginView;
 import com.mantledillusion.vaadin.cotton.QueryParam;
+import com.mantledillusion.vaadin.cotton.RequiredQueryParam;
 import com.mantledillusion.vaadin.cotton.UrlResourceRegistry;
 
 /**

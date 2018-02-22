@@ -7,6 +7,8 @@ import java.util.Locale;
 import java.util.ResourceBundle;
 import java.util.Set;
 
+import com.mantledillusion.vaadin.cotton.CottonUI.NavigationAnnouncementEvent;
+import com.mantledillusion.vaadin.cotton.CottonUI.UserChangeAnnouncementEvent;
 import com.mantledillusion.vaadin.cotton.User.SessionLogContext;
 import com.mantledillusion.vaadin.cotton.User.SessionLogEntry;
 import com.mantledillusion.vaadin.cotton.User.SessionLogType;
@@ -27,13 +29,16 @@ public final class WebEnv {
 	// #########################################################################################################################################
 
 	/**
-	 * Convenience {@link Method} for {@link #navigateTo(NavigationTarget)} with the given url.
+	 * Convenience {@link Method} for {@link #navigateTo(NavigationTarget)} with the
+	 * given url.
 	 * 
 	 * @param url
 	 *            The url to navigate to; <b>not</b> allowed to be null.
+	 * @return True if the {@link NavigationAnnouncementEvent} is accepted and the
+	 *         navigation was successful, false otherwise
 	 */
-	public static void navigateTo(String url) {
-		CottonUI.current().navigateTo(NavigationTarget.of(url));
+	public static boolean navigateTo(String url) {
+		return CottonUI.current().navigateTo(NavigationTarget.of(url));
 	}
 
 	/**
@@ -41,20 +46,25 @@ public final class WebEnv {
 	 * 
 	 * @param target
 	 *            The target to navigate to; <b>not</b> allowed to be null.
+	 * @return True if the {@link NavigationAnnouncementEvent} is accepted and the
+	 *         navigation was successful, false otherwise
 	 */
-	public static void navigateTo(NavigationTarget target) {
+	public static boolean navigateTo(NavigationTarget target) {
 		if (target == null) {
-			throw new WebException(HttpErrorCodes.HTTP901_ILLEGAL_ARGUMENT_ERROR, "Unable to navigate to a null target.");
+			throw new WebException(HttpErrorCodes.HTTP901_ILLEGAL_ARGUMENT_ERROR,
+					"Unable to navigate to a null target.");
 		}
-		CottonUI.current().navigateTo(target);
+		return CottonUI.current().navigateTo(target);
 	}
 
 	/**
-	 * Causes a reload with the current {@link IPagingSegment} and
-	 * {@link QueryParam}s.
+	 * Causes a reload at the current URL.
+	 * 
+	 * @return True if the {@link NavigationAnnouncementEvent} is accepted and the
+	 *         refresh was successful, false otherwise
 	 */
-	public static void refresh() {
-		CottonUI.current().refresh();
+	public static boolean refresh() {
+		return CottonUI.current().refresh();
 	}
 
 	// #########################################################################################################################################
@@ -135,8 +145,8 @@ public final class WebEnv {
 	 * 
 	 * @param user
 	 *            The {@link User} to log in; might <b>not</b> be null.
-	 * @return True if the login was allowed by the {@link UserSensitive}s and is
-	 *         done.
+	 * @return True if the {@link UserChangeAnnouncementEvent} is accepted and the
+	 *         log in was successful, false otherwise
 	 */
 	public static boolean logIn(User user) {
 		if (user == null) {
@@ -149,8 +159,8 @@ public final class WebEnv {
 	 * Will log out the current {@link User} if there is one; in that case, also
 	 * reloads the current page.
 	 * 
-	 * @return True if the logout was allowed by the {@link UserSensitive}s and is
-	 *         done.
+	 * @return True if the {@link UserChangeAnnouncementEvent} is accepted and the
+	 *         log out was successful, false otherwise
 	 */
 	public static boolean logOut() {
 		return CottonUI.current().logOut();

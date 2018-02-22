@@ -42,6 +42,7 @@ import com.mantledillusion.vaadin.cotton.User.SessionLogEntry;
 import com.mantledillusion.vaadin.cotton.User.SessionLogType;
 import com.mantledillusion.vaadin.cotton.exception.WebException;
 import com.mantledillusion.vaadin.cotton.exception.WebException.HttpErrorCodes;
+import com.mantledillusion.vaadin.cotton.viewpresenter.Addressable;
 import com.mantledillusion.vaadin.cotton.viewpresenter.View;
 import com.vaadin.server.ErrorHandler;
 import com.vaadin.server.Page;
@@ -227,11 +228,13 @@ public abstract class CottonUI extends com.vaadin.ui.UI {
 		 * Registers the given {@link ErrorView} type as the error handler for the given
 		 * {@link Throwable} sub type.
 		 * <P>
-		 * This {@link Method} is shorthand for calling
-		 * {@link #registerErrorViewProvider(Class, ErrorHandlingDecider)} with a
-		 * provider that returns the given {@link TypedBlueprint} for absolutely every
-		 * error instance given to it.
+		 * This {@link Method} is shorthand for registering a
+		 * {@link ErrorHandlingDecider} that returns the given {@link TypedBlueprint}
+		 * for absolutely every error instance given to it.
 		 * 
+		 * @param <ErrorType>
+		 *            The {@link Throwable} sub type to register an {@link ErrorView}
+		 *            for.
 		 * @param errorType
 		 *            The {@link Throwable} sub type to register an {@link ErrorView}
 		 *            for; <b>not</b> allowed to be null.
@@ -246,7 +249,7 @@ public abstract class CottonUI extends com.vaadin.ui.UI {
 				throw new WebException(HttpErrorCodes.HTTP901_ILLEGAL_ARGUMENT_ERROR,
 						"The error view type to register can never be null.");
 			}
-			registerErrorViewProvider(errorType, (error) -> viewBlueprint);
+			registerErrorViewDecider(errorType, (error) -> viewBlueprint);
 		}
 
 		/**
@@ -271,14 +274,17 @@ public abstract class CottonUI extends com.vaadin.ui.UI {
 		 * Such a default error page provider exists internally by default, but can be
 		 * overridden in the described way.
 		 * 
+		 * @param <ErrorType>
+		 *            The {@link Throwable} sub type to register an
+		 *            {@link ErrorHandlingDecider} for.
 		 * @param errorType
-		 *            The {@link Throwable} sub type to register an {@link ErrorView}
-		 *            for; <b>not</b> allowed to be null.
+		 *            The {@link Throwable} sub type to register an
+		 *            {@link ErrorHandlingDecider} for; <b>not</b> allowed to be null.
 		 * @param provider
 		 *            The {@link ErrorHandlingDecider} to use upon an occurring error of
 		 *            the given type; <b>not</b> allowed to be null.
 		 */
-		public <ErrorType extends Throwable> void registerErrorViewProvider(Class<ErrorType> errorType,
+		public <ErrorType extends Throwable> void registerErrorViewDecider(Class<ErrorType> errorType,
 				ErrorHandlingDecider<ErrorType> provider) {
 			if (errorType == null) {
 				throw new WebException(HttpErrorCodes.HTTP901_ILLEGAL_ARGUMENT_ERROR,
@@ -403,17 +409,17 @@ public abstract class CottonUI extends com.vaadin.ui.UI {
 			});
 
 			TemporalUIConfiguration conf = new TemporalUIConfiguration();
-			
+
 			this.urlRegistry = configure(conf);
 			conf.allowConfiguration = false;
 			if (this.urlRegistry == null) {
 				throw new WebException(HttpErrorCodes.HTTP901_ILLEGAL_ARGUMENT_ERROR,
 						"Cannot initialize a UI using a null URL registry.");
 			}
-			
+
 			Singleton eventBus = Singleton.of(EventBus.PRESENTER_EVENT_BUS_ID, this.eventBus);
 			this.injector = Injector.of(ListUtils.union(conf.predefinables, Arrays.asList(eventBus)));
-			
+
 			handleRequest(request);
 		} catch (Exception e) {
 			close();
@@ -560,13 +566,13 @@ public abstract class CottonUI extends com.vaadin.ui.UI {
 		this.eventBus.dispatch(new NavigationEvent(navigationChangeType), null);
 	}
 
-	private void navigate(String urlPath, Map<String, String[]> params, boolean keepLanguageParam,
+	private boolean navigate(String urlPath, Map<String, String[]> params, boolean keepLanguageParam,
 			boolean createBrowserNavEntry) {
 		NavigationType navigationType;
 		if (!urlPath.equals(this.currentUrl)) {
 			navigationType = NavigationType.SEGMENT_CHANGE;
-		} else if (!params.equals(this.currentParams) && 
-				Arrays.equals(params.get(QUERY_PARAM_KEY_LANGUAGE), this.currentParams.get(QUERY_PARAM_KEY_LANGUAGE))) {
+		} else if (!params.equals(this.currentParams) && Arrays.equals(params.get(QUERY_PARAM_KEY_LANGUAGE),
+				this.currentParams.get(QUERY_PARAM_KEY_LANGUAGE))) {
 			navigationType = NavigationType.QUERY_PARAM_CHANGE;
 		} else {
 			navigationType = NavigationType.REFRESH;
@@ -626,10 +632,12 @@ public abstract class CottonUI extends com.vaadin.ui.UI {
 			}
 
 			notifyNavigationAwares(navigationType);
+			return true;
 		} else {
 			appendToLog(SessionLogEntry.of(SessionLogContext.NAVIGATION, SessionLogType.WARNING,
 					"Navigation to '" + buildFullUrl(urlPath, params) + "' denied."));
 			updateUrl(createBrowserNavEntry);
+			return false;
 		}
 	}
 
@@ -658,7 +666,7 @@ public abstract class CottonUI extends com.vaadin.ui.UI {
 	public static enum NavigationType {
 
 		/**
-		 * Change type of URL -&gt; new {@link UrlRegistration}.
+		 * Change type of URL -&gt; another {@link Addressable}.
 		 */
 		SEGMENT_CHANGE,
 
@@ -756,12 +764,12 @@ public abstract class CottonUI extends com.vaadin.ui.UI {
 		}
 	}
 
-	final void navigateTo(NavigationTarget target) {
-		navigate(target.getUrl(), target.getParams(), true, true);
+	final boolean navigateTo(NavigationTarget target) {
+		return navigate(target.getUrl(), target.getParams(), true, true);
 	}
 
-	final void refresh() {
-		navigate(this.currentUrl, this.currentParams, true, false);
+	final boolean refresh() {
+		return navigate(this.currentUrl, this.currentParams, true, false);
 	}
 
 	// #########################################################################################################################################
@@ -884,8 +892,8 @@ public abstract class CottonUI extends com.vaadin.ui.UI {
 
 	/**
 	 * Specialized {@link View} sub type that can be supplied to the
-	 * {@link TemporalUIConfiguration#registerLoginView(TypedBlueprint)}
-	 * {@link Method} of a {@link CottonUI} during its configuration phase.
+	 * {@link TemporalUIConfiguration} of a {@link CottonUI} during its
+	 * configuration phase.
 	 * <P>
 	 * Whenever there is a need for a paged log in, the implementation of this
 	 * {@link LoginView} configured there will be used automatically.
@@ -1126,8 +1134,8 @@ public abstract class CottonUI extends com.vaadin.ui.UI {
 
 	/**
 	 * Specialized {@link View} sub type that can be supplied to the
-	 * {@link TemporalUIConfiguration#registerErrorView(Class, Blueprint))}
-	 * {@link Method} of a {@link CottonUI} during its configuration phase.
+	 * {@link TemporalUIConfiguration} of a {@link CottonUI} during its
+	 * configuration phase.
 	 *
 	 * @param <ErrorType>
 	 *            The {@link Throwable} sub type whose occurrences should be handled

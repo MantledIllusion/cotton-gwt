@@ -19,17 +19,17 @@ import com.mantledillusion.vaadin.cotton.viewpresenter.Addressable;
 import com.mantledillusion.vaadin.cotton.viewpresenter.View;
 
 /**
- * Registry that basically holds URL-&gt;{@link TypedBlueprint} mappings to determine
- * which {@link TypedBlueprint} to use for view injection when the user visits a
- * specific URL.
+ * Registry that basically holds URL-&gt;{@link TypedBlueprint} mappings to
+ * determine which {@link TypedBlueprint} to use for view injection when the
+ * user visits a specific URL.
  * <p>
  * In addition, the registry can also handle certain special cases like Http410
  * GONE resources and Http30X redirects.
  */
 public final class UrlResourceRegistry {
 
-	private final static String URL_SEGMENT_REGEX = "[a-zA-Z0-9_]+";
-	private final static String URL_PATH_REGEX = "(" + URL_SEGMENT_REGEX + "(/" + URL_SEGMENT_REGEX + ")*)?";
+	private static final String URL_SEGMENT_REGEX = "[a-zA-Z0-9_]+";
+	public static final String URL_PATH_REGEX = "(" + URL_SEGMENT_REGEX + "(/" + URL_SEGMENT_REGEX + ")*)?";
 
 	private final Map<String, UrlResource> resourceRegistry = new HashMap<>();
 	private final Map<String, String> redirectRegistry = new HashMap<>();
@@ -134,7 +134,8 @@ public final class UrlResourceRegistry {
 	}
 
 	/**
-	 * Returns the {@link TypedBlueprint} registered for view injection at the given URL.
+	 * Returns the {@link TypedBlueprint} registered for view injection at the given
+	 * URL.
 	 * 
 	 * @param urlPath
 	 *            The URL path to retrieve the {@link TypedBlueprint} for; might
@@ -157,10 +158,10 @@ public final class UrlResourceRegistry {
 	 * implementation at the URL in the view's @{@link Addressable} annotation.
 	 * 
 	 * @param viewBlueprint
-	 *            The {@link TypedBlueprint} whose view to register; might <b>not</b> be
-	 *            null, also the view has to be annotated with @{@link Addressable}
-	 *            somewhere, view the documentation of {@link Addressable} for
-	 *            reference.
+	 *            The {@link TypedBlueprint} whose view to register; might
+	 *            <b>not</b> be null, also the view has to be annotated
+	 *            with @{@link Addressable} somewhere, view the documentation of
+	 *            {@link Addressable} for reference.
 	 */
 	public void registerViewResource(TypedBlueprint<? extends View> viewBlueprint) {
 		if (viewBlueprint == null) {
@@ -216,22 +217,31 @@ public final class UrlResourceRegistry {
 	 * 
 	 * @param urlPath
 	 *            Path to register the GONE resource at; might <b>not</b> be null
-	 *            and has to match {@link AddressableValidator#URL_PATH_REGEX}
+	 *            and has to match {@link #URL_PATH_REGEX}
 	 */
 	public void registerGoneResource(String urlPath) {
 		UrlResourceRegistry.checkUrlPattern(urlPath);
 		register(urlPath, new GoneResource());
 	}
 
-	public static void checkUrlPattern(String url) {
+	/**
+	 * Checks whether the given URL is not null and matches the pattern for URL
+	 * paths, which is {@link #URL_PATH_REGEX}.
+	 * 
+	 * @param url
+	 *            The url to check; might <b>not</b> be null or not matching to the
+	 *            pattern for valid URL paths.
+	 * @throws WebException
+	 *             Thrown if the given URL is null or no valid URL path
+	 */
+	public static void checkUrlPattern(String url) throws WebException {
 		if (url == null) {
 			throw new WebException(HttpErrorCodes.HTTP901_ILLEGAL_ARGUMENT_ERROR,
 					"Cannot register a resource at a null url.");
 		} else if (!url.matches(URL_PATH_REGEX)) {
 			throw new WebException(HttpErrorCodes.HTTP901_ILLEGAL_ARGUMENT_ERROR,
 					"Cannot register the resource at url '" + url
-							+ "'; the url does not match the valid format for segmented url paths: "
-							+ URL_PATH_REGEX);
+							+ "'; the url does not match the valid format for segmented url paths: " + URL_PATH_REGEX);
 		}
 	}
 

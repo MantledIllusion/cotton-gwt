@@ -55,8 +55,8 @@ public abstract class PresetPattern<T extends AbstractComponent> extends OptionP
 	}
 
 	/**
-	 * {@link PresetBuilder} implementation for {@link PresetPattern}s that
-	 * can be applied on {@link AbstractOrderedLayout}s.
+	 * {@link PresetBuilder} implementation for {@link PresetPattern}s that can be
+	 * applied on {@link AbstractOrderedLayout}s.
 	 * <P>
 	 * Possible targets for the build {@link PresetPattern} are:<br>
 	 * - {@link FormLayout}<br>
@@ -138,8 +138,8 @@ public abstract class PresetPattern<T extends AbstractComponent> extends OptionP
 	}
 
 	/**
-	 * {@link PresetBuilder} implementation for {@link PresetPattern}s that
-	 * can be applied on {@link AbstractDateField}s.
+	 * {@link PresetBuilder} implementation for {@link PresetPattern}s that can be
+	 * applied on {@link AbstractDateField}s.
 	 * <P>
 	 * Possible targets for the build {@link PresetPattern} are:<br>
 	 * - {@link DateField}<br>
@@ -162,7 +162,7 @@ public abstract class PresetPattern<T extends AbstractComponent> extends OptionP
 		 * 
 		 * @param dateFormat
 		 *            The date format to use on the {@link AbstractDateField}, see
-		 *            {@link SimpleDateFormat} for details; may <B>NOT<B> be null.
+		 *            {@link SimpleDateFormat} for details; may <b>not</b> be null.
 		 * @return this
 		 */
 		public DateFieldPresetBuilder withFormat(String dateFormat) {
@@ -284,8 +284,8 @@ public abstract class PresetPattern<T extends AbstractComponent> extends OptionP
 	}
 
 	/**
-	 * {@link PresetBuilder} implementation for {@link PresetPattern}s that
-	 * can be applied on {@link AbstractTextField}s.
+	 * {@link PresetBuilder} implementation for {@link PresetPattern}s that can be
+	 * applied on {@link AbstractTextField}s.
 	 * <P>
 	 * Possible targets for the build {@link PresetPattern} are:<br>
 	 * - {@link TextArea}<br>
@@ -306,7 +306,7 @@ public abstract class PresetPattern<T extends AbstractComponent> extends OptionP
 		 * length.
 		 * 
 		 * @param maxLength
-		 *            The max length to set; values <0 are interpreted as unlimited
+		 *            The max length to set; values &lt;0 are interpreted as unlimited
 		 *            length.
 		 * @return this
 		 */
@@ -403,8 +403,8 @@ public abstract class PresetPattern<T extends AbstractComponent> extends OptionP
 	}
 
 	/**
-	 * {@link PresetBuilder} implementation for {@link PresetPattern}s that
-	 * can be applied on {@link CheckBox}s.
+	 * {@link PresetBuilder} implementation for {@link PresetPattern}s that can be
+	 * applied on {@link CheckBox}s.
 	 */
 	public static final class CheckBoxPresetBuilder implements PresetBuilder<CheckBox> {
 
@@ -456,8 +456,8 @@ public abstract class PresetPattern<T extends AbstractComponent> extends OptionP
 	}
 
 	/**
-	 * {@link PresetBuilder} implementation for {@link PresetPattern}s that
-	 * can be applied on {@link CheckBoxGroup}s.
+	 * {@link PresetBuilder} implementation for {@link PresetPattern}s that can be
+	 * applied on {@link CheckBoxGroup}s.
 	 */
 	public static final class CheckBoxGroupPresetBuilder implements PresetBuilder<CheckBoxGroup<?>> {
 
@@ -536,8 +536,8 @@ public abstract class PresetPattern<T extends AbstractComponent> extends OptionP
 	}
 
 	/**
-	 * {@link PresetBuilder} implementation for {@link PresetPattern}s that
-	 * can be applied on {@link ComboBox}es.
+	 * {@link PresetBuilder} implementation for {@link PresetPattern}s that can be
+	 * applied on {@link ComboBox}es.
 	 */
 	public static final class ComboBoxPresetBuilder implements PresetBuilder<ComboBox<?>> {
 
@@ -713,8 +713,8 @@ public abstract class PresetPattern<T extends AbstractComponent> extends OptionP
 	}
 
 	/**
-	 * {@link PresetBuilder} implementation for {@link PresetPattern}s that
-	 * can be applied on {@link RadioButtonGroup}s.
+	 * {@link PresetBuilder} implementation for {@link PresetPattern}s that can be
+	 * applied on {@link RadioButtonGroup}s.
 	 */
 	public static final class RadioButtonGroupPresetBuilder implements PresetBuilder<RadioButtonGroup<?>> {
 

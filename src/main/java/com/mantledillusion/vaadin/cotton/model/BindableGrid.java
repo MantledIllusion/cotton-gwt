@@ -38,9 +38,9 @@ import com.vaadin.ui.Grid.Column;
 import com.vaadin.ui.TextField;
 
 /**
- * {@link Grid} extension that is bound to a {@link IModelPropertyList}, so its
- * rows display that {@link IModelPropertyList}'s elements, while the columns
- * display the element's {@link ModelProperty}s.
+ * {@link Grid} extension that is bound to a {@link ModelPropertyList}, so its
+ * table cells display that {@link ModelPropertyList} element's
+ * {@link ModelProperty}s.
  *
  * @param <RowType>
  *            The item type that represents a row in the grid.
@@ -176,8 +176,8 @@ public final class BindableGrid<RowType, ModelType> extends Composite {
 	}
 
 	/**
-	 * An {@link ModelAccessor} implementation that is indexed for one
-	 * specific row in a {@link BindableGrid}.
+	 * An {@link ModelAccessor} implementation that is indexed for one specific row
+	 * in a {@link BindableGrid}.
 	 *
 	 * @param <ModelType>
 	 *            The root type of the data model the {@link RowAccessor}'s row
@@ -429,8 +429,8 @@ public final class BindableGrid<RowType, ModelType> extends Composite {
 		 * grid.
 		 * 
 		 * @param config
-		 *            The configuration this {@link ModelPropertyColumnConfigurator}
-		 *            may work with.
+		 *            The configuration this {@link ModelPropertyColumnConfigurator} may
+		 *            work with.
 		 */
 		public void configure(ModelPropertyColumnConfiguration<TableRowType> config);
 	}

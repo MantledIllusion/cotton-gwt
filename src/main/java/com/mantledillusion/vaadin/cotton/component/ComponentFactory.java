@@ -63,6 +63,9 @@ public final class ComponentFactory {
 		 * {@link Component} using multiple {@link NamingPattern}s,
 		 * {@link SizingPattern}s, etc grouped together.
 		 * 
+		 * @param <T>
+		 *            The {@link AbstractComponent} extending type whose
+		 *            {@link OptionPattern}s to group.
 		 * @param patterns
 		 *            The pattern to group; may be null or contain nulls, both is
 		 *            ignored.
@@ -96,6 +99,9 @@ public final class ComponentFactory {
 	 * Base {@link Method} that is used in all of {@link ComponentFactory}'s factory
 	 * methods to apply {@link OptionPattern}s on an {@link AbstractComponent}.
 	 * 
+	 * @param <T>
+	 *            The type of {@link AbstractComponent} to apply the given patterns
+	 *            on.
 	 * @param component
 	 *            The {@link AbstractComponent} to apply {@link OptionPattern}s on;
 	 *            may be null, then the patterns will not be called.
@@ -350,6 +356,8 @@ public final class ComponentFactory {
 	/**
 	 * Factory method for a {@link CheckBoxGroup}.
 	 * 
+	 * @param <T>
+	 *            The element type of the {@link CheckBoxGroup}.
 	 * @param patterns
 	 *            The patterns to apply on the requested {@link CheckBoxGroup}
 	 *            before returning; may be null or empty, then nothing will be
@@ -368,6 +376,8 @@ public final class ComponentFactory {
 	/**
 	 * Factory method for a {@link RadioButtonGroup}.
 	 * 
+	 * @param <T>
+	 *            The element type of the {@link RadioButtonGroup}.
 	 * @param patterns
 	 *            The patterns to apply on the requested {@link RadioButtonGroup}
 	 *            before returning; may be null or empty, then nothing will be
@@ -387,6 +397,8 @@ public final class ComponentFactory {
 	/**
 	 * Factory method for a {@link ComboBox}.
 	 * 
+	 * @param <T>
+	 *            The element type of the {@link ComboBox}.
 	 * @param patterns
 	 *            The patterns to apply on the requested {@link ComboBox} before
 	 *            returning; may be null or empty, then nothing will be applied.

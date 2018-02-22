@@ -1,7 +1,5 @@
 package com.mantledillusion.vaadin.cotton.model;
 
-import java.util.List;
-
 import com.mantledillusion.data.epiphy.ModelProperty;
 import com.mantledillusion.data.epiphy.ModelPropertyList;
 import com.mantledillusion.vaadin.cotton.component.ComponentFactory;
@@ -22,8 +20,8 @@ import com.vaadin.ui.TextField;
  * components to {@link ModelProperty}s.
  * 
  * @param <ModelType>
- *            The root type of the data model the {@link ModelBinder} is
- *            able to bind ui components to.
+ *            The root type of the data model the {@link ModelBinder} is able to
+ *            bind ui components to.
  */
 abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 
@@ -80,9 +78,9 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 	 *            The {@link ModelProperty} to bind the new {@link TextField} to;
 	 *            <b>not</b> allowed to be null.
 	 * @param patterns
-	 *            The {@link OptionPattern}s to apply to the new component;
-	 *            may be null or empty, then nothing will be applied. Will be
-	 *            applied in the given order.
+	 *            The {@link OptionPattern}s to apply to the new component; may be
+	 *            null or empty, then nothing will be applied. Will be applied in
+	 *            the given order.
 	 * @return A new {@link TextField} instance, bound to the given
 	 *         {@link ModelProperty}; never null
 	 */
@@ -95,6 +93,8 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 	/**
 	 * Directly builds a single {@link TextField} and binds it.
 	 * 
+	 * @param <PropertyType>
+	 *            The type of the property to bind.
 	 * @param property
 	 *            The {@link ModelProperty} to bind the new {@link TextField} to;
 	 *            <b>not</b> allowed to be null.
@@ -102,9 +102,9 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 	 *            The converter to convert the property type to the type used by the
 	 *            {@link TextField}; <b>not</b> allowed to be null.
 	 * @param patterns
-	 *            The {@link OptionPattern}s to apply to the new component;
-	 *            may be null or empty, then nothing will be applied. Will be
-	 *            applied in the given order.
+	 *            The {@link OptionPattern}s to apply to the new component; may be
+	 *            null or empty, then nothing will be applied. Will be applied in
+	 *            the given order.
 	 * @return A new {@link TextField} instance, bound to the given
 	 *         {@link ModelProperty}; never null
 	 */
@@ -125,9 +125,9 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 	 *            The {@link ModelProperty} to bind the new {@link TextArea} to;
 	 *            <b>not</b> allowed to be null.
 	 * @param patterns
-	 *            The {@link OptionPattern}s to apply to the new component;
-	 *            may be null or empty, then nothing will be applied. Will be
-	 *            applied in the given order.
+	 *            The {@link OptionPattern}s to apply to the new component; may be
+	 *            null or empty, then nothing will be applied. Will be applied in
+	 *            the given order.
 	 * @return A new {@link TextArea} instance, bound to the given
 	 *         {@link ModelProperty}; never null
 	 */
@@ -140,6 +140,8 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 	/**
 	 * Directly builds a single {@link TextArea} and binds it.
 	 * 
+	 * @param <PropertyType>
+	 *            The type of the property to bind.
 	 * @param property
 	 *            The {@link ModelProperty} to bind the new {@link TextArea} to;
 	 *            <b>not</b> allowed to be null.
@@ -147,9 +149,9 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 	 *            The converter to convert the property type to the type used by the
 	 *            {@link TextArea}; <b>not</b> allowed to be null.
 	 * @param patterns
-	 *            The {@link OptionPattern}s to apply to the new component;
-	 *            may be null or empty, then nothing will be applied. Will be
-	 *            applied in the given order.
+	 *            The {@link OptionPattern}s to apply to the new component; may be
+	 *            null or empty, then nothing will be applied. Will be applied in
+	 *            the given order.
 	 * @return A new {@link TextArea} instance, bound to the given
 	 *         {@link ModelProperty}; never null
 	 */
@@ -170,9 +172,9 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 	 *            The {@link ModelProperty} to bind the new {@link CheckBox} to;
 	 *            <b>not</b> allowed to be null.
 	 * @param patterns
-	 *            The {@link OptionPattern}s to apply to the new component;
-	 *            may be null or empty, then nothing will be applied. Will be
-	 *            applied in the given order.
+	 *            The {@link OptionPattern}s to apply to the new component; may be
+	 *            null or empty, then nothing will be applied. Will be applied in
+	 *            the given order.
 	 * @return A new {@link CheckBox} instance, bound to the given
 	 *         {@link ModelProperty}; never null
 	 */
@@ -185,6 +187,8 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 	/**
 	 * Directly builds a single {@link CheckBox} and binds it.
 	 * 
+	 * @param <PropertyType>
+	 *            The type of the property to bind.
 	 * @param property
 	 *            The {@link ModelProperty} to bind the new {@link CheckBox} to;
 	 *            <b>not</b> allowed to be null.
@@ -192,9 +196,9 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 	 *            The converter to convert the property type to the type used by the
 	 *            {@link CheckBox}; <b>not</b> allowed to be null.
 	 * @param patterns
-	 *            The {@link OptionPattern}s to apply to the new component;
-	 *            may be null or empty, then nothing will be applied. Will be
-	 *            applied in the given order.
+	 *            The {@link OptionPattern}s to apply to the new component; may be
+	 *            null or empty, then nothing will be applied. Will be applied in
+	 *            the given order.
 	 * @return A new {@link CheckBox} instance, bound to the given
 	 *         {@link ModelProperty}; never null
 	 */
@@ -211,13 +215,15 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 	/**
 	 * Directly builds a single {@link RadioButtonGroup} and binds it.
 	 * 
+	 * @param <T>
+	 *            The type of the property to bind.
 	 * @param property
-	 *            The {@link ModelProperty} to bind the new
-	 *            {@link RadioButtonGroup} to; <b>not</b> allowed to be null.
+	 *            The {@link ModelProperty} to bind the new {@link RadioButtonGroup}
+	 *            to; <b>not</b> allowed to be null.
 	 * @param patterns
-	 *            The {@link OptionPattern}s to apply to the new component;
-	 *            may be null or empty, then nothing will be applied. Will be
-	 *            applied in the given order.
+	 *            The {@link OptionPattern}s to apply to the new component; may be
+	 *            null or empty, then nothing will be applied. Will be applied in
+	 *            the given order.
 	 * @return A new {@link RadioButtonGroup} instance, bound to the given
 	 *         {@link ModelProperty}; never null
 	 */
@@ -231,16 +237,20 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 	/**
 	 * Directly builds a single {@link RadioButtonGroup} and binds it.
 	 * 
+	 * @param <T>
+	 *            The type to convert the property type to.
+	 * @param <PropertyType>
+	 *            The type of the property to bind.
 	 * @param property
-	 *            The {@link ModelProperty} to bind the new
-	 *            {@link RadioButtonGroup} to; <b>not</b> allowed to be null.
+	 *            The {@link ModelProperty} to bind the new {@link RadioButtonGroup}
+	 *            to; <b>not</b> allowed to be null.
 	 * @param converter
 	 *            The converter to convert the property type to the type used by the
 	 *            {@link RadioButtonGroup}; <b>not</b> allowed to be null.
 	 * @param patterns
-	 *            The {@link OptionPattern}s to apply to the new component;
-	 *            may be null or empty, then nothing will be applied. Will be
-	 *            applied in the given order.
+	 *            The {@link OptionPattern}s to apply to the new component; may be
+	 *            null or empty, then nothing will be applied. Will be applied in
+	 *            the given order.
 	 * @return A new {@link RadioButtonGroup} instance, bound to the given
 	 *         {@link ModelProperty}; never null
 	 */
@@ -259,13 +269,15 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 	/**
 	 * Directly builds a single {@link ComboBox} and binds it.
 	 * 
+	 * @param <T>
+	 *            The type of the property to bind.
 	 * @param property
 	 *            The {@link ModelProperty} to bind the new {@link ComboBox} to;
 	 *            <b>not</b> allowed to be null.
 	 * @param patterns
-	 *            The {@link OptionPattern}s to apply to the new component;
-	 *            may be null or empty, then nothing will be applied. Will be
-	 *            applied in the given order.
+	 *            The {@link OptionPattern}s to apply to the new component; may be
+	 *            null or empty, then nothing will be applied. Will be applied in
+	 *            the given order.
 	 * @return A new {@link ComboBox} instance, bound to the given
 	 *         {@link ModelProperty}; never null
 	 */
@@ -279,6 +291,10 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 	/**
 	 * Directly builds a single {@link ComboBox} and binds it.
 	 * 
+	 * @param <T>
+	 *            The type to convert the property type to.
+	 * @param <PropertyType>
+	 *            The type of the property to bind.
 	 * @param property
 	 *            The {@link ModelProperty} to bind the new {@link ComboBox} to;
 	 *            <b>not</b> allowed to be null.
@@ -286,16 +302,15 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 	 *            The converter to convert the property type to the type used by the
 	 *            {@link ComboBox}; <b>not</b> allowed to be null.
 	 * @param patterns
-	 *            The {@link OptionPattern}s to apply to the new component;
-	 *            may be null or empty, then nothing will be applied. Will be
-	 *            applied in the given order.
+	 *            The {@link OptionPattern}s to apply to the new component; may be
+	 *            null or empty, then nothing will be applied. Will be applied in
+	 *            the given order.
 	 * @return A new {@link ComboBox} instance, bound to the given
 	 *         {@link ModelProperty}; never null
 	 */
 	@SafeVarargs
-	public final <T, PropertyType> ComboBox<T> buildComboBoxForProperty(
-			ModelProperty<ModelType, PropertyType> property, Converter<T, PropertyType> converter,
-			OptionPattern<? super ComboBox<?>>... patterns) {
+	public final <T, PropertyType> ComboBox<T> buildComboBoxForProperty(ModelProperty<ModelType, PropertyType> property,
+			Converter<T, PropertyType> converter, OptionPattern<? super ComboBox<?>>... patterns) {
 		HasValueProvider<ComboBox<T>, T> provider = ComponentFactory::buildComboBox;
 		return buildAndBind(provider, property, converter, patterns);
 	}
@@ -307,18 +322,20 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 	/**
 	 * Directly builds a single {@link BindableGrid} and binds it.
 	 * 
+	 * @param <T>
+	 *            The type of the property to bind.
 	 * @param property
-	 *            The {@link ModelProperty} to bind the new {@link BindableGrid}
-	 *            to; <b>not</b> allowed to be null.
+	 *            The {@link ModelProperty} to bind the new {@link BindableGrid} to;
+	 *            <b>not</b> allowed to be null.
 	 * @param patterns
-	 *            The {@link OptionPattern}s to apply to the new component;
-	 *            may be null or empty, then nothing will be applied. Will be
-	 *            applied in the given order.
+	 *            The {@link OptionPattern}s to apply to the new component; may be
+	 *            null or empty, then nothing will be applied. Will be applied in
+	 *            the given order.
 	 * @return A new {@link BindableGrid} instance, bound to the given
 	 *         {@link ModelProperty}; never null
 	 */
 	@SafeVarargs
-	public final <T, Bindable extends Component & HasValue<List<T>>> BindableGrid<T, ModelType> buildGridForProperty(
+	public final <T> BindableGrid<T, ModelType> buildGridForProperty(
 			ModelPropertyList<ModelType, T> property, OptionPattern<? super BindableGrid<?, ?>>... patterns) {
 		BindableGrid<T, ModelType> table = new BindableGrid<T, ModelType>(this, property);
 		bind(table.getBindable(), property);

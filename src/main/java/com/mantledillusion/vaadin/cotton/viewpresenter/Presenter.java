@@ -10,6 +10,7 @@ import com.mantledillusion.injection.hura.Injector;
 import com.mantledillusion.vaadin.cotton.EventBusSubscriber;
 import com.mantledillusion.vaadin.cotton.exception.WebException;
 import com.mantledillusion.vaadin.cotton.exception.WebException.HttpErrorCodes;
+import com.mantledillusion.vaadin.cotton.viewpresenter.View.Present;
 import com.mantledillusion.vaadin.cotton.viewpresenter.View.TemporalActiveComponentRegistry;
 import com.vaadin.ui.AbstractComponent;
 
