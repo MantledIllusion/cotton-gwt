@@ -419,12 +419,11 @@ public abstract class CottonUI extends com.vaadin.ui.UI {
 
 			Singleton eventBus = Singleton.of(EventBus.PRESENTER_EVENT_BUS_ID, this.eventBus);
 			this.injector = Injector.of(ListUtils.union(conf.predefinables, Arrays.asList(eventBus)));
-
-			handleRequest(request);
 		} catch (Exception e) {
-			close();
 			this.internalErrorHandler.error(new com.vaadin.server.ErrorEvent(e));
+			close();
 		}
+		handleRequest(request);
 	}
 
 	@Override
@@ -433,7 +432,11 @@ public abstract class CottonUI extends com.vaadin.ui.UI {
 	}
 
 	private void handleRequest(VaadinRequest request) {
-		handlePathChanged(QueryParam.clean(request.getParameterMap()));
+		try {
+			handlePathChanged(QueryParam.clean(request.getParameterMap()));
+		} catch (Exception e) {
+			this.internalErrorHandler.error(new com.vaadin.server.ErrorEvent(e));
+		}
 	}
 
 	@Override
