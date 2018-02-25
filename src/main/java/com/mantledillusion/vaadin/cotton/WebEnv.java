@@ -14,6 +14,8 @@ import com.mantledillusion.vaadin.cotton.User.SessionLogEntry;
 import com.mantledillusion.vaadin.cotton.User.SessionLogType;
 import com.mantledillusion.vaadin.cotton.exception.WebException;
 import com.mantledillusion.vaadin.cotton.exception.WebException.HttpErrorCodes;
+import com.mantledillusion.vaadin.cotton.viewpresenter.Addressed;
+import com.mantledillusion.vaadin.cotton.viewpresenter.View;
 
 /**
  * Type that offers static methods in the web environment context of the current
@@ -30,15 +32,29 @@ public final class WebEnv {
 
 	/**
 	 * Convenience {@link Method} for {@link #navigateTo(NavigationTarget)} with the
-	 * given url.
+	 * given URL.
 	 * 
 	 * @param url
-	 *            The url to navigate to; <b>not</b> allowed to be null.
+	 *            The URL to navigate to; <b>not</b> allowed to be null.
 	 * @return True if the {@link NavigationAnnouncementEvent} is accepted and the
 	 *         navigation was successful, false otherwise
 	 */
 	public static boolean navigateTo(String url) {
 		return CottonUI.current().navigateTo(NavigationTarget.of(url));
+	}
+
+	/**
+	 * Convenience {@link Method} for {@link #navigateTo(NavigationTarget)} with the
+	 * given {@link View}.
+	 * 
+	 * @param viewClass
+	 *            The {@link View} annotated with @{@link Addressed} to navigate to;
+	 *            <b>not</b> allowed to be null.
+	 * @return True if the {@link NavigationAnnouncementEvent} is accepted and the
+	 *         navigation was successful, false otherwise
+	 */
+	public static boolean navigateTo(Class<? extends View> viewClass) {
+		return CottonUI.current().navigateTo(NavigationTarget.of(viewClass));
 	}
 
 	/**
