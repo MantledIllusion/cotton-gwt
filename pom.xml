@@ -4,7 +4,7 @@
 
 	<groupId>com.mantledillusion.vaadin</groupId>
 	<artifactId>cotton</artifactId>
-	<version>1.0.0.ALPHA2</version>
+	<version>1.0.0.ALPHA3</version>
 
 	<name>Cotton</name>
 	<description>Cotton is a Vaadin extension for automatic url pathing, MVP injection and advanced data binding.</description>
