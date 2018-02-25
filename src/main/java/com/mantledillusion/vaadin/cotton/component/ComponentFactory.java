@@ -1,9 +1,15 @@
 package com.mantledillusion.vaadin.cotton.component;
 
 import java.lang.reflect.Method;
+import java.net.URI;
 import java.util.Arrays;
 
+import com.mantledillusion.vaadin.cotton.NavigationTarget;
 import com.mantledillusion.vaadin.cotton.WebEnv;
+import com.mantledillusion.vaadin.cotton.exception.WebException;
+import com.mantledillusion.vaadin.cotton.exception.WebException.HttpErrorCodes;
+import com.vaadin.server.ExternalResource;
+import com.vaadin.server.Page;
 import com.vaadin.server.Resource;
 import com.vaadin.ui.AbsoluteLayout;
 import com.vaadin.ui.AbstractComponent;
@@ -15,6 +21,7 @@ import com.vaadin.ui.Component;
 import com.vaadin.ui.HorizontalLayout;
 import com.vaadin.ui.Image;
 import com.vaadin.ui.Label;
+import com.vaadin.ui.Link;
 import com.vaadin.ui.MenuBar;
 import com.vaadin.ui.Panel;
 import com.vaadin.ui.RadioButtonGroup;
@@ -219,6 +226,49 @@ public final class ComponentFactory {
 	@SafeVarargs
 	public static Image buildImage(Resource imageResource, OptionPattern<? super Image>... patterns) {
 		return apply(new Image(null, imageResource), patterns);
+	}
+
+	// ##############################################################################################################
+	// ################################################## LINK ######################################################
+	// ##############################################################################################################
+
+	/**
+	 * Factory method for a {@link Link}.
+	 * 
+	 * @param target
+	 *            The {@link NavigationTarget} to build a {@link Link} to;
+	 *            <b>not</b> allowed to be null.
+	 * @param patterns
+	 *            The patterns to apply on the requested {@link Image} before
+	 *            returning; may be null or empty, then nothing will be applied.
+	 *            Will be applied in the given order.
+	 * @return A new {@link Link} instance; never null
+	 */
+	@SafeVarargs
+	public static Link buildLink(NavigationTarget target, OptionPattern<? super Image>... patterns) {
+		if (target == null) {
+			throw new WebException(HttpErrorCodes.HTTP901_ILLEGAL_ARGUMENT_ERROR,
+					"Unable to create a link to a null target.");
+		}
+		URI uri = Page.getCurrent().getLocation();
+		String url = uri.getScheme() + "://" + uri.getAuthority() + target.toUrl();
+		return buildLink(url, patterns);
+	}
+
+	/**
+	 * Factory method for a {@link Link}.
+	 * 
+	 * @param url
+	 *            The URL the requested {@link Link} addresses.
+	 * @param patterns
+	 *            The patterns to apply on the requested {@link Image} before
+	 *            returning; may be null or empty, then nothing will be applied.
+	 *            Will be applied in the given order.
+	 * @return A new {@link Link} instance; never null
+	 */
+	@SafeVarargs
+	public static Link buildLink(String url, OptionPattern<? super Image>... patterns) {
+		return new Link(null, new ExternalResource(url));
 	}
 
 	// ##############################################################################################################

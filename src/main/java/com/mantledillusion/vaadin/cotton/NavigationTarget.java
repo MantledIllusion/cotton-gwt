@@ -10,6 +10,8 @@ import org.apache.commons.lang3.StringUtils;
 
 import com.mantledillusion.vaadin.cotton.exception.WebException;
 import com.mantledillusion.vaadin.cotton.exception.WebException.HttpErrorCodes;
+import com.mantledillusion.vaadin.cotton.viewpresenter.Addressed;
+import com.mantledillusion.vaadin.cotton.viewpresenter.View;
 
 /**
  * Represents a URL (possibly with query parameters) to navigate to.
@@ -78,6 +80,11 @@ public final class NavigationTarget {
 	Map<String, String[]> getParams() {
 		return this.params;
 	}
+	
+	public String toUrl() {
+		String queryParams = QueryParam.toParamAppender(this.params);
+		return '/' + this.url + (this.url.isEmpty() ? StringUtils.EMPTY : '/') + queryParams;
+	}
 
 	/**
 	 * Convenience {@link Method} for building a query parameterless target.
@@ -88,6 +95,18 @@ public final class NavigationTarget {
 	 */
 	public static NavigationTarget of(String url) {
 		return builder(url).build();
+	}
+
+	/**
+	 * Convenience {@link Method} for building a query parameterless target.
+	 * 
+	 * @param viewClass
+	 *            The {@link View} annotated with @{@link Addressed} to navigate to;
+	 *            <b>not</b> allowed to be null.
+	 * @return A new {@link NavigationTarget} instance; never null
+	 */
+	public static NavigationTarget of(Class<? extends View> viewClass) {
+		return builder(viewClass).build();
 	}
 
 	/**
@@ -104,5 +123,19 @@ public final class NavigationTarget {
 					"Unable to create a navigaion target with a null url.");
 		}
 		return new QueryParametersBuilder(url);
+	}
+
+	/**
+	 * Returns a {@link QueryParametersBuilder} for building a target with query
+	 * parameters.
+	 * 
+	 * @param viewClass
+	 *            The {@link View} annotated with @{@link Addressed} to navigate to;
+	 *            <b>not</b> allowed to be null.
+	 * @return A new {@link QueryParametersBuilder}; never null
+	 */
+	public static QueryParametersBuilder builder(Class<? extends View> viewClass) {
+		Addressed address = WebUtils.getAddressFrom(viewClass);
+		return new QueryParametersBuilder(address.value());
 	}
 }

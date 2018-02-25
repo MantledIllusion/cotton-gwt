@@ -11,7 +11,6 @@ import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
 
-import com.mantledillusion.essentials.reflection.TypeEssentials;
 import com.mantledillusion.injection.hura.Blueprint.TypedBlueprint;
 import com.mantledillusion.vaadin.cotton.exception.WebException;
 import com.mantledillusion.vaadin.cotton.exception.WebException.HttpErrorCodes;
@@ -168,18 +167,8 @@ public final class UrlResourceRegistry {
 			throw new WebException(HttpErrorCodes.HTTP901_ILLEGAL_ARGUMENT_ERROR,
 					"Cannot register a null blueprint as view resoruce.");
 		}
-		List<Class<?>> urls = TypeEssentials.getSuperClassesAnnotatedWith(viewBlueprint.getRootType(),
-				Addressed.class);
 
-		if (urls.isEmpty()) {
-			throw new WebException(HttpErrorCodes.HTTP905_ILLEGAL_INTERFACE_USE,
-					"Views that are registered as resources have to be annotated with @"
-							+ Addressed.class.getSimpleName()
-							+ " somewhere along its classes' hierarchy; however, the view type "
-							+ viewBlueprint.getRootType().getSimpleName() + " isn't.");
-		}
-
-		Addressed url = urls.stream().skip(urls.size() - 1).findFirst().get().getAnnotation(Addressed.class);
+		Addressed url = WebUtils.getAddressFrom(viewBlueprint.getRootType());
 
 		register(url.value(), new ViewResource(viewBlueprint));
 
