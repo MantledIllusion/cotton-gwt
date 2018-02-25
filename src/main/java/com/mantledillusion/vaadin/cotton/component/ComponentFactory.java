@@ -245,7 +245,7 @@ public final class ComponentFactory {
 	 * @return A new {@link Link} instance; never null
 	 */
 	@SafeVarargs
-	public static Link buildLink(NavigationTarget target, OptionPattern<? super Image>... patterns) {
+	public static Link buildLink(NavigationTarget target, OptionPattern<? super Link>... patterns) {
 		if (target == null) {
 			throw new WebException(HttpErrorCodes.HTTP901_ILLEGAL_ARGUMENT_ERROR,
 					"Unable to create a link to a null target.");
@@ -267,8 +267,8 @@ public final class ComponentFactory {
 	 * @return A new {@link Link} instance; never null
 	 */
 	@SafeVarargs
-	public static Link buildLink(String url, OptionPattern<? super Image>... patterns) {
-		return new Link(null, new ExternalResource(url));
+	public static Link buildLink(String url, OptionPattern<? super Link>... patterns) {
+		return apply(new Link(null, new ExternalResource(url)), patterns);
 	}
 
 	// ##############################################################################################################
