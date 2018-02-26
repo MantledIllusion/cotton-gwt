@@ -195,9 +195,28 @@ public final class QueryParam {
 	}
 
 	/**
+	 * Returns the value of this {@link QueryParam} at the given index.
+	 * 
+	 * @return The nth value of this param; never null
+	 */
+	public String getValue(int index) {
+		return CottonUI.current().getQueryParam(this.key)[index];
+	}
+
+	/**
+	 * Returns the value count of this {@link QueryParam}.
+	 * 
+	 * @return The value count of this param; might be null if the parameter is not
+	 *         set
+	 */
+	public int getValueCount() {
+		return CottonUI.current().getQueryParam(this.key).length;
+	}
+
+	/**
 	 * Returns the values of this {@link QueryParam}.
 	 * 
-	 * @return The values of this param; never null, might be empty is the parameter
+	 * @return The values of this param; never null, might be empty if the parameter
 	 *         is not set
 	 */
 	public String[] getValues() {
