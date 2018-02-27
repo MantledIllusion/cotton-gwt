@@ -33,6 +33,8 @@ import com.vaadin.ui.VerticalLayout;
 
 final class InternalErrorHandler implements ErrorHandler {
 
+	private static final long serialVersionUID = 1L;
+
 	private static final class DefaultErrorView extends CottonUI.ErrorView<Throwable> {
 	
 		private static final long serialVersionUID = 1L;
@@ -104,8 +106,6 @@ final class InternalErrorHandler implements ErrorHandler {
 	private final Map<Class<? extends Throwable>, ErrorHandlingDecider<?>> errorNavigationRegistry = new HashMap<>();
 	private ErrorHandler externalErrorHandler;
 
-	private static final long serialVersionUID = 1L;
-
 	boolean hasDeciderRegisteredFor(Class<? extends Throwable> errorType) {
 		return this.errorNavigationRegistry.containsKey(errorType);
 	}
@@ -121,10 +121,11 @@ final class InternalErrorHandler implements ErrorHandler {
 
 	@Override
 	public void error(com.vaadin.server.ErrorEvent event) {
-		CottonUI.current().appendToLog(
-				SessionLogEntry.of(SessionLogContext.ACTION, SessionLogType.ERROR, "Handling error '" + event + "'"));
-
 		Throwable t = DefaultErrorHandler.findRelevantThrowable(event.getThrowable());
+		
+		CottonUI.current().appendToLog(
+				SessionLogEntry.of(SessionLogContext.ACTION, SessionLogType.ERROR, "Handling error '" + t + "'"));
+
 		LinkedHashMap<Class<? extends Throwable>, ErrorHandlingDecider<? extends Throwable>> handlingChain = new LinkedHashMap<>();
 		handlingChain.put(t.getClass(), null);
 		decideOrFallback(event, t, handlingChain);
