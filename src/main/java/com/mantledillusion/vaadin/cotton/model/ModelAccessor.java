@@ -48,7 +48,7 @@ public abstract class ModelAccessor<ModelType> extends ModelBinder<ModelType> {
 	private final ModelProxy<ModelType> parent;
 
 	private Binder<ModelType> binder = new Binder<>();
-	private final Map<ModelProperty<ModelType, ?>, Set<PropertyResetter<?>>> boundFields = new IdentityHashMap<>();
+	private final Map<ModelProperty<ModelType, ?>, Set<BindingReference>> boundFields = new IdentityHashMap<>();
 	private ValidationErrorRegistry<ModelType> validationErrors = new ValidationErrorRegistry<ModelType>();
 
 	/**
@@ -72,10 +72,17 @@ public abstract class ModelAccessor<ModelType> extends ModelBinder<ModelType> {
 
 	@Process(Phase.DESTROY)
 	private void releaseReferences() {
+		this.validationErrors = new ValidationErrorRegistry<ModelType>();
+		
+		for (Set<BindingReference> references: this.boundFields.values()) {
+			for (BindingReference reference: references) {
+				reference.destroyBinding();
+			}
+		}
+		this.boundFields.clear();
 		this.binder.removeBean();
 		this.binder = new Binder<>();
-		this.validationErrors = new ValidationErrorRegistry<ModelType>();
-		this.boundFields.clear();
+		
 		this.parent.unregister(this);
 	}
 
@@ -180,9 +187,27 @@ public abstract class ModelAccessor<ModelType> extends ModelBinder<ModelType> {
 	// ############################################################## BINDING ###############################################################
 	// ######################################################################################################################################
 
-	private interface PropertyResetter<PropertyValueType> {
+	private interface HasValueResetter<PropertyValueType> {
 
 		void reset();
+	}
+	
+	private final class BindingReference {
+		private final HasValue<?> hasValue;
+		private final HasValueResetter<?> resetter;
+		
+		private BindingReference(HasValue<?> hasValue, HasValueResetter<?> resetter) {
+			this.hasValue = hasValue;
+			this.resetter = resetter;
+		}
+		
+		private void reset() {
+			this.resetter.reset();
+		}
+		
+		private void destroyBinding() {
+			ModelAccessor.this.binder.removeBinding(this.hasValue);
+		}
 	}
 
 	@Override
@@ -199,7 +224,7 @@ public abstract class ModelAccessor<ModelType> extends ModelBinder<ModelType> {
 	}
 
 	private final <FieldValueType, PropertyValueType> void bind(ModelProperty<ModelType, PropertyValueType> property,
-			BindingBuilder<ModelType, PropertyValueType> builder, PropertyResetter<PropertyValueType> setter) {
+			BindingBuilder<ModelType, PropertyValueType> builder, HasValueResetter<PropertyValueType> setter) {
 		if (property == null) {
 			throw new WebException(HttpErrorCodes.HTTP901_ILLEGAL_ARGUMENT_ERROR,
 					"Cannot bind a component for a null property.");
@@ -237,21 +262,20 @@ public abstract class ModelAccessor<ModelType> extends ModelBinder<ModelType> {
 		if (!this.boundFields.containsKey(property)) {
 			this.boundFields.put(property, new HashSet<>());
 		}
-		this.boundFields.get(property).add(setter);
+		this.boundFields.get(property).add(new BindingReference(builder.getField(), setter));
 	}
 
 	// ######################################################################################################################################
 	// ############################################################## UPDATE ################################################################
 	// ######################################################################################################################################
 
-	@SuppressWarnings("unchecked")
 	final <PropertyValueType> void updatePropertyBoundFields(IndexContext context,
 			Set<ModelProperty<ModelType, ?>> properties) {
 		if (context.contains(this.indexContext)) {
 			for (ModelProperty<ModelType, ?> property : properties) {
 				if (this.boundFields.containsKey(property)) {
-					for (PropertyResetter<?> setter : this.boundFields.get(property)) {
-						((PropertyResetter<PropertyValueType>) setter).reset();
+					for (BindingReference setter : this.boundFields.get(property)) {
+						setter.reset();
 					}
 				}
 			}
