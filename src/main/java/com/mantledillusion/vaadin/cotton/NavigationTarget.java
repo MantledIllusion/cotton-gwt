@@ -1,7 +1,6 @@
 package com.mantledillusion.vaadin.cotton;
 
 import java.lang.reflect.Method;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -61,7 +60,7 @@ public final class NavigationTarget {
 		 * @return A new {@link NavigationTarget}; never null
 		 */
 		public NavigationTarget build() {
-			return new NavigationTarget(this.url, Collections.unmodifiableMap(new HashMap<>(this.params)));
+			return new NavigationTarget(this.url, new HashMap<>(this.params));
 		}
 	}
 
