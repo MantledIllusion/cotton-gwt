@@ -18,6 +18,7 @@ import com.vaadin.ui.CheckBox;
 import com.vaadin.ui.CheckBoxGroup;
 import com.vaadin.ui.ComboBox;
 import com.vaadin.ui.Component;
+import com.vaadin.ui.FormLayout;
 import com.vaadin.ui.HorizontalLayout;
 import com.vaadin.ui.Image;
 import com.vaadin.ui.Label;
@@ -174,6 +175,20 @@ public final class ComponentFactory {
 	@SafeVarargs
 	public static VerticalLayout buildVerticalLayout(OptionPattern<? super VerticalLayout>... patterns) {
 		return apply(new VerticalLayout(), patterns);
+	}
+
+	/**
+	 * Factory method for a {@link FormLayout}.
+	 * 
+	 * @param patterns
+	 *            The patterns to apply on the requested {@link FormLayout}
+	 *            before returning; may be null or empty, then nothing will be
+	 *            applied. Will be applied in the given order.
+	 * @return A new {@link FormLayout} instance; never null
+	 */
+	@SafeVarargs
+	public static FormLayout buildFormLayoutLayout(OptionPattern<? super FormLayout>... patterns) {
+		return apply(new FormLayout(), patterns);
 	}
 
 	// ##############################################################################################################
