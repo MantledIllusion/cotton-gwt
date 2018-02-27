@@ -197,6 +197,9 @@ public final class QueryParam {
 	/**
 	 * Returns the value of this {@link QueryParam} at the given index.
 	 * 
+	 * @param index
+	 *            The index of the value to return; has to be in range
+	 *            0-&gt;{@link #getValueCount()}.
 	 * @return The nth value of this param; never null
 	 */
 	public String getValue(int index) {

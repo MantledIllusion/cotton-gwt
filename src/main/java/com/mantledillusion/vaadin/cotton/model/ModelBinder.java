@@ -11,6 +11,7 @@ import com.vaadin.data.HasValue;
 import com.vaadin.ui.CheckBox;
 import com.vaadin.ui.ComboBox;
 import com.vaadin.ui.Component;
+import com.vaadin.ui.Label;
 import com.vaadin.ui.RadioButtonGroup;
 import com.vaadin.ui.TextArea;
 import com.vaadin.ui.TextField;
@@ -66,6 +67,55 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 	abstract <FieldValueType, PropertyValueType> void bind(HasValue<FieldValueType> field,
 			ModelProperty<ModelType, PropertyValueType> property,
 			Converter<FieldValueType, PropertyValueType> converter);
+
+	// ##############################################################################################################
+	// ################################################## LABEL #####################################################
+	// ##############################################################################################################
+
+	/**
+	 * Directly builds a single {@link Label} and binds it.
+	 * 
+	 * @param property
+	 *            The {@link ModelProperty} to bind the new {@link Label} to;
+	 *            <b>not</b> allowed to be null.
+	 * @param patterns
+	 *            The {@link OptionPattern}s to apply to the new component; may be
+	 *            null or empty, then nothing will be applied. Will be applied in
+	 *            the given order.
+	 * @return A new {@link Label} instance, bound to the given
+	 *         {@link ModelProperty}; never null
+	 */
+	@SafeVarargs
+	public final Label buildLabelForProperty(ModelProperty<ModelType, String> property,
+			OptionPattern<? super Label>... patterns) {
+		HasValueProvider<BindableLabel, String> provider = (p) -> ComponentFactory.apply(new BindableLabel(), p);
+		return buildAndBind(provider, property, patterns);
+	}
+
+	/**
+	 * Directly builds a single {@link Label} and binds it.
+	 * 
+	 * @param <PropertyType>
+	 *            The type of the property to bind.
+	 * @param property
+	 *            The {@link ModelProperty} to bind the new {@link Label} to;
+	 *            <b>not</b> allowed to be null.
+	 * @param converter
+	 *            The converter to convert the property type to the type used by the
+	 *            {@link Label}; <b>not</b> allowed to be null.
+	 * @param patterns
+	 *            The {@link OptionPattern}s to apply to the new component; may be
+	 *            null or empty, then nothing will be applied. Will be applied in
+	 *            the given order.
+	 * @return A new {@link Label} instance, bound to the given
+	 *         {@link ModelProperty}; never null
+	 */
+	@SafeVarargs
+	public final <PropertyType> Label buildLabelForProperty(ModelProperty<ModelType, PropertyType> property,
+			Converter<String, PropertyType> converter, OptionPattern<? super Label>... patterns) {
+		HasValueProvider<BindableLabel, String> provider = (p) -> ComponentFactory.apply(new BindableLabel(), p);
+		return buildAndBind(provider, property, converter, patterns);
+	}
 
 	// ##############################################################################################################
 	// ################################################ TEXTFIELD ###################################################
@@ -339,7 +389,6 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 			ModelPropertyList<ModelType, T> property, OptionPattern<? super BindableGrid<?, ?>>... patterns) {
 		BindableGrid<T, ModelType> table = new BindableGrid<T, ModelType>(this, property);
 		bind(table.getBindable(), property);
-		ComponentFactory.apply(table, patterns);
-		return table;
+		return ComponentFactory.apply(table, patterns);
 	}
 }
