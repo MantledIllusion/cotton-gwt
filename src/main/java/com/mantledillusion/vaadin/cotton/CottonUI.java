@@ -419,7 +419,7 @@ public abstract class CottonUI extends com.vaadin.ui.UI {
 
 			Singleton eventBus = Singleton.of(EventBus.PRESENTER_EVENT_BUS_ID, this.eventBus);
 			this.injector = Injector.of(ListUtils.union(conf.predefinables, Arrays.asList(eventBus)));
-			
+
 			handleRequest(request);
 		} catch (Exception e) {
 			this.internalErrorHandler.error(new com.vaadin.server.ErrorEvent(e));
@@ -530,7 +530,7 @@ public abstract class CottonUI extends com.vaadin.ui.UI {
 		}
 
 		if (!changedLang) {
-			navigate(clean, params, false, false);
+			navigate(clean, params, false, false, NavigationInitiator.BROWSER);
 		} else {
 			Page.getCurrent().setLocation(buildFullUrl(clean, params));
 		}
@@ -566,12 +566,12 @@ public abstract class CottonUI extends com.vaadin.ui.UI {
 		}
 	}
 
-	private void notifyNavigationAwares(NavigationType navigationChangeType) {
-		this.eventBus.dispatch(new NavigationEvent(navigationChangeType), null);
+	private void notifyNavigationAwares(NavigationType navigationChangeType, NavigationInitiator navigationInitiator) {
+		this.eventBus.dispatch(new NavigationEvent(navigationChangeType, navigationInitiator), null);
 	}
 
 	private boolean navigate(String urlPath, Map<String, String[]> params, boolean keepLanguageParam,
-			boolean createBrowserNavEntry) {
+			boolean createBrowserNavEntry, NavigationInitiator navigationInitiator) {
 		NavigationType navigationType;
 		if (!urlPath.equals(this.currentUrl)) {
 			navigationType = NavigationType.SEGMENT_CHANGE;
@@ -588,7 +588,7 @@ public abstract class CottonUI extends com.vaadin.ui.UI {
 			urlPath = redirectedPath;
 		}
 
-		if (isNavigationAllowed(navigationType)) {
+		if (isNavigationAllowed(navigationType, navigationInitiator)) {
 			if (keepLanguageParam && !params.containsKey(QUERY_PARAM_KEY_LANGUAGE)
 					&& this.currentParams.containsKey(QUERY_PARAM_KEY_LANGUAGE)) {
 				params.put(QUERY_PARAM_KEY_LANGUAGE, this.currentParams.get(QUERY_PARAM_KEY_LANGUAGE));
@@ -635,7 +635,7 @@ public abstract class CottonUI extends com.vaadin.ui.UI {
 				}
 			}
 
-			notifyNavigationAwares(navigationType);
+			notifyNavigationAwares(navigationType, navigationInitiator);
 			return true;
 		} else {
 			appendToLog(SessionLogEntry.of(SessionLogContext.NAVIGATION, SessionLogType.WARNING,
@@ -656,8 +656,8 @@ public abstract class CottonUI extends com.vaadin.ui.UI {
 		return view;
 	}
 
-	private boolean isNavigationAllowed(NavigationType navigationChangeType) {
-		NavigationAnnouncementEvent event = new NavigationAnnouncementEvent(navigationChangeType);
+	private boolean isNavigationAllowed(NavigationType navigationChangeType, NavigationInitiator navigationInitiator) {
+		NavigationAnnouncementEvent event = new NavigationAnnouncementEvent(navigationChangeType, navigationInitiator);
 		this.eventBus.dispatch(event, null);
 		return event.doAccept;
 	}
@@ -687,6 +687,23 @@ public abstract class CottonUI extends com.vaadin.ui.UI {
 	}
 
 	/**
+	 * The initiators of navigation changes that are possible.
+	 */
+	public static enum NavigationInitiator {
+
+		/**
+		 * The browser; manual navigation through back/forward, refresh or URl type in.
+		 */
+		BROWSER,
+
+		/**
+		 * The {@link CottonUI}; programmatic navigation through {@link WebEnv} or
+		 * similar.
+		 */
+		UI;
+	}
+
+	/**
 	 * {@link BusEvent} that is dispatched <b>before</b> a navigation is performed;
 	 * therefore giving subscribers the possibility to {@link #decline()} the
 	 * navigation.
@@ -697,10 +714,12 @@ public abstract class CottonUI extends com.vaadin.ui.UI {
 	public static final class NavigationAnnouncementEvent extends AbstractCottonEvent {
 
 		private final NavigationType navigationType;
+		private final NavigationInitiator navigationInitiator;
 		private boolean doAccept = true;
 
-		private NavigationAnnouncementEvent(NavigationType navigationType) {
+		private NavigationAnnouncementEvent(NavigationType navigationType, NavigationInitiator navigationInitiator) {
 			this.navigationType = navigationType;
+			this.navigationInitiator = navigationInitiator;
 		}
 
 		/**
@@ -710,6 +729,15 @@ public abstract class CottonUI extends com.vaadin.ui.UI {
 		 */
 		public NavigationType getNavigationType() {
 			return this.navigationType;
+		}
+
+		/**
+		 * Returns the initiator of the requested navigation.
+		 * 
+		 * @return The {@link NavigationInitiator}; never null
+		 */
+		public NavigationInitiator getNavigationInitiator() {
+			return navigationInitiator;
 		}
 
 		/**
@@ -726,9 +754,20 @@ public abstract class CottonUI extends com.vaadin.ui.UI {
 	public static final class NavigationEvent extends AbstractCottonEvent {
 
 		private final NavigationType navigationType;
+		private final NavigationInitiator navigationInitiator;
 
-		private NavigationEvent(NavigationType navigationType) {
+		private NavigationEvent(NavigationType navigationType, NavigationInitiator navigationInitiator) {
 			this.navigationType = navigationType;
+			this.navigationInitiator = navigationInitiator;
+		}
+
+		/**
+		 * Returns the initiator of the requested navigation.
+		 * 
+		 * @return The {@link NavigationInitiator}; never null
+		 */
+		public NavigationInitiator getNavigationInitiator() {
+			return navigationInitiator;
 		}
 
 		/**
@@ -754,7 +793,7 @@ public abstract class CottonUI extends com.vaadin.ui.UI {
 		updateUrl(false);
 		appendToLog(SessionLogEntry.of(SessionLogContext.NAVIGATION, SessionLogType.INFO,
 				"Query param '" + key + "' set to [" + StringUtils.join(values, '/') + "] set."));
-		notifyNavigationAwares(NavigationType.QUERY_PARAM_CHANGE);
+		notifyNavigationAwares(NavigationType.QUERY_PARAM_CHANGE, NavigationInitiator.UI);
 	}
 
 	final void removeQueryParam(String key) {
@@ -764,16 +803,16 @@ public abstract class CottonUI extends com.vaadin.ui.UI {
 			updateUrl(false);
 			appendToLog(SessionLogEntry.of(SessionLogContext.NAVIGATION, SessionLogType.INFO,
 					"Query param '" + key + "' with values [" + StringUtils.join(values, '/') + "] removed."));
-			notifyNavigationAwares(NavigationType.QUERY_PARAM_CHANGE);
+			notifyNavigationAwares(NavigationType.QUERY_PARAM_CHANGE, NavigationInitiator.UI);
 		}
 	}
 
 	final boolean navigateTo(NavigationTarget target) {
-		return navigate(target.getUrl(), target.getParams(), true, true);
+		return navigate(target.getUrl(), target.getParams(), true, true, NavigationInitiator.UI);
 	}
 
 	final boolean refresh() {
-		return navigate(this.currentUrl, this.currentParams, true, false);
+		return navigate(this.currentUrl, this.currentParams, true, false, NavigationInitiator.UI);
 	}
 
 	// #########################################################################################################################################
