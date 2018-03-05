@@ -42,11 +42,25 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 					"Cannot bind a component for a null property.");
 		}
 		FieldType comp = provider.build(patterns);
-		ModelBinder.this.bind(comp, property);
+		ModelBinder.this.bindToProperty(comp, property);
 		return comp;
 	}
 
-	abstract <PropertyType> void bind(HasValue<PropertyType> field, ModelProperty<ModelType, PropertyType> property);
+	/**
+	 * Binds the given field to the given property.
+	 * 
+	 * @param <FieldType>
+	 *            The type of {@link HasValue} that is being bound.
+	 * @param <PropertyType>
+	 *            The type of data the property refers to.
+	 * @param field
+	 *            The {@link HasValue} to bind; might <b>not</b> be null.
+	 * @param property
+	 *            The property to bind to; might <b>not</b> be null.
+	 * @return The given field for in-line use
+	 */
+	public abstract <FieldType extends HasValue<PropertyType>, PropertyType> FieldType bindToProperty(FieldType field,
+			ModelProperty<ModelType, PropertyType> property);
 
 	private <FieldType extends Component & HasValue<FieldValueType>, FieldValueType, PropertyType> FieldType buildAndBind(
 			HasValueProvider<FieldType, FieldValueType> provider, ModelProperty<ModelType, PropertyType> property,
@@ -60,12 +74,30 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 					"Cannot bind a component to a differently typed property using a null converter.");
 		}
 		FieldType comp = provider.build(patterns);
-		ModelBinder.this.bind(comp, property, converter);
+		ModelBinder.this.bindToProperty(comp, property, converter);
 		return comp;
 	}
 
-	abstract <FieldValueType, PropertyValueType> void bind(HasValue<FieldValueType> field,
-			ModelProperty<ModelType, PropertyValueType> property,
+	/**
+	 * Binds the given field to the given property.
+	 * 
+	 * @param <FieldType>
+	 *            The type of {@link HasValue} that is being bound.
+	 * @param <FieldValueType>
+	 *            The type of value the field accepts
+	 * @param <PropertyValueType>
+	 *            The type of data the property refers to.
+	 * @param field
+	 *            The {@link HasValue} to bind; might <b>not</b> be null.
+	 * @param property
+	 *            The property to bind to; might <b>not</b> be null.
+	 * @param converter
+	 *            The converter needed for map from the field's value type to the
+	 *            properties' value type and vice versa; might <b>not</b> be null.
+	 * @return The given field for in-line use
+	 */
+	public abstract <FieldType extends HasValue<FieldValueType>, FieldValueType, PropertyValueType> FieldType bindToProperty(
+			FieldType field, ModelProperty<ModelType, PropertyValueType> property,
 			Converter<FieldValueType, PropertyValueType> converter);
 
 	// ##############################################################################################################
@@ -86,7 +118,7 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 	 *         {@link ModelProperty}; never null
 	 */
 	@SafeVarargs
-	public final Label buildLabelForProperty(ModelProperty<ModelType, String> property,
+	public final Label bindLabelForProperty(ModelProperty<ModelType, String> property,
 			OptionPattern<? super Label>... patterns) {
 		HasValueProvider<BindableLabel, String> provider = (p) -> ComponentFactory.apply(new BindableLabel(), p);
 		return buildAndBind(provider, property, patterns);
@@ -111,7 +143,7 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 	 *         {@link ModelProperty}; never null
 	 */
 	@SafeVarargs
-	public final <PropertyType> Label buildLabelForProperty(ModelProperty<ModelType, PropertyType> property,
+	public final <PropertyType> Label bindLabelForProperty(ModelProperty<ModelType, PropertyType> property,
 			Converter<String, PropertyType> converter, OptionPattern<? super Label>... patterns) {
 		HasValueProvider<BindableLabel, String> provider = (p) -> ComponentFactory.apply(new BindableLabel(), p);
 		return buildAndBind(provider, property, converter, patterns);
@@ -135,7 +167,7 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 	 *         {@link ModelProperty}; never null
 	 */
 	@SafeVarargs
-	public final TextField buildTextFieldForProperty(ModelProperty<ModelType, String> property,
+	public final TextField bindTextFieldForProperty(ModelProperty<ModelType, String> property,
 			OptionPattern<? super TextField>... patterns) {
 		return buildAndBind(ComponentFactory::buildTextField, property, patterns);
 	}
@@ -159,7 +191,7 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 	 *         {@link ModelProperty}; never null
 	 */
 	@SafeVarargs
-	public final <PropertyType> TextField buildTextFieldForProperty(ModelProperty<ModelType, PropertyType> property,
+	public final <PropertyType> TextField bindTextFieldForProperty(ModelProperty<ModelType, PropertyType> property,
 			Converter<String, PropertyType> converter, OptionPattern<? super TextField>... patterns) {
 		return buildAndBind(ComponentFactory::buildTextField, property, converter, patterns);
 	}
@@ -182,7 +214,7 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 	 *         {@link ModelProperty}; never null
 	 */
 	@SafeVarargs
-	public final TextArea buildTextAreaForProperty(ModelProperty<ModelType, String> property,
+	public final TextArea bindTextAreaForProperty(ModelProperty<ModelType, String> property,
 			OptionPattern<? super TextArea>... patterns) {
 		return buildAndBind(ComponentFactory::buildTextArea, property, patterns);
 	}
@@ -206,7 +238,7 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 	 *         {@link ModelProperty}; never null
 	 */
 	@SafeVarargs
-	public final <PropertyType> TextArea buildTextAreaForProperty(ModelProperty<ModelType, PropertyType> property,
+	public final <PropertyType> TextArea bindTextAreaForProperty(ModelProperty<ModelType, PropertyType> property,
 			Converter<String, PropertyType> converter, OptionPattern<? super TextArea>... patterns) {
 		return buildAndBind(ComponentFactory::buildTextArea, property, converter, patterns);
 	}
@@ -229,7 +261,7 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 	 *         {@link ModelProperty}; never null
 	 */
 	@SafeVarargs
-	public final CheckBox buildCheckBoxForProperty(ModelProperty<ModelType, Boolean> property,
+	public final CheckBox bindCheckBoxForProperty(ModelProperty<ModelType, Boolean> property,
 			OptionPattern<? super CheckBox>... patterns) {
 		return buildAndBind(ComponentFactory::buildCheckBox, property, patterns);
 	}
@@ -253,7 +285,7 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 	 *         {@link ModelProperty}; never null
 	 */
 	@SafeVarargs
-	public final <PropertyType> CheckBox buildCheckBoxForProperty(ModelProperty<ModelType, PropertyType> property,
+	public final <PropertyType> CheckBox bindCheckBoxForProperty(ModelProperty<ModelType, PropertyType> property,
 			Converter<Boolean, PropertyType> converter, OptionPattern<? super CheckBox>... patterns) {
 		return buildAndBind(ComponentFactory::buildCheckBox, property, converter, patterns);
 	}
@@ -278,7 +310,7 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 	 *         {@link ModelProperty}; never null
 	 */
 	@SafeVarargs
-	public final <T> RadioButtonGroup<T> buildRadioButtonGroupForProperty(ModelProperty<ModelType, T> property,
+	public final <T> RadioButtonGroup<T> bindRadioButtonGroupForProperty(ModelProperty<ModelType, T> property,
 			OptionPattern<? super RadioButtonGroup<?>>... patterns) {
 		HasValueProvider<RadioButtonGroup<T>, T> provider = ComponentFactory::buildRadioButtonGroup;
 		return buildAndBind(provider, property, patterns);
@@ -305,7 +337,7 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 	 *         {@link ModelProperty}; never null
 	 */
 	@SafeVarargs
-	public final <T, PropertyType> RadioButtonGroup<T> buildRadioButtonGroupForProperty(
+	public final <T, PropertyType> RadioButtonGroup<T> bindRadioButtonGroupForProperty(
 			ModelProperty<ModelType, PropertyType> property, Converter<T, PropertyType> converter,
 			OptionPattern<? super RadioButtonGroup<?>>... patterns) {
 		HasValueProvider<RadioButtonGroup<T>, T> provider = ComponentFactory::buildRadioButtonGroup;
@@ -332,7 +364,7 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 	 *         {@link ModelProperty}; never null
 	 */
 	@SafeVarargs
-	public final <T> ComboBox<T> buildComboBoxForProperty(ModelProperty<ModelType, T> property,
+	public final <T> ComboBox<T> bindComboBoxForProperty(ModelProperty<ModelType, T> property,
 			OptionPattern<? super ComboBox<?>>... patterns) {
 		HasValueProvider<ComboBox<T>, T> provider = ComponentFactory::buildComboBox;
 		return buildAndBind(provider, property, patterns);
@@ -359,7 +391,7 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 	 *         {@link ModelProperty}; never null
 	 */
 	@SafeVarargs
-	public final <T, PropertyType> ComboBox<T> buildComboBoxForProperty(ModelProperty<ModelType, PropertyType> property,
+	public final <T, PropertyType> ComboBox<T> bindComboBoxForProperty(ModelProperty<ModelType, PropertyType> property,
 			Converter<T, PropertyType> converter, OptionPattern<? super ComboBox<?>>... patterns) {
 		HasValueProvider<ComboBox<T>, T> provider = ComponentFactory::buildComboBox;
 		return buildAndBind(provider, property, converter, patterns);
@@ -385,10 +417,10 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 	 *         {@link ModelProperty}; never null
 	 */
 	@SafeVarargs
-	public final <T> BindableGrid<T, ModelType> buildGridForProperty(
-			ModelPropertyList<ModelType, T> property, OptionPattern<? super BindableGrid<?, ?>>... patterns) {
+	public final <T> BindableGrid<T, ModelType> bindGridForProperty(ModelPropertyList<ModelType, T> property,
+			OptionPattern<? super BindableGrid<?, ?>>... patterns) {
 		BindableGrid<T, ModelType> table = new BindableGrid<T, ModelType>(this, property);
-		bind(table.getBindable(), property);
+		bindToProperty(table.getBindable(), property);
 		return ComponentFactory.apply(table, patterns);
 	}
 }
