@@ -647,7 +647,7 @@ public abstract class CottonUI extends com.vaadin.ui.UI {
 
 	<ViewType extends View> ViewType doDisplay(TypedBlueprint<ViewType> viewType) {
 		if (this.currentView != null) {
-			this.injector.destroy(currentView);
+			this.injector.destroy(this.currentView);
 			this.currentView = null;
 		}
 		ViewType view = this.injector.instantiate(viewType);
