@@ -73,16 +73,16 @@ public abstract class ModelAccessor<ModelType> extends ModelBinder<ModelType> {
 	@Process(Phase.DESTROY)
 	private void releaseReferences() {
 		this.validationErrors = new ValidationErrorRegistry<ModelType>();
-		
-		for (Set<BindingReference> references: this.boundFields.values()) {
-			for (BindingReference reference: references) {
+
+		for (Set<BindingReference> references : this.boundFields.values()) {
+			for (BindingReference reference : references) {
 				reference.destroyBinding();
 			}
 		}
 		this.boundFields.clear();
 		this.binder.removeBean();
 		this.binder = new Binder<>();
-		
+
 		this.parent.unregister(this);
 	}
 
@@ -191,43 +191,54 @@ public abstract class ModelAccessor<ModelType> extends ModelBinder<ModelType> {
 
 		void reset();
 	}
-	
+
 	private final class BindingReference {
 		private final HasValue<?> hasValue;
 		private final HasValueResetter<?> resetter;
-		
+
 		private BindingReference(HasValue<?> hasValue, HasValueResetter<?> resetter) {
 			this.hasValue = hasValue;
 			this.resetter = resetter;
 		}
-		
+
 		private void reset() {
 			this.resetter.reset();
 		}
-		
+
 		private void destroyBinding() {
 			ModelAccessor.this.binder.removeBinding(this.hasValue);
 		}
 	}
 
 	@Override
-	final <PropertyType> void bind(HasValue<PropertyType> field, ModelProperty<ModelType, PropertyType> property) {
+	public final <FieldType extends HasValue<PropertyType>, PropertyType> FieldType bindToProperty(FieldType field,
+			ModelProperty<ModelType, PropertyType> property) {
+		if (field == null) {
+			throw new IllegalArgumentException("Cannot bind a null HasValue.");
+		}
 		bind(property, this.binder.forField(field), () -> field.setValue(ModelAccessor.this.getProperty(property)));
+		return field;
 	}
 
 	@Override
-	final <FieldValueType, PropertyValueType> void bind(HasValue<FieldValueType> field,
-			ModelProperty<ModelType, PropertyValueType> property,
+	public final <FieldType extends HasValue<FieldValueType>, FieldValueType, PropertyValueType> FieldType bindToProperty(
+			FieldType field, ModelProperty<ModelType, PropertyValueType> property,
 			Converter<FieldValueType, PropertyValueType> converter) {
+		if (field == null) {
+			throw new IllegalArgumentException("Cannot bind a null HasValue.");
+		} else if (converter == null) {
+			throw new IllegalArgumentException("Cannot bind using a null converter.");
+		}
 		bind(property, this.binder.forField(field).withConverter(converter), () -> field.setValue(
 				converter.convertToPresentation(ModelAccessor.this.getProperty(property), new ValueContext())));
+		return field;
 	}
 
 	private final <FieldValueType, PropertyValueType> void bind(ModelProperty<ModelType, PropertyValueType> property,
 			BindingBuilder<ModelType, PropertyValueType> builder, HasValueResetter<PropertyValueType> setter) {
 		if (property == null) {
 			throw new WebException(HttpErrorCodes.HTTP901_ILLEGAL_ARGUMENT_ERROR,
-					"Cannot bind a component for a null property.");
+					"Cannot bind a HasValue to a null property.");
 		}
 		builder.withValidator(new SerializablePredicate<PropertyValueType>() {
 			private static final long serialVersionUID = 1L;
