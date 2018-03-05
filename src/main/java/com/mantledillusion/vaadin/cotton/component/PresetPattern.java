@@ -82,6 +82,18 @@ public abstract class PresetPattern<T extends AbstractComponent> extends OptionP
 		}
 
 		/**
+		 * Instruct the {@link AbstractOrderedLayout} to use spacing between components,
+		 * but no margin at its bounds.
+		 * 
+		 * @return A new {@link PresetPattern} with the values currently set; never null
+		 */
+		public PresetPattern<AbstractOrderedLayout> withSpacingOnly() {
+			this.spacing = true;
+			this.margin = false;
+			return build();
+		}
+
+		/**
 		 * Instruct the {@link AbstractOrderedLayout} to not use spacing between
 		 * components.
 		 * 
@@ -103,6 +115,18 @@ public abstract class PresetPattern<T extends AbstractComponent> extends OptionP
 		}
 
 		/**
+		 * Instruct the {@link AbstractOrderedLayout} to use a margin at its bounds, but
+		 * no spacing between components.
+		 * 
+		 * @return A new {@link PresetPattern} with the values currently set; never null
+		 */
+		public PresetPattern<AbstractOrderedLayout> withMarginOnly() {
+			this.spacing = false;
+			this.margin = true;
+			return build();
+		}
+
+		/**
 		 * Instruct the {@link AbstractOrderedLayout} to not use a margin at its bounds.
 		 * 
 		 * @return this
@@ -110,6 +134,30 @@ public abstract class PresetPattern<T extends AbstractComponent> extends OptionP
 		public OrderedLayoutPresetBuilder withoutMargin() {
 			this.margin = false;
 			return this;
+		}
+
+		/**
+		 * Instruct the {@link AbstractOrderedLayout} to use a margin at its bounds and
+		 * spacing between components.
+		 * 
+		 * @return A new {@link PresetPattern} with the values currently set; never null
+		 */
+		public PresetPattern<AbstractOrderedLayout> withAllGaps() {
+			this.spacing = true;
+			this.margin = true;
+			return build();
+		}
+
+		/**
+		 * Instruct the {@link AbstractOrderedLayout} to neither use a margin at its
+		 * bounds, nor spacing between components.
+		 * 
+		 * @return A new {@link PresetPattern} with the values currently set; never null
+		 */
+		public PresetPattern<AbstractOrderedLayout> withoutAnyGap() {
+			this.spacing = false;
+			this.margin = false;
+			return build();
 		}
 
 		/**
