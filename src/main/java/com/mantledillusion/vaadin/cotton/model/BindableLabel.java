@@ -10,22 +10,22 @@ class BindableLabel extends Label implements HasValue<String> {
 
 	@Override
 	public boolean isReadOnly() {
-		return super.isReadOnly();
+		return true;
 	}
 	
 	@Override
 	public void setReadOnly(boolean readOnly) {
-		super.setReadOnly(readOnly);
+		// Do nothing - labels cannot be set non-readOnly
 	}
 	
 	@Override
 	public boolean isRequiredIndicatorVisible() {
-		return super.isRequiredIndicatorVisible();
+		return false;
 	}
 	
 	@Override
 	public void setRequiredIndicatorVisible(boolean visible) {
-		super.setRequiredIndicatorVisible(visible);
+		// Do nothing - labels cannot be used for input, so they cannot be required for input
 	}
 
 	@Override
