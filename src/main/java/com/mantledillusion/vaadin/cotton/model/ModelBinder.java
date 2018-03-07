@@ -8,6 +8,8 @@ import com.mantledillusion.vaadin.cotton.exception.WebException;
 import com.mantledillusion.vaadin.cotton.exception.WebException.HttpErrorCodes;
 import com.vaadin.data.Converter;
 import com.vaadin.data.HasValue;
+import com.vaadin.data.Result;
+import com.vaadin.data.ValueContext;
 import com.vaadin.ui.CheckBox;
 import com.vaadin.ui.ComboBox;
 import com.vaadin.ui.Component;
@@ -107,6 +109,8 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 	/**
 	 * Directly builds a single {@link Label} and binds it.
 	 * 
+	 * @param <PropertyType>
+	 *            The type of the property to bind.
 	 * @param property
 	 *            The {@link ModelProperty} to bind the new {@link Label} to;
 	 *            <b>not</b> allowed to be null.
@@ -118,10 +122,9 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 	 *         {@link ModelProperty}; never null
 	 */
 	@SafeVarargs
-	public final Label bindLabelForProperty(ModelProperty<ModelType, String> property,
+	public final <PropertyType> Label bindLabelForProperty(ModelProperty<ModelType, PropertyType> property,
 			OptionPattern<? super Label>... patterns) {
-		HasValueProvider<BindableLabel, String> provider = (p) -> ComponentFactory.apply(new BindableLabel(), p);
-		return buildAndBind(provider, property, patterns);
+		return bindLabelForProperty(property, StringRenderer.defaultRenderer(), patterns);
 	}
 
 	/**
@@ -132,8 +135,8 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 	 * @param property
 	 *            The {@link ModelProperty} to bind the new {@link Label} to;
 	 *            <b>not</b> allowed to be null.
-	 * @param converter
-	 *            The converter to convert the property type to the type used by the
+	 * @param renderer
+	 *            The renderer to convert the property type to Strings used by the
 	 *            {@link Label}; <b>not</b> allowed to be null.
 	 * @param patterns
 	 *            The {@link OptionPattern}s to apply to the new component; may be
@@ -144,8 +147,25 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 	 */
 	@SafeVarargs
 	public final <PropertyType> Label bindLabelForProperty(ModelProperty<ModelType, PropertyType> property,
-			Converter<String, PropertyType> converter, OptionPattern<? super Label>... patterns) {
+			StringRenderer<PropertyType> renderer, OptionPattern<? super Label>... patterns) {
+		if (renderer == null) {
+			throw new IllegalArgumentException("Cannot apply a null renderer.");
+		}
 		HasValueProvider<BindableLabel, String> provider = (p) -> ComponentFactory.apply(new BindableLabel(), p);
+		Converter<String, PropertyType> converter = new Converter<String, PropertyType>() {
+
+			private static final long serialVersionUID = 1L;
+
+			@Override
+			public Result<PropertyType> convertToModel(String value, ValueContext context) {
+				throw new UnsupportedOperationException("Cannot convert a label's text to model data.");
+			}
+
+			@Override
+			public String convertToPresentation(PropertyType value, ValueContext context) {
+				return renderer.render(value);
+			}
+		};
 		return buildAndBind(provider, property, converter, patterns);
 	}
 
