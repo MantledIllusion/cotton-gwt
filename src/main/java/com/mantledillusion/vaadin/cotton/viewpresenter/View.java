@@ -55,6 +55,12 @@ public abstract class View extends Composite {
 						"The @" + Addressed.class.getSimpleName() + " annotation can only be used on "
 								+ View.class.getSimpleName() + " implementations; the type '"
 								+ annotatedElement.getSimpleName() + "' however is not.");
+			} else if (Frame.class.isAssignableFrom(annotatedElement)) {
+				throw new WebException(HttpErrorCodes.HTTP904_ILLEGAL_ANNOTATION_USE,
+						"Despite being a " + View.class.getSimpleName() + " implementation, the @"
+								+ Addressed.class.getSimpleName() + " annotation cannot be used on "
+								+ Frame.class.getSimpleName() + " implementations, since " + Frame.class.getSimpleName()
+								+ "s cannot be addressed directly.");
 			}
 
 			UrlResourceRegistry.checkUrlPattern(annotationInstance.value());
@@ -293,7 +299,7 @@ public abstract class View extends Composite {
 		this.canSetCompositionRoot = false;
 		return reg;
 	}
-	
+
 	Component setupUI(TemporalActiveComponentRegistry reg) throws Throwable {
 		return buildUI(reg);
 	}
