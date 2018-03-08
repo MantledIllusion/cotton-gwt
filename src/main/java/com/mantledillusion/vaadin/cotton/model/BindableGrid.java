@@ -518,25 +518,6 @@ public final class BindableGrid<RowType, ModelType> extends Composite {
 	 * @param <PropertyType>
 	 *            The type of the property to bind.
 	 * @param property
-	 *            The property to bind the column to; might <b>not</b> be null.
-	 * @param configurator
-	 *            The configurator to use on the given columns registration; might
-	 *            be null.
-	 * @return A {@link ModelPropertyColumnConfiguration} to configure the
-	 *         registration of the given column in this grid with.
-	 */
-	public <PropertyType> ModelPropertyColumnConfiguration<RowType> addColumn(
-			ModelProperty<ModelType, PropertyType> property, ModelPropertyColumnConfigurator<RowType> configurator) {
-		return addColumn(rowAccessor -> rowAccessor.bindLabelForProperty(property), configurator);
-	}
-
-	/**
-	 * Adds a column to this {@link BindableGrid} that is bound to the given
-	 * property.
-	 * 
-	 * @param <PropertyType>
-	 *            The type of the property to bind.
-	 * @param property
 	 *            property The property to bind the column to; might <b>not</b> be
 	 *            null.
 	 * @param renderer
