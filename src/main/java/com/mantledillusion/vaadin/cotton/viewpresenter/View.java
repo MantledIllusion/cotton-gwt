@@ -215,7 +215,7 @@ public abstract class View extends Composite {
 							+ requiredUserRights + ", but one ore more are missing.");
 		}
 
-		TemporalActiveComponentRegistry reg = buildUI();
+		TemporalActiveComponentRegistry reg = setupUI();
 
 		if (getClass().isAnnotationPresent(Presented.class)) {
 
@@ -273,11 +273,11 @@ public abstract class View extends Composite {
 		super.setCompositionRoot(compositionRoot);
 	}
 
-	private TemporalActiveComponentRegistry buildUI() {
+	private TemporalActiveComponentRegistry setupUI() {
 		TemporalActiveComponentRegistry reg = new TemporalActiveComponentRegistry();
 		Component root = null;
 		try {
-			root = buildUI(reg);
+			root = setupUI(reg);
 		} catch (Throwable t) {
 			throw new WebException(HttpErrorCodes.HTTP500_INTERNAL_SERVER_ERROR,
 					"Unable to initialize view " + getClass().getSimpleName() + ": " + t.getMessage(), t);
@@ -292,6 +292,10 @@ public abstract class View extends Composite {
 		setCompositionRoot(root);
 		this.canSetCompositionRoot = false;
 		return reg;
+	}
+	
+	Component setupUI(TemporalActiveComponentRegistry reg) throws Throwable {
+		return buildUI(reg);
 	}
 
 	/**
