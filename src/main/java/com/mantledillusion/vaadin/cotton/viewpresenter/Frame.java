@@ -2,6 +2,8 @@ package com.mantledillusion.vaadin.cotton.viewpresenter;
 
 import java.lang.reflect.Constructor;
 
+import com.mantledillusion.injection.hura.Processor.Phase;
+import com.mantledillusion.injection.hura.annotation.Process;
 import com.mantledillusion.vaadin.cotton.CottonUI;
 import com.mantledillusion.vaadin.cotton.exception.WebException;
 import com.mantledillusion.vaadin.cotton.exception.WebException.HttpErrorCodes;
@@ -107,6 +109,11 @@ public abstract class Frame extends View {
 			throw new WebException(HttpErrorCodes.HTTP903_NOT_IMPLEMENTED_ERROR, Frame.class.getSimpleName()
 					+ " types cannot be added to any other component than their own window.");
 		}
+	}
+	
+	@Process(Phase.DESTROY)
+	private void detachWindowFromUI() {
+		this.window.close();
 	}
 
 	// #########################################################################################################################################

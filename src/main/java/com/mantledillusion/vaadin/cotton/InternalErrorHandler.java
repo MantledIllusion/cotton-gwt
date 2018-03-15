@@ -30,70 +30,71 @@ import com.vaadin.ui.HorizontalLayout;
 import com.vaadin.ui.Label;
 import com.vaadin.ui.TextArea;
 import com.vaadin.ui.VerticalLayout;
+import com.vaadin.ui.Window;
 
 final class InternalErrorHandler implements ErrorHandler {
 
 	private static final long serialVersionUID = 1L;
 
 	private static final class DefaultErrorView extends CottonUI.ErrorView<Throwable> {
-	
+
 		private static final long serialVersionUID = 1L;
-	
+
 		private Label errorTitle;
 		private Label errorLabel;
 		private TextArea errorText;
-	
+
 		@Construct
 		private DefaultErrorView() {
 		}
-	
+
 		@Override
 		protected Component buildUI(TemporalActiveComponentRegistry reg) throws Exception {
 			HorizontalLayout layout = new HorizontalLayout();
 			layout.setSizeFull();
 			layout.setMargin(true);
-	
+
 			VerticalLayout column = new VerticalLayout();
 			column.setWidth(66, Unit.PERCENTAGE);
 			column.setHeightUndefined();
 			layout.addComponent(column);
 			layout.setComponentAlignment(column, Alignment.TOP_CENTER);
-	
+
 			this.errorTitle = new Label(null, ContentMode.HTML);
 			this.errorTitle.setSizeUndefined();
 			column.addComponent(this.errorTitle);
 			column.setExpandRatio(this.errorTitle, 0);
-	
+
 			this.errorLabel = new Label(null, ContentMode.HTML);
 			this.errorLabel.setWidth(100, Unit.PERCENTAGE);
 			this.errorLabel.setHeightUndefined();
 			column.addComponent(this.errorLabel);
 			column.setExpandRatio(this.errorLabel, 0);
-	
+
 			this.errorText = new TextArea();
 			this.errorText.setWidth(100, Unit.PERCENTAGE);
 			this.errorText.setHeight(300, Unit.PIXELS);
 			column.addComponent(errorText);
 			column.setExpandRatio(errorText, 1);
-	
+
 			return layout;
 		}
-	
+
 		@Override
 		protected void handleError(Throwable t) {
 			this.errorTitle.setValue("<b><font size=\"5\">" + t.getClass().getSimpleName() + ":</font></b>");
 			this.errorLabel.setValue("<font size=\"4\">" + t.getLocalizedMessage() + "</font>");
-	
+
 			this.errorText.setValue(ExceptionUtils.getStackTrace(t));
 			this.errorText.setComponentError(new ErrorMessage() {
-	
+
 				private static final long serialVersionUID = 1L;
-	
+
 				@Override
 				public String getFormattedHtmlMessage() {
 					return StringUtils.EMPTY;
 				}
-	
+
 				@Override
 				public ErrorLevel getErrorLevel() {
 					return ErrorLevel.SYSTEM;
@@ -121,8 +122,16 @@ final class InternalErrorHandler implements ErrorHandler {
 
 	@Override
 	public void error(com.vaadin.server.ErrorEvent event) {
+		for (Window window : CottonUI.current().getWindows()) {
+			try {
+				window.close();
+			} catch (Exception e) {
+				// Ignore; the window is closed anyway
+			}
+		}
+
 		Throwable t = DefaultErrorHandler.findRelevantThrowable(event.getThrowable());
-		
+
 		CottonUI.current().appendToLog(
 				SessionLogEntry.of(SessionLogContext.ACTION, SessionLogType.ERROR, "Handling error '" + t + "'"));
 
