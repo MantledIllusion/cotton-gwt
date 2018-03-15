@@ -11,6 +11,7 @@ import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
 
+import com.mantledillusion.injection.hura.Blueprint;
 import com.mantledillusion.injection.hura.Blueprint.TypedBlueprint;
 import com.mantledillusion.vaadin.cotton.exception.WebException;
 import com.mantledillusion.vaadin.cotton.exception.WebException.HttpErrorCodes;
@@ -150,6 +151,20 @@ public final class UrlResourceRegistry {
 					"There is no view resource registered at url '" + urlPath + "'.");
 		}
 		return this.resourceRegistry.get(urlPath).getViewResource();
+	}
+
+	/**
+	 * Registers the given {@link View} implementation at the URL in the
+	 * view's @{@link Addressed} annotation.
+	 * 
+	 * @param viewClass
+	 *            The {@link View} implementation to register; might <b>not</b> be
+	 *            null, also the has to be annotated with @{@link Addressed}
+	 *            somewhere, view the documentation of {@link Addressed} for
+	 *            reference.
+	 */
+	public void registerViewResource(Class<? extends View> viewClass) {
+		registerViewResource(Blueprint.of(viewClass));
 	}
 
 	/**
