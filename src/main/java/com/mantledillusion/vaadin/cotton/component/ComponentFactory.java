@@ -18,6 +18,8 @@ import com.vaadin.ui.CheckBox;
 import com.vaadin.ui.CheckBoxGroup;
 import com.vaadin.ui.ComboBox;
 import com.vaadin.ui.Component;
+import com.vaadin.ui.DateField;
+import com.vaadin.ui.DateTimeField;
 import com.vaadin.ui.FormLayout;
 import com.vaadin.ui.HorizontalLayout;
 import com.vaadin.ui.Image;
@@ -181,9 +183,9 @@ public final class ComponentFactory {
 	 * Factory method for a {@link FormLayout}.
 	 * 
 	 * @param patterns
-	 *            The patterns to apply on the requested {@link FormLayout}
-	 *            before returning; may be null or empty, then nothing will be
-	 *            applied. Will be applied in the given order.
+	 *            The patterns to apply on the requested {@link FormLayout} before
+	 *            returning; may be null or empty, then nothing will be applied.
+	 *            Will be applied in the given order.
 	 * @return A new {@link FormLayout} instance; never null
 	 */
 	@SafeVarargs
@@ -358,6 +360,38 @@ public final class ComponentFactory {
 	@SafeVarargs
 	public static TextArea buildTextArea(OptionPattern<? super TextArea>... patterns) {
 		return apply(new TextArea(), patterns);
+	}
+
+	// ##############################################################################################################
+	// ################################################ DATEFIELD ###################################################
+	// ##############################################################################################################
+
+	/**
+	 * Factory method for a {@link DateField}.
+	 * 
+	 * @param patterns
+	 *            The patterns to apply on the requested {@link DateField} before
+	 *            returning; may be null or empty, then nothing will be applied.
+	 *            Will be applied in the given order.
+	 * @return A new {@link DateField} instance; never null
+	 */
+	@SafeVarargs
+	public static DateField buildDateField(OptionPattern<? super DateField>... patterns) {
+		return apply(new DateField(), patterns);
+	}
+
+	/**
+	 * Factory method for a {@link DateTimeField}.
+	 * 
+	 * @param patterns
+	 *            The patterns to apply on the requested {@link DateTimeField}
+	 *            before returning; may be null or empty, then nothing will be
+	 *            applied. Will be applied in the given order.
+	 * @return A new {@link DateTimeField} instance; never null
+	 */
+	@SafeVarargs
+	public static DateTimeField buildDateTimeField(OptionPattern<? super DateTimeField>... patterns) {
+		return apply(new DateTimeField(), patterns);
 	}
 
 	// ##############################################################################################################

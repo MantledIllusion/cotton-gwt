@@ -1,6 +1,12 @@
 package com.mantledillusion.vaadin.cotton.component;
 
+import java.io.Serializable;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.temporal.Temporal;
+import java.time.temporal.TemporalAdjuster;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -8,6 +14,8 @@ import com.mantledillusion.vaadin.cotton.WebEnv;
 import com.mantledillusion.vaadin.cotton.component.ComponentFactory.OptionPattern;
 import com.mantledillusion.vaadin.cotton.exception.WebException;
 import com.mantledillusion.vaadin.cotton.exception.WebException.HttpErrorCodes;
+import com.vaadin.shared.ui.datefield.DateResolution;
+import com.vaadin.shared.ui.datefield.DateTimeResolution;
 import com.vaadin.ui.AbstractComponent;
 import com.vaadin.ui.AbstractDateField;
 import com.vaadin.ui.AbstractOrderedLayout;
@@ -186,24 +194,29 @@ public abstract class PresetPattern<T extends AbstractComponent> extends OptionP
 	}
 
 	/**
-	 * {@link PresetBuilder} implementation for {@link PresetPattern}s that can be
-	 * applied on {@link AbstractDateField}s.
-	 * <P>
-	 * Possible targets for the build {@link PresetPattern} are:<br>
-	 * - {@link DateField}<br>
-	 * - {@link DateTimeField}<br>
-	 * - {@link InlineDateField}<br>
-	 * - {@link InlineDateTimeField}
+	 * Base type for {@link PresetBuilder}s for {@link AbstractDateField}s.
+	 *
+	 * @param <B>
+	 * @param <T>
+	 * @param <R>
 	 */
-	public static final class DateFieldPresetBuilder implements PresetBuilder<AbstractDateField<?, ?>> {
+	public static abstract class TemporalFieldPresetBuilder<B extends TemporalFieldPresetBuilder<B, T, R>, T extends Temporal & TemporalAdjuster & Serializable & Comparable<? super T>, R extends Enum<R>>
+			implements PresetBuilder<AbstractDateField<T, R>> {
 
 		private String dateFormat;
 		private String dateOutOfRangeMessage;
 		private String dateUnparsableMessage;
 		private Boolean readOnly;
 
-		private DateFieldPresetBuilder() {
+		private T rangeStart;
+		private T rangeEnd;
+		private R resolution;
+		private ZoneId zoneId;
+
+		private TemporalFieldPresetBuilder() {
 		}
+
+		protected abstract B getThis();
 
 		/**
 		 * Sets the date format to the given value.
@@ -213,13 +226,13 @@ public abstract class PresetPattern<T extends AbstractComponent> extends OptionP
 		 *            {@link SimpleDateFormat} for details; may <b>not</b> be null.
 		 * @return this
 		 */
-		public DateFieldPresetBuilder withFormat(String dateFormat) {
+		public B withFormat(String dateFormat) {
 			if (dateFormat == null) {
 				throw new WebException(HttpErrorCodes.HTTP901_ILLEGAL_ARGUMENT_ERROR,
 						"Unable to create a date field with a null format.");
 			}
 			this.dateFormat = dateFormat;
-			return this;
+			return getThis();
 		}
 
 		/**
@@ -233,9 +246,9 @@ public abstract class PresetPattern<T extends AbstractComponent> extends OptionP
 		 *            The message (or localizable message id) to set; may be null.
 		 * @return this
 		 */
-		public DateFieldPresetBuilder withMessageForOutOfRangeValue(String dateOutOfRangeMsgId) {
+		public B withMessageForOutOfRangeValue(String dateOutOfRangeMsgId) {
 			this.dateOutOfRangeMessage = dateOutOfRangeMsgId;
-			return this;
+			return getThis();
 		}
 
 		/**
@@ -244,9 +257,9 @@ public abstract class PresetPattern<T extends AbstractComponent> extends OptionP
 		 * 
 		 * @return this
 		 */
-		public DateFieldPresetBuilder withoutMessageForOutOfRangeValue() {
+		public B withoutMessageForOutOfRangeValue() {
 			this.dateOutOfRangeMessage = null;
-			return this;
+			return getThis();
 		}
 
 		/**
@@ -260,9 +273,9 @@ public abstract class PresetPattern<T extends AbstractComponent> extends OptionP
 		 *            The message (or localizable message id) to set; may be null.
 		 * @return this
 		 */
-		public DateFieldPresetBuilder withMessageForUnparsableValue(String dateUnparsableMessage) {
+		public B withMessageForUnparsableValue(String dateUnparsableMessage) {
 			this.dateUnparsableMessage = dateUnparsableMessage;
-			return this;
+			return getThis();
 		}
 
 		/**
@@ -271,9 +284,9 @@ public abstract class PresetPattern<T extends AbstractComponent> extends OptionP
 		 * 
 		 * @return this
 		 */
-		public DateFieldPresetBuilder withoutMessageForUnparsableValue() {
+		public B withoutMessageForUnparsableValue() {
 			this.dateUnparsableMessage = null;
-			return this;
+			return getThis();
 		}
 
 		/**
@@ -282,9 +295,9 @@ public abstract class PresetPattern<T extends AbstractComponent> extends OptionP
 		 * 
 		 * @return this
 		 */
-		public DateFieldPresetBuilder withReadOnly() {
+		public B withReadOnly() {
 			this.readOnly = true;
-			return this;
+			return getThis();
 		}
 
 		/**
@@ -292,9 +305,65 @@ public abstract class PresetPattern<T extends AbstractComponent> extends OptionP
 		 * 
 		 * @return this
 		 */
-		public DateFieldPresetBuilder withoutReadOnly() {
+		public B withoutReadOnly() {
 			this.readOnly = false;
-			return this;
+			return getThis();
+		}
+
+		/**
+		 * Sets the field's range start, meaning only dates later than this value will
+		 * be accepted.
+		 * 
+		 * @param rangeStart
+		 *            The start range of the field; may be null
+		 * @return this
+		 */
+		public B withRangeStart(T rangeStart) {
+			this.rangeStart = rangeStart;
+			return getThis();
+		}
+
+		/**
+		 * Sets the field's range end, meaning only dates earlier than this value will
+		 * be accepted.
+		 * 
+		 * @param rangeEnd
+		 *            The end range of the field; may be null.
+		 * @return this
+		 */
+		public B withRangeEnd(T rangeEnd) {
+			this.rangeEnd = rangeEnd;
+			return getThis();
+		}
+
+		/**
+		 * Sets the field's resolution in which the date will be displayed.
+		 * 
+		 * @param resolution
+		 *            The resolution in which to display the date; may <b>not</b> be
+		 *            null, DAY by default.
+		 * @return this
+		 */
+		public B withResolution(R resolution) {
+			if (resolution == null) {
+				throw new WebException(HttpErrorCodes.HTTP901_ILLEGAL_ARGUMENT_ERROR,
+						"Unable to create a date field with a null resolution.");
+			}
+			this.resolution = resolution;
+			return getThis();
+		}
+
+		/**
+		 * Sets the field's {@link ZoneId}, which is used when z is included inside the
+		 * {@link #withFormat(String)}.
+		 * 
+		 * @param zoneId
+		 *            The zone of the field; may be null.
+		 * @return this
+		 */
+		public B withZoneId(ZoneId zoneId) {
+			this.zoneId = zoneId;
+			return getThis();
 		}
 
 		/**
@@ -303,17 +372,22 @@ public abstract class PresetPattern<T extends AbstractComponent> extends OptionP
 		 * @return A new {@link PresetPattern} with the values currently set; never null
 		 */
 		@Override
-		public PresetPattern<AbstractDateField<?, ?>> build() {
+		public PresetPattern<AbstractDateField<T, R>> build() {
 
-			return new PresetPattern<AbstractDateField<?, ?>>() {
+			return new PresetPattern<AbstractDateField<T, R>>() {
 
-				private final String dateFormat = DateFieldPresetBuilder.this.dateFormat;
-				private final String dateOutOfRangeMsgId = DateFieldPresetBuilder.this.dateOutOfRangeMessage;
-				private final String dateUnparsableMsgId = DateFieldPresetBuilder.this.dateUnparsableMessage;
-				private final Boolean readOnly = DateFieldPresetBuilder.this.readOnly;
+				private final String dateFormat = TemporalFieldPresetBuilder.this.dateFormat;
+				private final String dateOutOfRangeMsgId = TemporalFieldPresetBuilder.this.dateOutOfRangeMessage;
+				private final String dateUnparsableMsgId = TemporalFieldPresetBuilder.this.dateUnparsableMessage;
+				private final Boolean readOnly = TemporalFieldPresetBuilder.this.readOnly;
+
+				private final T rangeStart = TemporalFieldPresetBuilder.this.rangeStart;
+				private final T rangeEnd = TemporalFieldPresetBuilder.this.rangeEnd;
+				private final R resolution = TemporalFieldPresetBuilder.this.resolution;
+				private final ZoneId zoneId = TemporalFieldPresetBuilder.this.zoneId;
 
 				@Override
-				void apply(AbstractDateField<?, ?> component) {
+				void apply(AbstractDateField<T, R> component) {
 					if (this.dateFormat != null) {
 						component.setDateFormat(this.dateFormat);
 					}
@@ -326,8 +400,59 @@ public abstract class PresetPattern<T extends AbstractComponent> extends OptionP
 					if (this.readOnly != null) {
 						component.setReadOnly(this.readOnly);
 					}
+					if (this.rangeStart != null) {
+						component.setRangeStart(this.rangeStart);
+					}
+					if (this.rangeEnd != null) {
+						component.setRangeEnd(this.rangeEnd);
+					}
+					if (this.resolution != null) {
+						component.setResolution(this.resolution);
+					}
+					if (this.zoneId != null) {
+						component.setZoneId(this.zoneId);
+					}
 				}
 			};
+		}
+	}
+
+	/**
+	 * {@link PresetBuilder} implementation for {@link PresetPattern}s that can be
+	 * applied on {@link AbstractDateField}s using {@link LocalDate}.
+	 * <P>
+	 * Possible targets for the build {@link PresetPattern} are:<br>
+	 * - {@link DateField}<br>
+	 * - {@link InlineDateField}
+	 */
+	public static final class DateFieldPresetBuilder
+			extends TemporalFieldPresetBuilder<DateFieldPresetBuilder, LocalDate, DateResolution> {
+
+		private DateFieldPresetBuilder() {
+		}
+
+		@Override
+		protected DateFieldPresetBuilder getThis() {
+			return this;
+		}
+	}
+
+	/**
+	 * {@link PresetBuilder} implementation for {@link PresetPattern}s that can be
+	 * applied on {@link AbstractDateField}s using {@link LocalDateTime}.
+	 * <P>
+	 * Possible targets for the build {@link PresetPattern} are:<br>
+	 * - {@link DateTimeField}<br>
+	 * - {@link InlineDateTimeField}
+	 */
+	public static final class DateTimeFieldPresetBuilder
+			extends TemporalFieldPresetBuilder<DateTimeFieldPresetBuilder, LocalDateTime, DateTimeResolution> {
+
+		private DateTimeFieldPresetBuilder() {
+		}
+
+		protected DateTimeFieldPresetBuilder getThis() {
+			return this;
 		}
 	}
 
@@ -856,12 +981,22 @@ public abstract class PresetPattern<T extends AbstractComponent> extends OptionP
 
 	/**
 	 * Begins a building process for {@link PresetPattern}s for
-	 * {@link AbstractDateField}s.
+	 * {@link AbstractDateField}s using {@link LocalDate}.
 	 * 
 	 * @return A new {@link DateFieldPresetBuilder}; never null
 	 */
 	public static final DateFieldPresetBuilder forDateField() {
 		return new DateFieldPresetBuilder();
+	}
+
+	/**
+	 * Begins a building process for {@link PresetPattern}s for
+	 * {@link AbstractDateField}s using {@link LocalDateTime}.
+	 * 
+	 * @return A new {@link DateTimeFieldPresetBuilder}; never null
+	 */
+	public static final DateTimeFieldPresetBuilder forDateTimeField() {
+		return new DateTimeFieldPresetBuilder();
 	}
 
 	/**
