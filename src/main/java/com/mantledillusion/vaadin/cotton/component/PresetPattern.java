@@ -1,6 +1,7 @@
 package com.mantledillusion.vaadin.cotton.component;
 
 import java.io.Serializable;
+import java.lang.reflect.Method;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -197,8 +198,15 @@ public abstract class PresetPattern<T extends AbstractComponent> extends OptionP
 	 * Base type for {@link PresetBuilder}s for {@link AbstractDateField}s.
 	 *
 	 * @param <B>
+	 *            The type extending this {@link TemporalFieldPresetBuilder}; needed
+	 *            for builder {@link Method} return type.
 	 * @param <T>
+	 *            The {@link Temporal} extending type the {@link AbstractDateField}
+	 *            uses; for example {@link LocalDate} or {@link LocalDateTime}.
 	 * @param <R>
+	 *            The {@link Enum} holding the resolutions in which the date can be
+	 *            displayed; for example {@link DateResolution} or
+	 *            {@link DateTimeResolution}.
 	 */
 	public static abstract class TemporalFieldPresetBuilder<B extends TemporalFieldPresetBuilder<B, T, R>, T extends Temporal & TemporalAdjuster & Serializable & Comparable<? super T>, R extends Enum<R>>
 			implements PresetBuilder<AbstractDateField<T, R>> {
