@@ -15,6 +15,7 @@ import com.mantledillusion.vaadin.cotton.WebEnv;
 import com.mantledillusion.vaadin.cotton.component.ComponentFactory.OptionPattern;
 import com.mantledillusion.vaadin.cotton.exception.WebException;
 import com.mantledillusion.vaadin.cotton.exception.WebException.HttpErrorCodes;
+import com.vaadin.shared.ui.MarginInfo;
 import com.vaadin.shared.ui.datefield.DateResolution;
 import com.vaadin.shared.ui.datefield.DateTimeResolution;
 import com.vaadin.ui.AbstractComponent;
@@ -75,7 +76,7 @@ public abstract class PresetPattern<T extends AbstractComponent> extends OptionP
 	public static final class OrderedLayoutPresetBuilder implements PresetBuilder<AbstractOrderedLayout> {
 
 		private Boolean spacing;
-		private Boolean margin;
+		private MarginInfo margin;
 
 		private OrderedLayoutPresetBuilder() {
 		}
@@ -98,7 +99,7 @@ public abstract class PresetPattern<T extends AbstractComponent> extends OptionP
 		 */
 		public PresetPattern<AbstractOrderedLayout> withSpacingOnly() {
 			this.spacing = true;
-			this.margin = false;
+			this.margin = new MarginInfo(false);
 			return build();
 		}
 
@@ -119,7 +120,18 @@ public abstract class PresetPattern<T extends AbstractComponent> extends OptionP
 		 * @return this
 		 */
 		public OrderedLayoutPresetBuilder withMargin() {
-			this.margin = true;
+			this.margin = new MarginInfo(true);
+			return this;
+		}
+
+		/**
+		 * Instruct the {@link AbstractOrderedLayout} to use a margin at specific
+		 * bounds.
+		 * 
+		 * @return this
+		 */
+		public OrderedLayoutPresetBuilder withMargin(boolean top, boolean right, boolean bottom, boolean left) {
+			this.margin = new MarginInfo(top, right, bottom, left);
 			return this;
 		}
 
@@ -131,7 +143,20 @@ public abstract class PresetPattern<T extends AbstractComponent> extends OptionP
 		 */
 		public PresetPattern<AbstractOrderedLayout> withMarginOnly() {
 			this.spacing = false;
-			this.margin = true;
+			this.margin = new MarginInfo(true);
+			return build();
+		}
+
+		/**
+		 * Instruct the {@link AbstractOrderedLayout} to use a margin at specific
+		 * bounds, but no spacing between components.
+		 * 
+		 * @return A new {@link PresetPattern} with the values currently set; never null
+		 */
+		public PresetPattern<AbstractOrderedLayout> withMarginOnly(boolean top, boolean right, boolean bottom,
+				boolean left) {
+			this.spacing = false;
+			this.margin = new MarginInfo(top, right, bottom, left);
 			return build();
 		}
 
@@ -141,7 +166,7 @@ public abstract class PresetPattern<T extends AbstractComponent> extends OptionP
 		 * @return this
 		 */
 		public OrderedLayoutPresetBuilder withoutMargin() {
-			this.margin = false;
+			this.margin = new MarginInfo(false);
 			return this;
 		}
 
@@ -153,7 +178,7 @@ public abstract class PresetPattern<T extends AbstractComponent> extends OptionP
 		 */
 		public PresetPattern<AbstractOrderedLayout> withAllGaps() {
 			this.spacing = true;
-			this.margin = true;
+			this.margin = new MarginInfo(true);
 			return build();
 		}
 
@@ -165,7 +190,7 @@ public abstract class PresetPattern<T extends AbstractComponent> extends OptionP
 		 */
 		public PresetPattern<AbstractOrderedLayout> withoutAnyGap() {
 			this.spacing = false;
-			this.margin = false;
+			this.margin = new MarginInfo(false);
 			return build();
 		}
 
@@ -179,7 +204,7 @@ public abstract class PresetPattern<T extends AbstractComponent> extends OptionP
 			return new PresetPattern<AbstractOrderedLayout>() {
 
 				private final Boolean spacing = OrderedLayoutPresetBuilder.this.spacing;
-				private final Boolean margin = OrderedLayoutPresetBuilder.this.margin;
+				private final MarginInfo margin = OrderedLayoutPresetBuilder.this.margin;
 
 				@Override
 				public void apply(AbstractOrderedLayout component) {
