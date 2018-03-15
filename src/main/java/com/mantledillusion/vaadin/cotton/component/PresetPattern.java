@@ -128,6 +128,14 @@ public abstract class PresetPattern<T extends AbstractComponent> extends OptionP
 		 * Instruct the {@link AbstractOrderedLayout} to use a margin at specific
 		 * bounds.
 		 * 
+		 * @param top
+		 *            Whether or not to show a margin at the top of the layout.
+		 * @param right
+		 *            Whether or not to show a margin at the right of the layout.
+		 * @param bottom
+		 *            Whether or not to show a margin at the bottom of the layout.
+		 * @param left
+		 *            Whether or not to show a margin at the left of the layout.
 		 * @return this
 		 */
 		public OrderedLayoutPresetBuilder withMargin(boolean top, boolean right, boolean bottom, boolean left) {
@@ -151,6 +159,14 @@ public abstract class PresetPattern<T extends AbstractComponent> extends OptionP
 		 * Instruct the {@link AbstractOrderedLayout} to use a margin at specific
 		 * bounds, but no spacing between components.
 		 * 
+		 * @param top
+		 *            Whether or not to show a margin at the top of the layout.
+		 * @param right
+		 *            Whether or not to show a margin at the right of the layout.
+		 * @param bottom
+		 *            Whether or not to show a margin at the bottom of the layout.
+		 * @param left
+		 *            Whether or not to show a margin at the left of the layout.
 		 * @return A new {@link PresetPattern} with the values currently set; never null
 		 */
 		public PresetPattern<AbstractOrderedLayout> withMarginOnly(boolean top, boolean right, boolean bottom,
