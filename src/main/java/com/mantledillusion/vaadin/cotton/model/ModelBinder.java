@@ -1,5 +1,8 @@
 package com.mantledillusion.vaadin.cotton.model;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+
 import com.mantledillusion.data.epiphy.ModelProperty;
 import com.mantledillusion.data.epiphy.ModelPropertyList;
 import com.mantledillusion.vaadin.cotton.component.ComponentFactory;
@@ -13,6 +16,8 @@ import com.vaadin.data.ValueContext;
 import com.vaadin.ui.CheckBox;
 import com.vaadin.ui.ComboBox;
 import com.vaadin.ui.Component;
+import com.vaadin.ui.DateField;
+import com.vaadin.ui.DateTimeField;
 import com.vaadin.ui.Label;
 import com.vaadin.ui.RadioButtonGroup;
 import com.vaadin.ui.TextArea;
@@ -261,6 +266,96 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 	public final <PropertyType> TextArea bindTextAreaForProperty(ModelProperty<ModelType, PropertyType> property,
 			Converter<String, PropertyType> converter, OptionPattern<? super TextArea>... patterns) {
 		return buildAndBind(ComponentFactory::buildTextArea, property, converter, patterns);
+	}
+
+	// ##############################################################################################################
+	// ################################################ DATEFIELD ###################################################
+	// ##############################################################################################################
+
+	/**
+	 * Directly builds a single {@link DateField} and binds it.
+	 * 
+	 * @param property
+	 *            The {@link ModelProperty} to bind the new {@link DateField} to;
+	 *            <b>not</b> allowed to be null.
+	 * @param patterns
+	 *            The {@link OptionPattern}s to apply to the new component; may be
+	 *            null or empty, then nothing will be applied. Will be applied in
+	 *            the given order.
+	 * @return A new {@link DateField} instance, bound to the given
+	 *         {@link ModelProperty}; never null
+	 */
+	@SafeVarargs
+	public final DateField bindDateFieldForProperty(ModelProperty<ModelType, LocalDate> property,
+			OptionPattern<? super DateField>... patterns) {
+		return buildAndBind(ComponentFactory::buildDateField, property, patterns);
+	}
+
+	/**
+	 * Directly builds a single {@link DateField} and binds it.
+	 * 
+	 * @param <PropertyType>
+	 *            The type of the property to bind.
+	 * @param property
+	 *            The {@link ModelProperty} to bind the new {@link DateField} to;
+	 *            <b>not</b> allowed to be null.
+	 * @param converter
+	 *            The converter to convert the property type to the type used by the
+	 *            {@link DateField}; <b>not</b> allowed to be null.
+	 * @param patterns
+	 *            The {@link OptionPattern}s to apply to the new component; may be
+	 *            null or empty, then nothing will be applied. Will be applied in
+	 *            the given order.
+	 * @return A new {@link DateField} instance, bound to the given
+	 *         {@link ModelProperty}; never null
+	 */
+	@SafeVarargs
+	public final <PropertyType> DateField bindDateFieldForProperty(ModelProperty<ModelType, PropertyType> property,
+			Converter<LocalDate, PropertyType> converter, OptionPattern<? super DateField>... patterns) {
+		return buildAndBind(ComponentFactory::buildDateField, property, converter, patterns);
+	}
+
+	/**
+	 * Directly builds a single {@link DateTimeField} and binds it.
+	 * 
+	 * @param property
+	 *            The {@link ModelProperty} to bind the new {@link DateTimeField} to;
+	 *            <b>not</b> allowed to be null.
+	 * @param patterns
+	 *            The {@link OptionPattern}s to apply to the new component; may be
+	 *            null or empty, then nothing will be applied. Will be applied in
+	 *            the given order.
+	 * @return A new {@link DateTimeField} instance, bound to the given
+	 *         {@link ModelProperty}; never null
+	 */
+	@SafeVarargs
+	public final DateTimeField bindDateTimeFieldForProperty(ModelProperty<ModelType, LocalDateTime> property,
+			OptionPattern<? super DateTimeField>... patterns) {
+		return buildAndBind(ComponentFactory::buildDateTimeField, property, patterns);
+	}
+
+	/**
+	 * Directly builds a single {@link DateTimeField} and binds it.
+	 * 
+	 * @param <PropertyType>
+	 *            The type of the property to bind.
+	 * @param property
+	 *            The {@link ModelProperty} to bind the new {@link DateTimeField} to;
+	 *            <b>not</b> allowed to be null.
+	 * @param converter
+	 *            The converter to convert the property type to the type used by the
+	 *            {@link DateTimeField}; <b>not</b> allowed to be null.
+	 * @param patterns
+	 *            The {@link OptionPattern}s to apply to the new component; may be
+	 *            null or empty, then nothing will be applied. Will be applied in
+	 *            the given order.
+	 * @return A new {@link DateTimeField} instance, bound to the given
+	 *         {@link ModelProperty}; never null
+	 */
+	@SafeVarargs
+	public final <PropertyType> DateTimeField bindDateTimeFieldForProperty(ModelProperty<ModelType, PropertyType> property,
+			Converter<LocalDateTime, PropertyType> converter, OptionPattern<? super DateTimeField>... patterns) {
+		return buildAndBind(ComponentFactory::buildDateTimeField, property, converter, patterns);
 	}
 
 	// ##############################################################################################################
