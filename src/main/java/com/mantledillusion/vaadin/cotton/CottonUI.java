@@ -453,7 +453,7 @@ public abstract class CottonUI extends com.vaadin.ui.UI {
 					+ "' could not be shutdown correctly; an error occurred during notifying event bus subscribers of the shutdown: "
 					+ t.getMessage(), t);
 		} finally {
-			this.injector.destroyAll();
+			this.injector.destroyInjector();
 		}
 	}
 
