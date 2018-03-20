@@ -4,7 +4,7 @@
 
 	<groupId>com.mantledillusion.vaadin</groupId>
 	<artifactId>cotton</artifactId>
-	<version>1.0.0.ALPHA5</version>
+	<version>1.0.0.ALPHA6</version>
 
 	<name>Cotton</name>
 	<description>Cotton is a Vaadin extension for automatic url pathing, MVP injection and advanced data binding.</description>
@@ -36,7 +36,7 @@
 
 		<!-- maven dependency versions -->
 		<com.vaadin.version>8.3.1</com.vaadin.version>
-		<injection.hura.version>1.0.0.ALPHA5</injection.hura.version>
+		<injection.hura.version>1.0.0.ALPHA6</injection.hura.version>
 		<data.epiphy.version>1.0.0</data.epiphy.version>
 		<slf4j.version>1.7.25</slf4j.version>
 		<junit.version>4.12</junit.version>
