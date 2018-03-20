@@ -44,7 +44,7 @@ public abstract class ModelAccessor<ModelType> extends ModelBinder<ModelType> {
 
 	@SuppressWarnings("rawtypes")
 	private static final ValidationErrorRegistry EMPTY_ERROR_REGISTRY = new ValidationErrorRegistry<>();
-	
+
 	@Inject(value = IndexContext.SINGLETON_ID, injectionMode = InjectionMode.EXPLICIT)
 	private IndexContext indexContext = IndexContext.EMPTY;
 
@@ -52,7 +52,7 @@ public abstract class ModelAccessor<ModelType> extends ModelBinder<ModelType> {
 
 	private Binder<ModelType> binder = new Binder<>();
 	private final Map<ModelProperty<ModelType, ?>, Set<BindingReference>> boundFields = new IdentityHashMap<>();
-	
+
 	@SuppressWarnings("unchecked")
 	private ValidationErrorRegistry<ModelType> validationErrors = EMPTY_ERROR_REGISTRY;
 
@@ -214,12 +214,25 @@ public abstract class ModelAccessor<ModelType> extends ModelBinder<ModelType> {
 	}
 
 	@Override
-	public final <FieldType extends HasValue<PropertyType>, PropertyType> FieldType bindToProperty(FieldType field,
-			ModelProperty<ModelType, PropertyType> property) {
+	public final <FieldType extends HasValue<PropertyValueType>, PropertyValueType> FieldType bindToProperty(
+			FieldType field, ModelProperty<ModelType, PropertyValueType> property) {
 		if (field == null) {
 			throw new IllegalArgumentException("Cannot bind a null HasValue.");
 		}
-		bind(property, this.binder.forField(field), () -> field.setValue(ModelAccessor.this.getProperty(property)));
+
+		BindingBuilder<ModelType, PropertyValueType> builder = this.binder.forField(field);
+		HasValueResetter<PropertyValueType> resetter;
+		if (field.getEmptyValue() != null) {
+			builder = builder.withNullRepresentation(field.getEmptyValue());
+			resetter = () -> {
+				PropertyValueType propertyValue = ModelAccessor.this.getProperty(property);
+				field.setValue(propertyValue == null ? field.getEmptyValue() : propertyValue);
+			};
+		} else {
+			resetter = () -> field.setValue(ModelAccessor.this.getProperty(property));
+		}
+
+		bind(property, builder, resetter);
 		return field;
 	}
 
@@ -232,8 +245,22 @@ public abstract class ModelAccessor<ModelType> extends ModelBinder<ModelType> {
 		} else if (converter == null) {
 			throw new IllegalArgumentException("Cannot bind using a null converter.");
 		}
-		bind(property, this.binder.forField(field).withConverter(converter), () -> field.setValue(
-				converter.convertToPresentation(ModelAccessor.this.getProperty(property), new ValueContext())));
+
+		BindingBuilder<ModelType, FieldValueType> builder = this.binder.forField(field);
+		HasValueResetter<PropertyValueType> resetter;
+		if (field.getEmptyValue() != null) {
+			builder = builder.withNullRepresentation(field.getEmptyValue());
+			resetter = () -> {
+				FieldValueType propertyValue = converter.convertToPresentation(ModelAccessor.this.getProperty(property),
+						new ValueContext());
+				field.setValue(propertyValue == null ? field.getEmptyValue() : propertyValue);
+			};
+		} else {
+			resetter = () -> field.setValue(
+					converter.convertToPresentation(ModelAccessor.this.getProperty(property), new ValueContext()));
+		}
+
+		bind(property, builder.withConverter(converter), resetter);
 		return field;
 	}
 
