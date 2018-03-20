@@ -42,6 +42,9 @@ import com.vaadin.server.Setter;
  */
 public abstract class ModelAccessor<ModelType> extends ModelBinder<ModelType> {
 
+	@SuppressWarnings("rawtypes")
+	private static final ValidationErrorRegistry EMPTY_ERROR_REGISTRY = new ValidationErrorRegistry<>();
+	
 	@Inject(value = IndexContext.SINGLETON_ID, injectionMode = InjectionMode.EXPLICIT)
 	private IndexContext indexContext = IndexContext.EMPTY;
 
@@ -49,7 +52,9 @@ public abstract class ModelAccessor<ModelType> extends ModelBinder<ModelType> {
 
 	private Binder<ModelType> binder = new Binder<>();
 	private final Map<ModelProperty<ModelType, ?>, Set<BindingReference>> boundFields = new IdentityHashMap<>();
-	private ValidationErrorRegistry<ModelType> validationErrors = new ValidationErrorRegistry<ModelType>();
+	
+	@SuppressWarnings("unchecked")
+	private ValidationErrorRegistry<ModelType> validationErrors = EMPTY_ERROR_REGISTRY;
 
 	/**
 	 * Constructor.
@@ -72,8 +77,6 @@ public abstract class ModelAccessor<ModelType> extends ModelBinder<ModelType> {
 
 	@Process(Phase.DESTROY)
 	private void releaseReferences() {
-		this.validationErrors = new ValidationErrorRegistry<ModelType>();
-
 		for (Set<BindingReference> references : this.boundFields.values()) {
 			for (BindingReference reference : references) {
 				reference.destroyBinding();
@@ -308,10 +311,11 @@ public abstract class ModelAccessor<ModelType> extends ModelBinder<ModelType> {
 	// ######################################################################################################################################
 
 	@Override
+	@SuppressWarnings("unchecked")
 	final void applyErrors(ValidationErrorRegistry<ModelType> errorRegistry) {
 		this.validationErrors = errorRegistry;
 		this.binder.validate();
-		this.validationErrors.errorMessages.clear();
+		this.validationErrors = EMPTY_ERROR_REGISTRY;
 		for (ModelAccessor<ModelType> child : getChildren()) {
 			child.applyErrors(errorRegistry);
 		}
