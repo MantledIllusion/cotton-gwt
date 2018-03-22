@@ -7,8 +7,10 @@ import java.lang.annotation.Annotation;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
+import com.mantledillusion.injection.hura.annotation.Inspected;
 import com.mantledillusion.injection.hura.annotation.Validated;
 import com.mantledillusion.vaadin.cotton.User;
+import com.mantledillusion.vaadin.cotton.viewpresenter.View.RestrictedInspector;
 import com.mantledillusion.vaadin.cotton.viewpresenter.View.RestrictedValidator;
 
 /**
@@ -18,6 +20,7 @@ import com.mantledillusion.vaadin.cotton.viewpresenter.View.RestrictedValidator;
 @Retention(RUNTIME)
 @Target(TYPE)
 @Validated(RestrictedValidator.class)
+@Inspected(RestrictedInspector.class)
 public @interface Restricted {
 
 	/**

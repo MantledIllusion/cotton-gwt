@@ -26,6 +26,7 @@ import javax.servlet.http.Cookie;
 import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.collections4.SetUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -617,7 +618,7 @@ public abstract class CottonUI extends com.vaadin.ui.UI {
 				try {
 					doDisplay(this.urlRegistry.getViewAt(urlPath));
 				} catch (Throwable t) {
-					Throwable cause = t.getCause();
+					Throwable cause = ExceptionUtils.getRootCause(t);
 					if (cause instanceof WebException
 							&& ((WebException) cause).getErrorCode() == HttpErrorCodes.HTTP403_FORBIDDEN
 							&& this.user == null) {
@@ -969,10 +970,15 @@ public abstract class CottonUI extends com.vaadin.ui.UI {
 		}
 	}
 
-	private boolean isUserChangeAllowed(CottonUI.UserChangeType userChangeType) {
+	private enum UserChangeAllowance {
+		ALLOW, REFRESH, DECLINE;
+	}
+
+	private UserChangeAllowance isUserChangeAllowed(CottonUI.UserChangeType userChangeType) {
 		UserChangeAnnouncementEvent event = new UserChangeAnnouncementEvent(userChangeType);
 		this.eventBus.dispatch(event, null);
-		return event.doAccept;
+		return event.doAccept ? (event.doRefresh ? UserChangeAllowance.REFRESH : UserChangeAllowance.ALLOW)
+				: UserChangeAllowance.DECLINE;
 	}
 
 	private void notifyUserAwares(CottonUI.UserChangeType userChangeType) {
@@ -1010,6 +1016,7 @@ public abstract class CottonUI extends com.vaadin.ui.UI {
 
 		private final UserChangeType changeType;
 		private boolean doAccept = true;
+		private boolean doRefresh = false;
 
 		private UserChangeAnnouncementEvent(UserChangeType changeType) {
 			this.changeType = changeType;
@@ -1024,8 +1031,18 @@ public abstract class CottonUI extends com.vaadin.ui.UI {
 			return changeType;
 		}
 
+		/**
+		 * Marks the requested user change to be declined.
+		 */
 		public void decline() {
 			this.doAccept = false;
+		}
+
+		/**
+		 * Marks the requested user change to cause a refresh when performed.
+		 */
+		public void refreshAfterChange() {
+			this.doRefresh = true;
 		}
 	}
 
@@ -1060,8 +1077,13 @@ public abstract class CottonUI extends com.vaadin.ui.UI {
 	}
 
 	final boolean logIn(User user) {
-		boolean allow = isUserChangeAllowed(CottonUI.UserChangeType.LOGIN);
-		if (allow) {
+		if (this.user != null) {
+			throw new WebException(HttpErrorCodes.HTTP902_ILLEGAL_STATE_ERROR,
+					"There already is a user logged in; perform a logout first.");
+		}
+
+		UserChangeAllowance allow = isUserChangeAllowed(CottonUI.UserChangeType.LOGIN);
+		if (allow != UserChangeAllowance.DECLINE) {
 			if (user == null) {
 				throw new WebException(HttpErrorCodes.HTTP901_ILLEGAL_ARGUMENT_ERROR, "Unable to log in a null user.");
 			} else if (this.user != null) {
@@ -1072,27 +1094,39 @@ public abstract class CottonUI extends com.vaadin.ui.UI {
 			this.user = user;
 			appendToLog(
 					SessionLogEntry.of(SessionLogContext.USER, SessionLogType.INFO, "User '" + user + "' logged in."));
+			if (allow == UserChangeAllowance.REFRESH) {
+				refresh();
+			}
 			notifyUserAwares(CottonUI.UserChangeType.LOGIN);
+			return true;
 		} else {
 			appendToLog(SessionLogEntry.of(SessionLogContext.USER, SessionLogType.WARNING,
 					"Login of user '" + user + "' denied."));
+			return false;
 		}
-		return allow;
 	}
 
 	final boolean logOut() {
-		boolean allow = isUserChangeAllowed(CottonUI.UserChangeType.LOGOUT);
-		if (allow && this.user != null) {
-			CottonUI.LOGGER.info("User '" + this.user + "' logged out.");
-			this.user = null;
-			appendToLog(
-					SessionLogEntry.of(SessionLogContext.USER, SessionLogType.INFO, "User '" + user + "' logged out."));
-			notifyUserAwares(CottonUI.UserChangeType.LOGOUT);
+		if (this.user != null) {
+			UserChangeAllowance allow = isUserChangeAllowed(CottonUI.UserChangeType.LOGOUT);
+			if (allow != UserChangeAllowance.DECLINE) {
+				CottonUI.LOGGER.info("User '" + this.user + "' logged out.");
+				this.user = null;
+				appendToLog(SessionLogEntry.of(SessionLogContext.USER, SessionLogType.INFO,
+						"User '" + user + "' logged out."));
+				if (allow == UserChangeAllowance.REFRESH) {
+					refresh();
+				}
+				notifyUserAwares(CottonUI.UserChangeType.LOGOUT);
+				return true;
+			} else {
+				appendToLog(SessionLogEntry.of(SessionLogContext.USER, SessionLogType.WARNING,
+						"Logout of user '" + user + "' denied."));
+				return false;
+			}
 		} else {
-			appendToLog(SessionLogEntry.of(SessionLogContext.USER, SessionLogType.WARNING,
-					"Logout of user '" + user + "' denied."));
+			return false;
 		}
-		return allow;
 	}
 
 	final boolean isLoggedIn() {
