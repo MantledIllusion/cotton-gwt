@@ -27,8 +27,8 @@ import com.mantledillusion.vaadin.cotton.exception.WebException.HttpErrorCodes;
 import com.mantledillusion.vaadin.cotton.model.ValidationContext.ValidationErrorRegistry;
 
 /**
- * Model Container that enables model browsing via {@link ModelProperty} and
- * can be used by {@link ModelAccessor}s as model data source.
+ * Model Container that enables model browsing via {@link ModelProperty} and can
+ * be used by {@link ModelAccessor}s as model data source.
  * <p>
  * NOTE: Should be injected, since the {@link Injector} handles the instance's
  * life cycles.
@@ -36,9 +36,8 @@ import com.mantledillusion.vaadin.cotton.model.ValidationContext.ValidationError
  * {@link ModelContainer}s are always unindexed; for accessing
  * {@link ModelPropertyList}s or their children in this container's model
  * instance, either provide an {@link IndexContext} to the containers several
- * data {@link Method}s or create an {@link ModelAccessor} with this
- * container as a parent that is able to index and proxy calls to is data
- * {@link Method}s.
+ * data {@link Method}s or create an {@link ModelAccessor} with this container
+ * as a parent that is able to index and proxy calls to is data {@link Method}s.
  *
  * @param <ModelType>
  *            The root type of the data model the {@link ModelContainer} can
@@ -394,8 +393,7 @@ public final class ModelContainer<ModelType> extends ModelProxy<ModelType> {
 					throw new WebException(HttpErrorCodes.HTTP500_INTERNAL_SERVER_ERROR,
 							"The persistor " + persistor.getClass().getSimpleName()
 									+ " threw an exception while persisting the " + instance.getClass().getSimpleName()
-									+ " instance " + instance + " at InjectableIndexContext " + possibleContext + "; "
-									+ t.getMessage(),
+									+ " instance " + instance + " at InjectableIndexContext " + possibleContext + ".",
 							t);
 				}
 			}

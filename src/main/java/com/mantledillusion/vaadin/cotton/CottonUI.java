@@ -451,8 +451,8 @@ public abstract class CottonUI extends com.vaadin.ui.UI {
 			this.eventBus.dispatch(new ShutdownEvent(), null);
 		} catch (Throwable t) {
 			throw new WebException(HttpErrorCodes.HTTP500_INTERNAL_SERVER_ERROR, "The UI instance '" + this
-					+ "' could not be shutdown correctly; an error occurred during notifying event bus subscribers of the shutdown: "
-					+ t.getMessage(), t);
+					+ "' could not be shutdown correctly; an error occurred during notifying event bus subscribers of the shutdown.",
+					t);
 		} finally {
 			this.injector.destroyInjector();
 		}
