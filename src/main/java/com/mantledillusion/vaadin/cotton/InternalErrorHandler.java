@@ -21,9 +21,8 @@ import com.mantledillusion.vaadin.cotton.exception.WebException;
 import com.mantledillusion.vaadin.cotton.exception.WebException.HttpErrorCodes;
 import com.vaadin.server.DefaultErrorHandler;
 import com.vaadin.server.ErrorHandler;
-import com.vaadin.server.ErrorMessage;
+import com.vaadin.server.SystemError;
 import com.vaadin.shared.ui.ContentMode;
-import com.vaadin.shared.ui.ErrorLevel;
 import com.vaadin.ui.Alignment;
 import com.vaadin.ui.Component;
 import com.vaadin.ui.HorizontalLayout;
@@ -82,24 +81,13 @@ final class InternalErrorHandler implements ErrorHandler {
 
 		@Override
 		protected void handleError(Throwable t) {
-			this.errorTitle.setValue("<b><font size=\"5\">" + t.getClass().getSimpleName() + ":</font></b>");
-			this.errorLabel.setValue("<font size=\"4\">" + t.getLocalizedMessage() + "</font>");
+			Throwable rootCause = ExceptionUtils.getRootCause(t);
+			
+			this.errorTitle.setValue("<b><font size=\"5\">" + rootCause.getClass().getSimpleName() + ":</font></b>");
+			this.errorLabel.setValue("<font size=\"4\">" + rootCause.getLocalizedMessage() + "</font>");
 
 			this.errorText.setValue(ExceptionUtils.getStackTrace(t));
-			this.errorText.setComponentError(new ErrorMessage() {
-
-				private static final long serialVersionUID = 1L;
-
-				@Override
-				public String getFormattedHtmlMessage() {
-					return StringUtils.EMPTY;
-				}
-
-				@Override
-				public ErrorLevel getErrorLevel() {
-					return ErrorLevel.SYSTEM;
-				}
-			});
+			this.errorText.setComponentError(new SystemError((String) null));
 			this.errorText.setReadOnly(true);
 		}
 	}

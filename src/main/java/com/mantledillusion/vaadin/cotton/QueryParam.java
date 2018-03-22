@@ -75,7 +75,7 @@ public final class QueryParam {
 						"The field '" + annotatedElement.getName() + "' in the type '"
 								+ annotatedElement.getDeclaringClass().getSimpleName() + "' is annotated with @"
 								+ RequiredQueryParam.class.getSimpleName() + ", but the matcher  '"
-								+ annotationInstance.matcher() + "' is no valid pattern: " + e.getMessage(),
+								+ annotationInstance.matcher() + "' is no valid pattern.",
 						e);
 			}
 

@@ -110,7 +110,7 @@ public abstract class View extends Composite {
 		@Construct
 		private RestrictedInspector() {
 		}
-		
+
 		@Override
 		public void inspect(Object bean, Restricted annotationInstance, Class<? extends View> annotatedElement,
 				TemporalInjectorCallback callback) throws Exception {
@@ -264,8 +264,8 @@ public abstract class View extends Composite {
 						throw new WebException(HttpErrorCodes.HTTP906_WIRING_ERROR, "The view type "
 								+ getClass().getSimpleName() + " is wired to the subscriber type "
 								+ bean.getClass().getSimpleName()
-								+ "; setting an instance of that view on an instance of that subscriber however failed: "
-								+ t.getMessage(), t);
+								+ "; setting an instance of that view on an instance of that subscriber however failed.",
+								t);
 					}
 				}
 			};
@@ -311,7 +311,7 @@ public abstract class View extends Composite {
 			root = setupUI(reg);
 		} catch (Throwable t) {
 			throw new WebException(HttpErrorCodes.HTTP500_INTERNAL_SERVER_ERROR,
-					"Unable to initialize view " + getClass().getSimpleName() + ": " + t.getMessage(), t);
+					"Unable to initialize view " + getClass().getSimpleName() + ".", t);
 		}
 		reg.canRegister = false;
 		if (root == null) {
