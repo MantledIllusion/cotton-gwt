@@ -17,9 +17,14 @@ import com.mantledillusion.injection.hura.AnnotationValidator;
 import com.mantledillusion.injection.hura.BeanAllocation;
 import com.mantledillusion.injection.hura.Blueprint.TypedBlueprint;
 import com.mantledillusion.injection.hura.Injector;
+import com.mantledillusion.injection.hura.Inspector;
 import com.mantledillusion.injection.hura.Injector.TemporalInjectorCallback;
+import com.mantledillusion.injection.hura.annotation.Construct;
 import com.mantledillusion.injection.hura.annotation.Define;
 import com.mantledillusion.injection.hura.annotation.Process;
+import com.mantledillusion.vaadin.cotton.CottonUI.UserChangeAnnouncementEvent;
+import com.mantledillusion.vaadin.cotton.CottonUI.UserChangeType;
+import com.mantledillusion.vaadin.cotton.EventBusSubscriber;
 import com.mantledillusion.vaadin.cotton.UrlResourceRegistry;
 import com.mantledillusion.vaadin.cotton.WebEnv;
 import com.mantledillusion.vaadin.cotton.exception.WebException;
@@ -95,6 +100,51 @@ public abstract class View extends Composite {
 						"The @" + Restricted.class.getSimpleName() + " annotation can only be used on "
 								+ View.class.getSimpleName() + " implementations; the type '"
 								+ annotatedElement.getSimpleName() + "' however is not.");
+			}
+		}
+	}
+
+	static class RestrictedInspector extends EventBusSubscriber
+			implements Inspector<Restricted, Class<? extends View>> {
+
+		@Construct
+		private RestrictedInspector() {
+		}
+		
+		@Override
+		public void inspect(Object bean, Restricted annotationInstance, Class<? extends View> annotatedElement,
+				TemporalInjectorCallback callback) throws Exception {
+			List<Class<?>> restrictions = TypeEssentials.getSuperClassesAnnotatedWith(annotatedElement,
+					Restricted.class);
+
+			if (!restrictions.isEmpty() && !WebEnv.isLoggedIn()) {
+				throw new WebException(HttpErrorCodes.HTTP403_FORBIDDEN, "The view '" + annotatedElement.getSimpleName()
+						+ "' requires a user to be logged in, but there is none.");
+			}
+
+			Set<String> requiredUserRights = new HashSet<>();
+			for (Class<?> type : restrictions) {
+				Restricted restricted = type.getAnnotation(Restricted.class);
+				if (restricted.value() != null) {
+					for (String requiredUserRight : restricted.value()) {
+						if (requiredUserRight != null) {
+							requiredUserRights.add(requiredUserRight);
+						}
+					}
+				}
+			}
+
+			if (!requiredUserRights.isEmpty() && !WebEnv.areAllowed(requiredUserRights)) {
+				throw new WebException(HttpErrorCodes.HTTP403_FORBIDDEN,
+						"The view '" + annotatedElement.getSimpleName() + "' requires the user to have the rights "
+								+ requiredUserRights + ", but one ore more are missing.");
+			}
+		}
+
+		@Subscribe
+		private void handleUserChangeAnnounced(UserChangeAnnouncementEvent event) {
+			if (event.getChangeType() == UserChangeType.LOGOUT) {
+				event.refreshAfterChange();
 			}
 		}
 	}
@@ -195,31 +245,6 @@ public abstract class View extends Composite {
 	@SuppressWarnings("rawtypes")
 	@Process
 	private <T2 extends View, T3 extends Presenter<T2>> void initialize(TemporalInjectorCallback callback) {
-
-		List<Class<?>> restrictions = TypeEssentials.getSuperClassesAnnotatedWith(getClass(), Restricted.class);
-
-		if (!restrictions.isEmpty() && !WebEnv.isLoggedIn()) {
-			throw new WebException(HttpErrorCodes.HTTP403_FORBIDDEN, "The view '" + getClass().getSimpleName()
-					+ "' requires a user to be logged in, but there is none.");
-		}
-
-		Set<String> requiredUserRights = new HashSet<>();
-		for (Class<?> type : restrictions) {
-			Restricted restricted = type.getAnnotation(Restricted.class);
-			if (restricted.value() != null) {
-				for (String requiredUserRight : restricted.value()) {
-					if (requiredUserRight != null) {
-						requiredUserRights.add(requiredUserRight);
-					}
-				}
-			}
-		}
-
-		if (!requiredUserRights.isEmpty() && !WebEnv.areAllowed(requiredUserRights)) {
-			throw new WebException(HttpErrorCodes.HTTP403_FORBIDDEN,
-					"The view '" + getClass().getSimpleName() + "' requires the user to have the rights "
-							+ requiredUserRights + ", but one ore more are missing.");
-		}
 
 		TemporalActiveComponentRegistry reg = setupUI();
 
