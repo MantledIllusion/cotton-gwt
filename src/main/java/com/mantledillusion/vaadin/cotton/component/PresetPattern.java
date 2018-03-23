@@ -40,43 +40,26 @@ import com.vaadin.ui.VerticalLayout;
 /**
  * Option pattern for {@link AbstractComponent} individual sub-type options.
  */
-public abstract class PresetPattern<T extends AbstractComponent> extends OptionPattern<T> {
+public abstract class PresetPattern {
+
+	public static abstract class TypedPresetPattern<T extends AbstractComponent> extends OptionPattern<T> {
+
+	}
 
 	// ##############################################################################################################
 	// ################################################ BUILDER #####################################################
 	// ##############################################################################################################
 
 	/**
-	 * Base type for {@link PresetPattern} builders.
-	 * 
-	 * @param <T>
-	 *            The {@link AbstractComponent} implementing type a build preset
-	 *            pattern can be applied on.
-	 */
-	public interface PresetBuilder<T extends AbstractComponent> {
-
-		/**
-		 * Builds a {@link PresetPattern} of the {@link AbstractComponent} implementing
-		 * type this builder uses.
-		 * 
-		 * @return A new {@link PresetPattern} instance; never null
-		 */
-		public PresetPattern<T> build();
-	}
-
-	/**
-	 * {@link PresetBuilder} implementation for {@link PresetPattern}s that can be
-	 * applied on {@link AbstractOrderedLayout}s.
+	 * Builder for {@link TypedPresetPattern}s that can be applied on
+	 * {@link AbstractOrderedLayout}s.
 	 * <P>
-	 * Possible targets for the build {@link PresetPattern} are:<br>
+	 * Possible targets for the build {@link TypedPresetPattern} are:<br>
 	 * - {@link FormLayout}<br>
 	 * - {@link HorizontalLayout}<br>
 	 * - {@link VerticalLayout}
 	 */
-	public static final class OrderedLayoutPresetBuilder implements PresetBuilder<AbstractOrderedLayout> {
-
-		private Boolean spacing;
-		private MarginInfo margin;
+	public static final class OrderedLayoutPresetBuilder {
 
 		private OrderedLayoutPresetBuilder() {
 		}
@@ -86,21 +69,8 @@ public abstract class PresetPattern<T extends AbstractComponent> extends OptionP
 		 * 
 		 * @return this
 		 */
-		public OrderedLayoutPresetBuilder withSpacing() {
-			this.spacing = true;
-			return this;
-		}
-
-		/**
-		 * Instruct the {@link AbstractOrderedLayout} to use spacing between components,
-		 * but no margin at its bounds.
-		 * 
-		 * @return A new {@link PresetPattern} with the values currently set; never null
-		 */
-		public PresetPattern<AbstractOrderedLayout> withSpacingOnly() {
-			this.spacing = true;
-			this.margin = new MarginInfo(false);
-			return build();
+		public OrderedLayoutMarginPresetBuilder withSpacing() {
+			return new OrderedLayoutMarginPresetBuilder(true);
 		}
 
 		/**
@@ -109,50 +79,28 @@ public abstract class PresetPattern<T extends AbstractComponent> extends OptionP
 		 * 
 		 * @return this
 		 */
-		public OrderedLayoutPresetBuilder withoutSpacing() {
-			this.spacing = false;
-			return this;
+		public OrderedLayoutMarginPresetBuilder withoutSpacing() {
+			return new OrderedLayoutMarginPresetBuilder(false);
 		}
 
 		/**
-		 * Instruct the {@link AbstractOrderedLayout} to use a margin at its bounds.
+		 * Instruct the {@link AbstractOrderedLayout} to use spacing between components,
+		 * but no margin at its bounds.
 		 * 
-		 * @return this
+		 * @return A new {@link TypedPresetPattern} with the values currently set; never null
 		 */
-		public OrderedLayoutPresetBuilder withMargin() {
-			this.margin = new MarginInfo(true);
-			return this;
-		}
-
-		/**
-		 * Instruct the {@link AbstractOrderedLayout} to use a margin at specific
-		 * bounds.
-		 * 
-		 * @param top
-		 *            Whether or not to show a margin at the top of the layout.
-		 * @param right
-		 *            Whether or not to show a margin at the right of the layout.
-		 * @param bottom
-		 *            Whether or not to show a margin at the bottom of the layout.
-		 * @param left
-		 *            Whether or not to show a margin at the left of the layout.
-		 * @return this
-		 */
-		public OrderedLayoutPresetBuilder withMargin(boolean top, boolean right, boolean bottom, boolean left) {
-			this.margin = new MarginInfo(top, right, bottom, left);
-			return this;
+		public TypedPresetPattern<AbstractOrderedLayout> withSpacingOnly() {
+			return new OrderedLayoutMarginPresetBuilder(true).andWithoutMargin();
 		}
 
 		/**
 		 * Instruct the {@link AbstractOrderedLayout} to use a margin at its bounds, but
 		 * no spacing between components.
 		 * 
-		 * @return A new {@link PresetPattern} with the values currently set; never null
+		 * @return A new {@link TypedPresetPattern} with the values currently set; never null
 		 */
-		public PresetPattern<AbstractOrderedLayout> withMarginOnly() {
-			this.spacing = false;
-			this.margin = new MarginInfo(true);
-			return build();
+		public TypedPresetPattern<AbstractOrderedLayout> withMarginOnly() {
+			return new OrderedLayoutMarginPresetBuilder(false).andMargin();
 		}
 
 		/**
@@ -167,60 +115,103 @@ public abstract class PresetPattern<T extends AbstractComponent> extends OptionP
 		 *            Whether or not to show a margin at the bottom of the layout.
 		 * @param left
 		 *            Whether or not to show a margin at the left of the layout.
-		 * @return A new {@link PresetPattern} with the values currently set; never null
+		 * @return A new {@link TypedPresetPattern} with the values currently set; never null
 		 */
-		public PresetPattern<AbstractOrderedLayout> withMarginOnly(boolean top, boolean right, boolean bottom,
+		public TypedPresetPattern<AbstractOrderedLayout> withMarginOnly(boolean top, boolean right, boolean bottom,
 				boolean left) {
-			this.spacing = false;
-			this.margin = new MarginInfo(top, right, bottom, left);
-			return build();
-		}
-
-		/**
-		 * Instruct the {@link AbstractOrderedLayout} to not use a margin at its bounds.
-		 * 
-		 * @return this
-		 */
-		public OrderedLayoutPresetBuilder withoutMargin() {
-			this.margin = new MarginInfo(false);
-			return this;
+			return new OrderedLayoutMarginPresetBuilder(false).andMargin(top, right, bottom, left);
 		}
 
 		/**
 		 * Instruct the {@link AbstractOrderedLayout} to use a margin at its bounds and
 		 * spacing between components.
 		 * 
-		 * @return A new {@link PresetPattern} with the values currently set; never null
+		 * @return A new {@link TypedPresetPattern} with the values currently set; never null
 		 */
-		public PresetPattern<AbstractOrderedLayout> withAllGaps() {
-			this.spacing = true;
-			this.margin = new MarginInfo(true);
-			return build();
+		public TypedPresetPattern<AbstractOrderedLayout> withAllGaps() {
+			return new OrderedLayoutMarginPresetBuilder(true).andMargin();
 		}
 
 		/**
 		 * Instruct the {@link AbstractOrderedLayout} to neither use a margin at its
 		 * bounds, nor spacing between components.
 		 * 
-		 * @return A new {@link PresetPattern} with the values currently set; never null
+		 * @return A new {@link TypedPresetPattern} with the values currently set; never null
 		 */
-		public PresetPattern<AbstractOrderedLayout> withoutAnyGap() {
-			this.spacing = false;
-			this.margin = new MarginInfo(false);
+		public TypedPresetPattern<AbstractOrderedLayout> withoutAnyGap() {
+			return new OrderedLayoutMarginPresetBuilder(false).andWithoutMargin();
+		}
+	}
+
+	/**
+	 * Builder for {@link TypedPresetPattern}s that can be applied on
+	 * {@link AbstractOrderedLayout}s.
+	 * <P>
+	 * Possible targets for the build {@link TypedPresetPattern} are:<br>
+	 * - {@link FormLayout}<br>
+	 * - {@link HorizontalLayout}<br>
+	 * - {@link VerticalLayout}
+	 */
+	public static final class OrderedLayoutMarginPresetBuilder {
+
+		private final Boolean spacing;
+		private MarginInfo margin;
+
+		private OrderedLayoutMarginPresetBuilder(Boolean spacing) {
+			this.spacing = spacing;
+		}
+
+		/**
+		 * Instruct the {@link AbstractOrderedLayout} to use a margin at its bounds.
+		 * <p>
+		 * Builds a new pattern on every invocation.
+		 * 
+		 * @return A new {@link TypedPresetPattern} with the values currently set; never null
+		 */
+		public TypedPresetPattern<AbstractOrderedLayout> andMargin() {
+			this.margin = new MarginInfo(true);
 			return build();
 		}
 
 		/**
+		 * Instruct the {@link AbstractOrderedLayout} to use a margin at specific
+		 * bounds.
+		 * <p>
 		 * Builds a new pattern on every invocation.
 		 * 
-		 * @return A new {@link PresetPattern} with the values currently set; never null
+		 * @param top
+		 *            Whether or not to show a margin at the top of the layout.
+		 * @param right
+		 *            Whether or not to show a margin at the right of the layout.
+		 * @param bottom
+		 *            Whether or not to show a margin at the bottom of the layout.
+		 * @param left
+		 *            Whether or not to show a margin at the left of the layout.
+		 * @return A new {@link TypedPresetPattern} with the values currently set; never null
 		 */
-		@Override
-		public PresetPattern<AbstractOrderedLayout> build() {
-			return new PresetPattern<AbstractOrderedLayout>() {
+		public TypedPresetPattern<AbstractOrderedLayout> andMargin(boolean top, boolean right, boolean bottom,
+				boolean left) {
+			this.margin = new MarginInfo(top, right, bottom, left);
+			return build();
+		}
 
-				private final Boolean spacing = OrderedLayoutPresetBuilder.this.spacing;
-				private final MarginInfo margin = OrderedLayoutPresetBuilder.this.margin;
+		/**
+		 * Instruct the {@link AbstractOrderedLayout} to not use a margin at its bounds.
+		 * <p>
+		 * Builds a new pattern on every invocation.
+		 * 
+		 * @return A new {@link TypedPresetPattern} with the values currently set; never null
+		 */
+		public TypedPresetPattern<AbstractOrderedLayout> andWithoutMargin() {
+			this.margin = new MarginInfo(false);
+			return build();
+		}
+
+		private TypedPresetPattern<AbstractOrderedLayout> build() {
+			return new TypedPresetPattern<AbstractOrderedLayout>() {
+
+				private final Boolean spacing = OrderedLayoutMarginPresetBuilder.this.spacing;
+				private final MarginInfo margin = OrderedLayoutMarginPresetBuilder.this.margin;
 
 				@Override
 				public void apply(AbstractOrderedLayout component) {
@@ -236,7 +227,7 @@ public abstract class PresetPattern<T extends AbstractComponent> extends OptionP
 	}
 
 	/**
-	 * Base type for {@link PresetBuilder}s for {@link AbstractDateField}s.
+	 * Base type for builders for {@link AbstractDateField}s.
 	 *
 	 * @param <B>
 	 *            The type extending this {@link TemporalFieldPresetBuilder}; needed
@@ -249,8 +240,7 @@ public abstract class PresetPattern<T extends AbstractComponent> extends OptionP
 	 *            displayed; for example {@link DateResolution} or
 	 *            {@link DateTimeResolution}.
 	 */
-	public static abstract class TemporalFieldPresetBuilder<B extends TemporalFieldPresetBuilder<B, T, R>, T extends Temporal & TemporalAdjuster & Serializable & Comparable<? super T>, R extends Enum<R>>
-			implements PresetBuilder<AbstractDateField<T, R>> {
+	public static abstract class TemporalFieldPresetBuilder<B extends TemporalFieldPresetBuilder<B, T, R>, T extends Temporal & TemporalAdjuster & Serializable & Comparable<? super T>, R extends Enum<R>> {
 
 		private String dateFormat;
 		private String dateOutOfRangeMessage;
@@ -418,12 +408,11 @@ public abstract class PresetPattern<T extends AbstractComponent> extends OptionP
 		/**
 		 * Builds a new pattern on every invocation.
 		 * 
-		 * @return A new {@link PresetPattern} with the values currently set; never null
+		 * @return A new {@link TypedPresetPattern} with the values currently set; never null
 		 */
-		@Override
-		public PresetPattern<AbstractDateField<T, R>> build() {
+		public TypedPresetPattern<AbstractDateField<T, R>> build() {
 
-			return new PresetPattern<AbstractDateField<T, R>>() {
+			return new TypedPresetPattern<AbstractDateField<T, R>>() {
 
 				private final String dateFormat = TemporalFieldPresetBuilder.this.dateFormat;
 				private final String dateOutOfRangeMsgId = TemporalFieldPresetBuilder.this.dateOutOfRangeMessage;
@@ -467,10 +456,10 @@ public abstract class PresetPattern<T extends AbstractComponent> extends OptionP
 	}
 
 	/**
-	 * {@link PresetBuilder} implementation for {@link PresetPattern}s that can be
-	 * applied on {@link AbstractDateField}s using {@link LocalDate}.
+	 * Builder for {@link TypedPresetPattern}s that can be applied on
+	 * {@link AbstractDateField}s using {@link LocalDate}.
 	 * <P>
-	 * Possible targets for the build {@link PresetPattern} are:<br>
+	 * Possible targets for the build {@link TypedPresetPattern} are:<br>
 	 * - {@link DateField}<br>
 	 * - {@link InlineDateField}
 	 */
@@ -487,10 +476,10 @@ public abstract class PresetPattern<T extends AbstractComponent> extends OptionP
 	}
 
 	/**
-	 * {@link PresetBuilder} implementation for {@link PresetPattern}s that can be
-	 * applied on {@link AbstractDateField}s using {@link LocalDateTime}.
+	 * Builder for {@link TypedPresetPattern}s that can be applied on
+	 * {@link AbstractDateField}s using {@link LocalDateTime}.
 	 * <P>
-	 * Possible targets for the build {@link PresetPattern} are:<br>
+	 * Possible targets for the build {@link TypedPresetPattern} are:<br>
 	 * - {@link DateTimeField}<br>
 	 * - {@link InlineDateTimeField}
 	 */
@@ -506,15 +495,15 @@ public abstract class PresetPattern<T extends AbstractComponent> extends OptionP
 	}
 
 	/**
-	 * {@link PresetBuilder} implementation for {@link PresetPattern}s that can be
-	 * applied on {@link AbstractTextField}s.
+	 * Builder for {@link TypedPresetPattern}s that can be applied on
+	 * {@link AbstractTextField}s.
 	 * <P>
-	 * Possible targets for the build {@link PresetPattern} are:<br>
+	 * Possible targets for the build {@link TypedPresetPattern} are:<br>
 	 * - {@link TextArea}<br>
 	 * - {@link TextField}<br>
 	 * - {@link PasswordField}
 	 */
-	public static final class TextFieldPresetBuilder implements PresetBuilder<AbstractTextField> {
+	public static final class TextFieldPresetBuilder {
 
 		private Integer maxLength;
 		private String placeholder;
@@ -598,11 +587,10 @@ public abstract class PresetPattern<T extends AbstractComponent> extends OptionP
 		/**
 		 * Builds a new pattern on every invocation.
 		 * 
-		 * @return A new {@link PresetPattern} with the values currently set; never null
+		 * @return A new {@link TypedPresetPattern} with the values currently set; never null
 		 */
-		@Override
-		public PresetPattern<AbstractTextField> build() {
-			return new PresetPattern<AbstractTextField>() {
+		public TypedPresetPattern<AbstractTextField> build() {
+			return new TypedPresetPattern<AbstractTextField>() {
 
 				private final Integer maxLength = TextFieldPresetBuilder.this.maxLength;
 				private final String placeholder = TextFieldPresetBuilder.this.placeholder;
@@ -625,10 +613,9 @@ public abstract class PresetPattern<T extends AbstractComponent> extends OptionP
 	}
 
 	/**
-	 * {@link PresetBuilder} implementation for {@link PresetPattern}s that can be
-	 * applied on {@link CheckBox}s.
+	 * Builder for {@link TypedPresetPattern}s that can be applied on {@link CheckBox}s.
 	 */
-	public static final class CheckBoxPresetBuilder implements PresetBuilder<CheckBox> {
+	public static final class CheckBoxPresetBuilder {
 
 		private Boolean readOnly;
 
@@ -659,11 +646,10 @@ public abstract class PresetPattern<T extends AbstractComponent> extends OptionP
 		/**
 		 * Builds a new pattern on every invocation.
 		 * 
-		 * @return A new {@link PresetPattern} with the values currently set; never null
+		 * @return A new {@link TypedPresetPattern} with the values currently set; never null
 		 */
-		@Override
-		public PresetPattern<CheckBox> build() {
-			return new PresetPattern<CheckBox>() {
+		public TypedPresetPattern<CheckBox> build() {
+			return new TypedPresetPattern<CheckBox>() {
 
 				private final Boolean readOnly = CheckBoxPresetBuilder.this.readOnly;
 
@@ -678,10 +664,10 @@ public abstract class PresetPattern<T extends AbstractComponent> extends OptionP
 	}
 
 	/**
-	 * {@link PresetBuilder} implementation for {@link PresetPattern}s that can be
-	 * applied on {@link CheckBoxGroup}s.
+	 * Builder for {@link TypedPresetPattern}s that can be applied on
+	 * {@link CheckBoxGroup}s.
 	 */
-	public static final class CheckBoxGroupPresetBuilder implements PresetBuilder<CheckBoxGroup<?>> {
+	public static final class CheckBoxGroupPresetBuilder {
 
 		private Boolean htmlContentAllowed;
 		private Boolean readOnly;
@@ -735,11 +721,10 @@ public abstract class PresetPattern<T extends AbstractComponent> extends OptionP
 		/**
 		 * Builds a new pattern on every invocation.
 		 * 
-		 * @return A new {@link PresetPattern} with the values currently set; never null
+		 * @return A new {@link TypedPresetPattern} with the values currently set; never null
 		 */
-		@Override
-		public PresetPattern<CheckBoxGroup<?>> build() {
-			return new PresetPattern<CheckBoxGroup<?>>() {
+		public TypedPresetPattern<CheckBoxGroup<?>> build() {
+			return new TypedPresetPattern<CheckBoxGroup<?>>() {
 
 				private final Boolean htmlContentAllowed = CheckBoxGroupPresetBuilder.this.htmlContentAllowed;
 				private final Boolean readOnly = CheckBoxGroupPresetBuilder.this.readOnly;
@@ -758,10 +743,9 @@ public abstract class PresetPattern<T extends AbstractComponent> extends OptionP
 	}
 
 	/**
-	 * {@link PresetBuilder} implementation for {@link PresetPattern}s that can be
-	 * applied on {@link ComboBox}es.
+	 * Builder for {@link TypedPresetPattern}s that can be applied on {@link ComboBox}es.
 	 */
-	public static final class ComboBoxPresetBuilder implements PresetBuilder<ComboBox<?>> {
+	public static final class ComboBoxPresetBuilder {
 
 		private Boolean emptySelectionAllowed;
 		private String emptySelectionCaptionMsgId = StringUtils.EMPTY;
@@ -898,11 +882,10 @@ public abstract class PresetPattern<T extends AbstractComponent> extends OptionP
 		/**
 		 * Builds a new pattern on every invocation.
 		 * 
-		 * @return A new {@link PresetPattern} with the values currently set; never null
+		 * @return A new {@link TypedPresetPattern} with the values currently set; never null
 		 */
-		@Override
-		public PresetPattern<ComboBox<?>> build() {
-			return new PresetPattern<ComboBox<?>>() {
+		public TypedPresetPattern<ComboBox<?>> build() {
+			return new TypedPresetPattern<ComboBox<?>>() {
 
 				private final Boolean emptySelectionAllowed = ComboBoxPresetBuilder.this.emptySelectionAllowed;
 				private final String emptySelectionCaptionMsgId = ComboBoxPresetBuilder.this.emptySelectionCaptionMsgId;
@@ -935,10 +918,10 @@ public abstract class PresetPattern<T extends AbstractComponent> extends OptionP
 	}
 
 	/**
-	 * {@link PresetBuilder} implementation for {@link PresetPattern}s that can be
-	 * applied on {@link RadioButtonGroup}s.
+	 * Builder for {@link TypedPresetPattern}s that can be applied on
+	 * {@link RadioButtonGroup}s.
 	 */
-	public static final class RadioButtonGroupPresetBuilder implements PresetBuilder<RadioButtonGroup<?>> {
+	public static final class RadioButtonGroupPresetBuilder {
 
 		private Boolean htmlContentAllowed;
 		private Boolean readOnly;
@@ -992,11 +975,10 @@ public abstract class PresetPattern<T extends AbstractComponent> extends OptionP
 		/**
 		 * Builds a new pattern on every invocation.
 		 * 
-		 * @return A new {@link PresetPattern} with the values currently set; never null
+		 * @return A new {@link TypedPresetPattern} with the values currently set; never null
 		 */
-		@Override
-		public PresetPattern<RadioButtonGroup<?>> build() {
-			return new PresetPattern<RadioButtonGroup<?>>() {
+		public TypedPresetPattern<RadioButtonGroup<?>> build() {
+			return new TypedPresetPattern<RadioButtonGroup<?>>() {
 
 				private final Boolean htmlContentAllowed = RadioButtonGroupPresetBuilder.this.htmlContentAllowed;
 				private final Boolean readOnly = RadioButtonGroupPresetBuilder.this.readOnly;
@@ -1019,7 +1001,7 @@ public abstract class PresetPattern<T extends AbstractComponent> extends OptionP
 	// ##############################################################################################################
 
 	/**
-	 * Begins a building process for {@link PresetPattern}s for
+	 * Begins a building process for {@link TypedPresetPattern}s for
 	 * {@link AbstractOrderedLayout}s.
 	 * 
 	 * @return A new {@link OrderedLayoutPresetBuilder}; never null
@@ -1029,7 +1011,7 @@ public abstract class PresetPattern<T extends AbstractComponent> extends OptionP
 	}
 
 	/**
-	 * Begins a building process for {@link PresetPattern}s for
+	 * Begins a building process for {@link TypedPresetPattern}s for
 	 * {@link AbstractDateField}s using {@link LocalDate}.
 	 * 
 	 * @return A new {@link DateFieldPresetBuilder}; never null
@@ -1039,7 +1021,7 @@ public abstract class PresetPattern<T extends AbstractComponent> extends OptionP
 	}
 
 	/**
-	 * Begins a building process for {@link PresetPattern}s for
+	 * Begins a building process for {@link TypedPresetPattern}s for
 	 * {@link AbstractDateField}s using {@link LocalDateTime}.
 	 * 
 	 * @return A new {@link DateTimeFieldPresetBuilder}; never null
@@ -1049,7 +1031,7 @@ public abstract class PresetPattern<T extends AbstractComponent> extends OptionP
 	}
 
 	/**
-	 * Begins a building process for {@link PresetPattern}s for
+	 * Begins a building process for {@link TypedPresetPattern}s for
 	 * {@link AbstractTextField}s.
 	 * 
 	 * @return A new {@link TextFieldPresetBuilder}; never null
@@ -1059,7 +1041,7 @@ public abstract class PresetPattern<T extends AbstractComponent> extends OptionP
 	}
 
 	/**
-	 * Begins a building process for {@link PresetPattern}s for {@link CheckBox}s.
+	 * Begins a building process for {@link TypedPresetPattern}s for {@link CheckBox}s.
 	 * 
 	 * @return A new {@link CheckBoxPresetBuilder}; never null
 	 */
@@ -1068,7 +1050,7 @@ public abstract class PresetPattern<T extends AbstractComponent> extends OptionP
 	}
 
 	/**
-	 * Begins a building process for {@link PresetPattern}s for
+	 * Begins a building process for {@link TypedPresetPattern}s for
 	 * {@link CheckBoxGroup}s.
 	 * 
 	 * @return A new {@link CheckBoxGroupPresetBuilder}; never null
@@ -1078,7 +1060,7 @@ public abstract class PresetPattern<T extends AbstractComponent> extends OptionP
 	}
 
 	/**
-	 * Begins a building process for {@link PresetPattern}s for {@link ComboBox}es.
+	 * Begins a building process for {@link TypedPresetPattern}s for {@link ComboBox}es.
 	 * 
 	 * @return A new {@link ComboBoxPresetBuilder}; never null
 	 */
@@ -1087,7 +1069,7 @@ public abstract class PresetPattern<T extends AbstractComponent> extends OptionP
 	}
 
 	/**
-	 * Begins a building process for {@link PresetPattern}s for
+	 * Begins a building process for {@link TypedPresetPattern}s for
 	 * {@link RadioButtonGroup}s.
 	 * 
 	 * @return A new {@link RadioButtonGroupPresetBuilder}; never null
