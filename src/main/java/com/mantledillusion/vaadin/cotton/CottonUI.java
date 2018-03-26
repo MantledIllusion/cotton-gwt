@@ -25,6 +25,7 @@ import javax.servlet.http.Cookie;
 
 import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.collections4.SetUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
@@ -618,7 +619,7 @@ public abstract class CottonUI extends com.vaadin.ui.UI {
 				try {
 					doDisplay(this.urlRegistry.getViewAt(urlPath));
 				} catch (Throwable t) {
-					Throwable cause = ExceptionUtils.getRootCause(t);
+					Throwable cause = ObjectUtils.defaultIfNull(ExceptionUtils.getRootCause(t), t);
 					if (cause instanceof WebException
 							&& ((WebException) cause).getErrorCode() == HttpErrorCodes.HTTP403_FORBIDDEN
 							&& this.user == null) {
