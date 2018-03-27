@@ -1,5 +1,7 @@
 package com.mantledillusion.vaadin.cotton.model;
 
+import java.lang.reflect.Method;
+
 import com.mantledillusion.data.epiphy.ModelProperty;
 import com.mantledillusion.data.epiphy.ModelPropertyList;
 
@@ -35,6 +37,62 @@ public interface ModelHandler<ModelType> {
 	 * @return The current model; might be null if there is no model
 	 */
 	ModelType getModel();
+
+	/**
+	 * Determines whether the given property exists in the model; or to put it
+	 * differently, whether the parent properties of the property are all non-null.
+	 * <p>
+	 * The {@link Method} checks on the property parent's values, not on the
+	 * properties' own value. If all parents are non-null but the property itself is
+	 * null, the {@link Method} will still return true.
+	 * <p>
+	 * The result indicates whether it is safe to execute writing operations on the
+	 * property.
+	 * <P>
+	 * Note that if the path from the property model's root to the given property is
+	 * indexed, the used index context has an impact on the returned result.
+	 * <P>
+	 * For determination of existence, this handler's own index context is used.
+	 * 
+	 * @param <TargetPropertyType>
+	 *            The type of the property to check.
+	 * @param property
+	 *            The property to check for existence; <b>not</b> allowed to be
+	 *            null.
+	 * @return True if all of the given properties' parents are non-null, false
+	 *         otherwise
+	 */
+	<TargetPropertyType> boolean exists(ModelProperty<ModelType, TargetPropertyType> property);
+
+	/**
+	 * Determines whether the given property exists in the model; or to put it
+	 * differently, whether the parent properties of the property are all non-null.
+	 * <p>
+	 * The {@link Method} checks on the property parent's values, not on the
+	 * properties' own value. If all parents are non-null but the property itself is
+	 * null, the {@link Method} will still return true.
+	 * <p>
+	 * The result indicates whether it is safe to execute writing operations on the
+	 * property.
+	 * <P>
+	 * Note that if the path from the property model's root to the given property is
+	 * indexed, the used index context has an impact on the returned result.
+	 * <P>
+	 * For determination of existence, the given index context is used as an
+	 * extension to the handler's own index context.
+	 * 
+	 * @param <TargetPropertyType>
+	 *            The type of the property to check.
+	 * @param property
+	 *            The property to check for existence; <b>not</b> allowed to be
+	 *            null.
+	 * @param context
+	 *            The context which is used for determining the correct property;
+	 *            might be null.
+	 * @return True if all of the given properties' parents are non-null, false
+	 *         otherwise
+	 */
+	<TargetPropertyType> boolean exists(ModelProperty<ModelType, TargetPropertyType> property, IndexContext context);
 
 	// ######################################################################################################################################
 	// ###################################################### PROPERTIED MODEL ACCESS #######################################################

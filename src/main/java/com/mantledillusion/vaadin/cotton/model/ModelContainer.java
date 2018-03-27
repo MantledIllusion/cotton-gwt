@@ -174,6 +174,16 @@ public final class ModelContainer<ModelType> extends ModelProxy<ModelType> {
 		return false;
 	}
 
+	@Override
+	public final <PropertyType> boolean exists(ModelProperty<ModelType, PropertyType> property) {
+		return exists(property, IndexContext.EMPTY);
+	}
+
+	@Override
+	public final <PropertyType> boolean exists(ModelProperty<ModelType, PropertyType> property, IndexContext context) {
+		return property.exists(this.dataModel, context);
+	}
+
 	// ######################################################################################################################################
 	// ###################################################### PROPERTIED MODEL ACCESS #######################################################
 	// ######################################################################################################################################
@@ -187,7 +197,7 @@ public final class ModelContainer<ModelType> extends ModelProxy<ModelType> {
 	public final <TargetPropertyType> TargetPropertyType getProperty(
 			ModelProperty<ModelType, TargetPropertyType> property, IndexContext indexContext) {
 		indexContext = ObjectUtils.defaultIfNull(indexContext, IndexContext.EMPTY);
-		return property.get(this.dataModel, indexContext);
+		return property.get(this.dataModel, indexContext, true);
 	}
 
 	@Override
