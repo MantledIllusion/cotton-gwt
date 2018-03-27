@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
@@ -81,8 +82,8 @@ final class InternalErrorHandler implements ErrorHandler {
 
 		@Override
 		protected void handleError(Throwable t) {
-			Throwable rootCause = ExceptionUtils.getRootCause(t);
-			
+			Throwable rootCause = ObjectUtils.defaultIfNull(ExceptionUtils.getRootCause(t), t);
+
 			this.errorTitle.setValue("<b><font size=\"5\">" + rootCause.getClass().getSimpleName() + ":</font></b>");
 			this.errorLabel.setValue("<font size=\"4\">" + rootCause.getLocalizedMessage() + "</font>");
 

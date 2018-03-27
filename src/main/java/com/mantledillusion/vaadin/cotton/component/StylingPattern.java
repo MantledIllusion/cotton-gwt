@@ -24,23 +24,11 @@ public final class StylingPattern extends OptionPattern<AbstractComponent> {
 	 */
 	public static final class StylingPatternBuilder {
 
-		private Resource icon;
+		private final Resource icon;
 		private Set<String> styleNames = new HashSet<>();
 
-		private StylingPatternBuilder() {
-		}
-
-		/**
-		 * Sets the icon to the given one.
-		 * 
-		 * @param icon
-		 *            The icon to use on the component; may be null, then nothing is
-		 *            set.
-		 * @return this
-		 */
-		public StylingPatternBuilder andIcon(Resource icon) {
+		private StylingPatternBuilder(Resource icon) {
 			this.icon = icon;
-			return this;
 		}
 
 		/**
@@ -61,12 +49,16 @@ public final class StylingPattern extends OptionPattern<AbstractComponent> {
 		}
 
 		/**
-		 * Builds a new pattern on every invocation.
+		 * Adds the given style to the already included ones and builds a new pattern on every invocation.
 		 * 
+		 * @param styleName
+		 *            The CSS style name to use on the component; may <b>not</b> be
+		 *            null.
 		 * @return A new {@link StylingPattern} with the values currently set; never
 		 *         null
 		 */
-		public StylingPattern build() {
+		public StylingPattern andFinalStyle(String styleName) {
+			andStyle(styleName);
 			return new StylingPattern(this.icon, Collections.unmodifiableSet(new HashSet<>(this.styleNames)));
 		}
 	}
@@ -112,7 +104,7 @@ public final class StylingPattern extends OptionPattern<AbstractComponent> {
 	 * @return A new {@link StylingPatternBuilder}; never null
 	 */
 	public static StylingPatternBuilder withIcon(Resource icon) {
-		return new StylingPatternBuilder().andIcon(icon);
+		return new StylingPatternBuilder(icon);
 	}
 
 	/**
@@ -139,6 +131,6 @@ public final class StylingPattern extends OptionPattern<AbstractComponent> {
 	 * @return A new {@link StylingPatternBuilder}; never null
 	 */
 	public static StylingPatternBuilder withStyle(String styleName) {
-		return new StylingPatternBuilder().andStyle(styleName);
+		return new StylingPatternBuilder(null).andStyle(styleName);
 	}
 }
