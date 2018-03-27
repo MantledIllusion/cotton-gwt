@@ -134,6 +134,17 @@ public abstract class ModelAccessor<ModelType> extends ModelBinder<ModelType> {
 		return this.parent.isPropertyChanged(property, this.indexContext.union(context));
 	}
 
+	@Override
+	public <TargetPropertyType> boolean exists(ModelProperty<ModelType, TargetPropertyType> property) {
+		return this.parent.exists(property, this.indexContext);
+	}
+
+	@Override
+	public <TargetPropertyType> boolean exists(ModelProperty<ModelType, TargetPropertyType> property,
+			IndexContext context) {
+		return this.parent.exists(property, this.indexContext.union(context));
+	}
+
 	// ######################################################################################################################################
 	// ###################################################### PROPERTIED MODEL ACCESS #######################################################
 	// ######################################################################################################################################
@@ -256,8 +267,10 @@ public abstract class ModelAccessor<ModelType> extends ModelBinder<ModelType> {
 				field.setValue(propertyValue == null ? field.getEmptyValue() : propertyValue);
 			};
 		} else {
-			resetter = () -> field.setValue(
-					converter.convertToPresentation(ModelAccessor.this.getProperty(property), new ValueContext()));
+			resetter = () -> {
+				field.setValue(
+						converter.convertToPresentation(ModelAccessor.this.getProperty(property), new ValueContext()));
+			};
 		}
 
 		bind(property, builder.withConverter(converter), resetter);
@@ -270,6 +283,7 @@ public abstract class ModelAccessor<ModelType> extends ModelBinder<ModelType> {
 			throw new WebException(HttpErrorCodes.HTTP901_ILLEGAL_ARGUMENT_ERROR,
 					"Cannot bind a HasValue to a null property.");
 		}
+
 		builder.withValidator(new SerializablePredicate<PropertyValueType>() {
 			private static final long serialVersionUID = 1L;
 
@@ -289,6 +303,7 @@ public abstract class ModelAccessor<ModelType> extends ModelBinder<ModelType> {
 
 			@Override
 			public PropertyValueType apply(ModelType source) {
+				builder.getField().setReadOnly(!ModelAccessor.this.exists(property));
 				return ModelAccessor.this.getProperty(property);
 			}
 		}, new Setter<ModelType, PropertyValueType>() {
@@ -296,7 +311,12 @@ public abstract class ModelAccessor<ModelType> extends ModelBinder<ModelType> {
 
 			@Override
 			public void accept(ModelType bean, PropertyValueType fieldvalue) {
-				ModelAccessor.this.setProperty(property, fieldvalue);
+				if (ModelAccessor.this.exists(property)) {
+					builder.getField().setReadOnly(false);
+					ModelAccessor.this.setProperty(property, fieldvalue);
+				} else {
+					builder.getField().setReadOnly(true);
+				}
 			}
 		});
 
