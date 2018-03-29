@@ -1,73 +1,82 @@
 package com.mantledillusion.vaadin.cotton.model;
 
+import java.lang.reflect.Constructor;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.commons.lang3.StringUtils;
-
 import com.mantledillusion.data.epiphy.ModelProperty;
 import com.mantledillusion.data.epiphy.ModelPropertyList;
 import com.mantledillusion.injection.hura.Injector;
+import com.mantledillusion.injection.hura.Predefinable.Singleton;
 import com.mantledillusion.injection.hura.Processor.Phase;
+import com.mantledillusion.injection.hura.annotation.Adjust;
+import com.mantledillusion.injection.hura.annotation.Adjust.MappingDef;
+import com.mantledillusion.injection.hura.annotation.Construct;
 import com.mantledillusion.injection.hura.annotation.Inject;
 import com.mantledillusion.injection.hura.annotation.Inject.InjectionMode;
 import com.mantledillusion.injection.hura.annotation.Process;
 import com.mantledillusion.vaadin.cotton.exception.WebException;
 import com.mantledillusion.vaadin.cotton.exception.WebException.HttpErrorCodes;
 import com.mantledillusion.vaadin.cotton.model.ValidationContext.ValidationErrorRegistry;
-import com.vaadin.data.Binder;
-import com.vaadin.data.Converter;
-import com.vaadin.data.ErrorMessageProvider;
 import com.vaadin.data.HasValue;
-import com.vaadin.data.ValueContext;
-import com.vaadin.data.ValueProvider;
-import com.vaadin.data.Binder.BindingBuilder;
-import com.vaadin.server.SerializablePredicate;
-import com.vaadin.server.Setter;
 
 /**
- * A super type for an indexable proxy on a parent {@link ModelContainer}.
+ * Model accessor that allows indexable access on a parent {@link ModelProxy}
+ * which can either be a {@link ModelContainer} or another
+ * {@link ModelAccessor}.
+ * <p>
+ * Model accessing via this {@link ModelAccessor} will then be forwarded to that
+ * parent {@link ModelProxy}.
+ * <p>
+ * When a {@link ModelContainer} is required as the parent, the
+ * {@link ModelAccessor} does not need to be extended; @{@link Inject} a
+ * {@link Singleton} {@link ModelContainer} somewhere else using the singletonId
+ * {@link ModelContainer#DEFAULT_SINGLETON_ID}. When handling multiple
+ * {@link ModelContainer}s that could be used,
+ * an @{@link Adjust} @{@link MappingDef} can re-map that singletonId to a
+ * specific value.
+ * <p>
+ * When a {@link ModelAccessor} is required as the parent, the
+ * {@link ModelAccessor} has to be extended, so the correct parent can be given
+ * to {@link #ModelAccessor(ModelProxy)}.
  * <p>
  * NOTE: Should be injected, since the {@link Injector} handles the instance's
  * life cycles.
- * <P>
- * Model accessing via this {@link ModelAccessor} will be forwarded to the
- * parent {@link ModelContainer}.
  *
  * @param <ModelType>
  *            The root type of the data model the {@link ModelAccessor}
  *            accesses.
  */
-public abstract class ModelAccessor<ModelType> extends ModelBinder<ModelType> {
-
-	@SuppressWarnings("rawtypes")
-	private static final ValidationErrorRegistry EMPTY_ERROR_REGISTRY = new ValidationErrorRegistry<>();
+public class ModelAccessor<ModelType> extends ModelBinder<ModelType> {
 
 	@Inject(value = IndexContext.SINGLETON_ID, injectionMode = InjectionMode.EXPLICIT)
 	private IndexContext indexContext = IndexContext.EMPTY;
 
 	private final ModelProxy<ModelType> parent;
+	private final Map<ModelProperty<ModelType, ?>, Set<PropertyBinding<?>>> boundFields = new IdentityHashMap<>();
 
-	private Binder<ModelType> binder = new Binder<>();
-	private final Map<ModelProperty<ModelType, ?>, Set<BindingReference>> boundFields = new IdentityHashMap<>();
-
-	@SuppressWarnings("unchecked")
-	private ValidationErrorRegistry<ModelType> validationErrors = EMPTY_ERROR_REGISTRY;
+	@Construct
+	private ModelAccessor(@Inject(ModelContainer.DEFAULT_SINGLETON_ID) ModelContainer<ModelType> parentContainer) {
+		this((ModelProxy<ModelType>) parentContainer);
+	}
 
 	/**
-	 * Constructor.
+	 * {@link Constructor}.
+	 * <p>
+	 * Note that even when using this {@link Constructor}, the {@link ModelAccessor}
+	 * still has to be injected to make sure its life cycle is handled.
 	 * 
-	 * @param parentContainer
+	 * @param parentProxy
 	 *            The parent {@link ModelProxy} to use; might <b>not</b> be null.
 	 */
-	protected ModelAccessor(ModelProxy<ModelType> parentContainer) {
-		if (parentContainer == null) {
+	protected ModelAccessor(ModelProxy<ModelType> parentProxy) {
+		if (parentProxy == null) {
 			throw new WebException(HttpErrorCodes.HTTP901_ILLEGAL_ARGUMENT_ERROR,
 					"Cannot create an accessor for a null parent container.");
 		}
-		this.parent = parentContainer;
+		this.parent = parentProxy;
 		this.parent.register(this);
 	}
 
@@ -77,14 +86,12 @@ public abstract class ModelAccessor<ModelType> extends ModelBinder<ModelType> {
 
 	@Process(Phase.DESTROY)
 	private void releaseReferences() {
-		for (Set<BindingReference> references : this.boundFields.values()) {
-			for (BindingReference reference : references) {
-				reference.destroyBinding();
+		for (Set<PropertyBinding<?>> bindings : this.boundFields.values()) {
+			for (PropertyBinding<?> binding : bindings) {
+				binding.destroy();
 			}
 		}
 		this.boundFields.clear();
-		this.binder.removeBean();
-		this.binder = new Binder<>();
 
 		this.parent.unregister(this);
 	}
@@ -104,17 +111,21 @@ public abstract class ModelAccessor<ModelType> extends ModelBinder<ModelType> {
 
 	@Override
 	public final boolean hasModel() {
-		return this.binder.getBean() != null;
+		return this.parent.hasModel();
 	}
 
 	@Override
 	public final ModelType getModel() {
 		return this.parent.getModel();
 	}
-
+	
 	@Override
 	final void setModel(ModelType model) {
-		this.binder.setBean(model);
+		for (ModelProperty<ModelType, ?> property: this.boundFields.keySet()) {
+			for (PropertyBinding<?> binding : this.boundFields.get(property)) {
+				binding.update();
+			}
+		}
 		super.setModel(model);
 	}
 
@@ -201,29 +212,6 @@ public abstract class ModelAccessor<ModelType> extends ModelBinder<ModelType> {
 	// ############################################################## BINDING ###############################################################
 	// ######################################################################################################################################
 
-	private interface HasValueResetter<PropertyValueType> {
-
-		void reset();
-	}
-
-	private final class BindingReference {
-		private final HasValue<?> hasValue;
-		private final HasValueResetter<?> resetter;
-
-		private BindingReference(HasValue<?> hasValue, HasValueResetter<?> resetter) {
-			this.hasValue = hasValue;
-			this.resetter = resetter;
-		}
-
-		private void reset() {
-			this.resetter.reset();
-		}
-
-		private void destroyBinding() {
-			ModelAccessor.this.binder.removeBinding(this.hasValue);
-		}
-	}
-
 	@Override
 	public final <FieldType extends HasValue<PropertyValueType>, PropertyValueType> FieldType bindToProperty(
 			FieldType field, ModelProperty<ModelType, PropertyValueType> property) {
@@ -231,99 +219,32 @@ public abstract class ModelAccessor<ModelType> extends ModelBinder<ModelType> {
 			throw new IllegalArgumentException("Cannot bind a null HasValue.");
 		}
 
-		BindingBuilder<ModelType, PropertyValueType> builder = this.binder.forField(field);
-		HasValueResetter<PropertyValueType> resetter;
-		if (field.getEmptyValue() != null) {
-			builder = builder.withNullRepresentation(field.getEmptyValue());
-			resetter = () -> {
-				PropertyValueType propertyValue = ModelAccessor.this.getProperty(property);
-				field.setValue(propertyValue == null ? field.getEmptyValue() : propertyValue);
-			};
-		} else {
-			resetter = () -> field.setValue(ModelAccessor.this.getProperty(property));
-		}
-
-		bind(property, builder, resetter);
+		bind(property, of(property, field));
+		
 		return field;
 	}
 
 	@Override
 	public final <FieldType extends HasValue<FieldValueType>, FieldValueType, PropertyValueType> FieldType bindToProperty(
 			FieldType field, ModelProperty<ModelType, PropertyValueType> property,
-			Converter<FieldValueType, PropertyValueType> converter) {
+			PropertyConverter<FieldValueType, PropertyValueType> converter) {
 		if (field == null) {
 			throw new IllegalArgumentException("Cannot bind a null HasValue.");
 		} else if (converter == null) {
 			throw new IllegalArgumentException("Cannot bind using a null converter.");
 		}
 
-		BindingBuilder<ModelType, FieldValueType> builder = this.binder.forField(field);
-		HasValueResetter<PropertyValueType> resetter;
-		if (field.getEmptyValue() != null) {
-			builder = builder.withNullRepresentation(field.getEmptyValue());
-			resetter = () -> {
-				FieldValueType propertyValue = converter.convertToPresentation(ModelAccessor.this.getProperty(property),
-						new ValueContext());
-				field.setValue(propertyValue == null ? field.getEmptyValue() : propertyValue);
-			};
-		} else {
-			resetter = () -> {
-				field.setValue(
-						converter.convertToPresentation(ModelAccessor.this.getProperty(property), new ValueContext()));
-			};
-		}
-
-		bind(property, builder.withConverter(converter), resetter);
+		bind(property, of(property, field, converter));
+		
 		return field;
 	}
-
-	private final <FieldValueType, PropertyValueType> void bind(ModelProperty<ModelType, PropertyValueType> property,
-			BindingBuilder<ModelType, PropertyValueType> builder, HasValueResetter<PropertyValueType> setter) {
-		if (property == null) {
-			throw new WebException(HttpErrorCodes.HTTP901_ILLEGAL_ARGUMENT_ERROR,
-					"Cannot bind a HasValue to a null property.");
-		}
-
-		builder.withValidator(new SerializablePredicate<PropertyValueType>() {
-			private static final long serialVersionUID = 1L;
-
-			@Override
-			public boolean test(PropertyValueType arg0) {
-				return !ModelAccessor.this.validationErrors.errorMessages.containsKey(property);
-			}
-		}, new ErrorMessageProvider() {
-			private static final long serialVersionUID = 1L;
-
-			@Override
-			public String apply(ValueContext context) {
-				return StringUtils.join(ModelAccessor.this.validationErrors.errorMessages.get(property), ',');
-			}
-		}).bind(new ValueProvider<ModelType, PropertyValueType>() {
-			private static final long serialVersionUID = 1L;
-
-			@Override
-			public PropertyValueType apply(ModelType source) {
-				builder.getField().setReadOnly(!ModelAccessor.this.exists(property));
-				return ModelAccessor.this.getProperty(property);
-			}
-		}, new Setter<ModelType, PropertyValueType>() {
-			private static final long serialVersionUID = 1L;
-
-			@Override
-			public void accept(ModelType bean, PropertyValueType fieldvalue) {
-				if (ModelAccessor.this.exists(property)) {
-					builder.getField().setReadOnly(false);
-					ModelAccessor.this.setProperty(property, fieldvalue);
-				} else {
-					builder.getField().setReadOnly(true);
-				}
-			}
-		});
-
+	
+	private final <PropertyTargetType> void bind(ModelProperty<ModelType, PropertyTargetType> property, PropertyBinding<PropertyTargetType> binding) {
 		if (!this.boundFields.containsKey(property)) {
 			this.boundFields.put(property, new HashSet<>());
 		}
-		this.boundFields.get(property).add(new BindingReference(builder.getField(), setter));
+		this.boundFields.get(property).add(binding);
+		binding.update();
 	}
 
 	// ######################################################################################################################################
@@ -335,8 +256,8 @@ public abstract class ModelAccessor<ModelType> extends ModelBinder<ModelType> {
 		if (context.contains(this.indexContext)) {
 			for (ModelProperty<ModelType, ?> property : properties) {
 				if (this.boundFields.containsKey(property)) {
-					for (BindingReference setter : this.boundFields.get(property)) {
-						setter.reset();
+					for (PropertyBinding<?> binding : this.boundFields.get(property)) {
+						binding.update();
 					}
 				}
 			}
@@ -358,11 +279,12 @@ public abstract class ModelAccessor<ModelType> extends ModelBinder<ModelType> {
 	// ######################################################################################################################################
 
 	@Override
-	@SuppressWarnings("unchecked")
 	final void applyErrors(ValidationErrorRegistry<ModelType> errorRegistry) {
-		this.validationErrors = errorRegistry;
-		this.binder.validate();
-		this.validationErrors = EMPTY_ERROR_REGISTRY;
+		for (ModelProperty<ModelType, ?> property: this.boundFields.keySet()) {
+			for (PropertyBinding<?> binding : this.boundFields.get(property)) {
+				binding.setError(errorRegistry.errorMessages);
+			}
+		}
 		for (ModelAccessor<ModelType> child : getChildren()) {
 			child.applyErrors(errorRegistry);
 		}
@@ -370,7 +292,11 @@ public abstract class ModelAccessor<ModelType> extends ModelBinder<ModelType> {
 
 	@Override
 	final void clearErrors() {
-		this.binder.validate();
+		for (ModelProperty<ModelType, ?> property: this.boundFields.keySet()) {
+			for (PropertyBinding<?> binding : this.boundFields.get(property)) {
+				binding.clearError();
+			}
+		}
 		for (ModelAccessor<ModelType> child : getChildren()) {
 			child.clearErrors();
 		}
