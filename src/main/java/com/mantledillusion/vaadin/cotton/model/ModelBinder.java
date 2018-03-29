@@ -2,6 +2,10 @@ package com.mantledillusion.vaadin.cotton.model;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Map;
+import java.util.Set;
+
+import org.apache.commons.lang3.StringUtils;
 
 import com.mantledillusion.data.epiphy.ModelProperty;
 import com.mantledillusion.data.epiphy.ModelPropertyList;
@@ -9,10 +13,13 @@ import com.mantledillusion.vaadin.cotton.component.ComponentFactory;
 import com.mantledillusion.vaadin.cotton.component.ComponentFactory.OptionPattern;
 import com.mantledillusion.vaadin.cotton.exception.WebException;
 import com.mantledillusion.vaadin.cotton.exception.WebException.HttpErrorCodes;
-import com.vaadin.data.Converter;
 import com.vaadin.data.HasValue;
-import com.vaadin.data.Result;
-import com.vaadin.data.ValueContext;
+import com.vaadin.data.HasValue.ValueChangeEvent;
+import com.vaadin.data.HasValue.ValueChangeListener;
+import com.vaadin.server.ErrorMessage;
+import com.vaadin.server.UserError;
+import com.vaadin.shared.Registration;
+import com.vaadin.ui.AbstractComponent;
 import com.vaadin.ui.CheckBox;
 import com.vaadin.ui.ComboBox;
 import com.vaadin.ui.Component;
@@ -36,6 +43,126 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 	private interface HasValueProvider<FieldType extends Component & HasValue<FieldValueType>, FieldValueType> {
 
 		FieldType build(@SuppressWarnings("unchecked") OptionPattern<? super FieldType>... patterns);
+	}
+
+	private interface Getter<PropertyTargetType> {
+
+		PropertyTargetType get();
+	}
+
+	private interface Setter<PropertyTargetType> {
+
+		void set(PropertyTargetType value);
+	}
+
+	private static final class HasValueDelegate<PropertyTargetType> {
+
+		private final HasValue<?> field;
+		private final Getter<PropertyTargetType> getter;
+		private final Setter<PropertyTargetType> setter;
+		private final Getter<PropertyTargetType> emptyRepresentationGetter;
+		private final Setter<ErrorMessage> errorSetter;
+
+		private HasValueDelegate(HasValue<?> field, Getter<PropertyTargetType> getter,
+				Setter<PropertyTargetType> setter, Getter<PropertyTargetType> emptyRepresentationProvider) {
+			this.field = field;
+			this.getter = getter;
+			this.setter = setter;
+			this.emptyRepresentationGetter = emptyRepresentationProvider;
+			if (this.field instanceof AbstractComponent) {
+				this.errorSetter = errorMessage -> ((AbstractComponent) this.field).setComponentError(errorMessage);
+			} else {
+				this.errorSetter = errorMessage -> {};
+			}
+		}
+
+		PropertyTargetType getValue() {
+			return this.getter.get();
+		}
+
+		void setValue(PropertyTargetType value) {
+			if (value == null) {
+				this.setter.set(this.emptyRepresentationGetter.get());
+			} else {
+				this.setter.set(value);
+			}
+		}
+
+		void setReadOnly(boolean readOnly) {
+			this.field.setReadOnly(readOnly);
+		}
+		
+		void setError(ErrorMessage errorMessage) {
+			this.errorSetter.set(errorMessage);
+		}
+
+		@SuppressWarnings({ "rawtypes", "unchecked" })
+		Registration register(ValueChangeListener listener) {
+			return this.field.addValueChangeListener(listener);
+		}
+	}
+
+	@SuppressWarnings({ "rawtypes" })
+	final class PropertyBinding<PropertyTargetType> implements ValueChangeListener {
+
+		private static final long serialVersionUID = 1L;
+
+		private final ModelProperty<ModelType, PropertyTargetType> property;
+		private final HasValueDelegate<PropertyTargetType> hasValue;
+		private final Registration registration;
+
+		private PropertyBinding(ModelProperty<ModelType, PropertyTargetType> property,
+				HasValueDelegate<PropertyTargetType> hasValue) {
+			this.property = property;
+			this.hasValue = hasValue;
+			this.registration = this.hasValue.register(this);
+		}
+
+		private boolean updating = false;
+
+		@Override
+		public void valueChange(ValueChangeEvent event) {
+			if (!this.updating && ModelBinder.this.exists(this.property)) {
+				ModelBinder.this.setProperty(this.property, this.hasValue.getValue());
+			}
+		}
+
+		synchronized void update() {
+			this.updating = true;
+			this.hasValue.setReadOnly(!ModelBinder.this.exists(this.property));
+			this.hasValue.setValue(ModelBinder.this.getProperty(this.property));
+			this.updating = false;
+		}
+		
+		void setError(Map<ModelProperty<?, ?>, Set<String>> errorMessages) {
+			if (errorMessages.containsKey(property)) {
+				this.hasValue.setError(new UserError(StringUtils.join(errorMessages.get(property), ',')));
+			} else {
+				clearError();
+			}
+		}
+		
+		void clearError() {
+			this.hasValue.setError(null);
+		}
+		
+		void destroy() {
+			this.registration.remove();
+		}
+	}
+
+	<PropertyTargetType> PropertyBinding<PropertyTargetType> of(ModelProperty<ModelType, PropertyTargetType> property,
+			HasValue<PropertyTargetType> field) {
+		return new PropertyBinding<>(property, new HasValueDelegate<>(field, field::getValue, field::setValue, field::getEmptyValue));
+	}
+
+	<PropertyTargetType, FieldValueType> PropertyBinding<PropertyTargetType> of(
+			ModelProperty<ModelType, PropertyTargetType> property, HasValue<FieldValueType> field,
+			PropertyConverter<FieldValueType, PropertyTargetType> converter) {
+		return new PropertyBinding<>(property, new HasValueDelegate<>(field,
+				() -> converter.toProperty(field.getValue()), 
+				(value) -> field.setValue(converter.toField(value)),
+				() -> converter.toProperty(field.getEmptyValue())));
 	}
 
 	ModelBinder() {
@@ -71,7 +198,7 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 
 	private <FieldType extends Component & HasValue<FieldValueType>, FieldValueType, PropertyType> FieldType buildAndBind(
 			HasValueProvider<FieldType, FieldValueType> provider, ModelProperty<ModelType, PropertyType> property,
-			Converter<FieldValueType, PropertyType> converter,
+			PropertyConverter<FieldValueType, PropertyType> converter,
 			@SuppressWarnings("unchecked") OptionPattern<? super FieldType>... patterns) {
 		if (property == null) {
 			throw new WebException(HttpErrorCodes.HTTP901_ILLEGAL_ARGUMENT_ERROR,
@@ -105,7 +232,7 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 	 */
 	public abstract <FieldType extends HasValue<FieldValueType>, FieldValueType, PropertyValueType> FieldType bindToProperty(
 			FieldType field, ModelProperty<ModelType, PropertyValueType> property,
-			Converter<FieldValueType, PropertyValueType> converter);
+			PropertyConverter<FieldValueType, PropertyValueType> converter);
 
 	// ##############################################################################################################
 	// ################################################## LABEL #####################################################
@@ -157,17 +284,15 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 			throw new IllegalArgumentException("Cannot apply a null renderer.");
 		}
 		HasValueProvider<BindableLabel, String> provider = (p) -> ComponentFactory.apply(new BindableLabel(), p);
-		Converter<String, PropertyType> converter = new Converter<String, PropertyType>() {
-
-			private static final long serialVersionUID = 1L;
+		PropertyConverter<String, PropertyType> converter = new PropertyConverter<String, PropertyType>() {
 
 			@Override
-			public Result<PropertyType> convertToModel(String value, ValueContext context) {
+			public PropertyType toProperty(String value) {
 				throw new UnsupportedOperationException("Cannot convert a label's text to model data.");
 			}
 
 			@Override
-			public String convertToPresentation(PropertyType value, ValueContext context) {
+			public String toField(PropertyType value) {
 				return renderer.render(value);
 			}
 		};
@@ -217,7 +342,7 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 	 */
 	@SafeVarargs
 	public final <PropertyType> TextField bindTextFieldForProperty(ModelProperty<ModelType, PropertyType> property,
-			Converter<String, PropertyType> converter, OptionPattern<? super TextField>... patterns) {
+			PropertyConverter<String, PropertyType> converter, OptionPattern<? super TextField>... patterns) {
 		return buildAndBind(ComponentFactory::buildTextField, property, converter, patterns);
 	}
 
@@ -264,7 +389,7 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 	 */
 	@SafeVarargs
 	public final <PropertyType> TextArea bindTextAreaForProperty(ModelProperty<ModelType, PropertyType> property,
-			Converter<String, PropertyType> converter, OptionPattern<? super TextArea>... patterns) {
+			PropertyConverter<String, PropertyType> converter, OptionPattern<? super TextArea>... patterns) {
 		return buildAndBind(ComponentFactory::buildTextArea, property, converter, patterns);
 	}
 
@@ -311,7 +436,7 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 	 */
 	@SafeVarargs
 	public final <PropertyType> DateField bindDateFieldForProperty(ModelProperty<ModelType, PropertyType> property,
-			Converter<LocalDate, PropertyType> converter, OptionPattern<? super DateField>... patterns) {
+			PropertyConverter<LocalDate, PropertyType> converter, OptionPattern<? super DateField>... patterns) {
 		return buildAndBind(ComponentFactory::buildDateField, property, converter, patterns);
 	}
 
@@ -319,8 +444,8 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 	 * Directly builds a single {@link DateTimeField} and binds it.
 	 * 
 	 * @param property
-	 *            The {@link ModelProperty} to bind the new {@link DateTimeField} to;
-	 *            <b>not</b> allowed to be null.
+	 *            The {@link ModelProperty} to bind the new {@link DateTimeField}
+	 *            to; <b>not</b> allowed to be null.
 	 * @param patterns
 	 *            The {@link OptionPattern}s to apply to the new component; may be
 	 *            null or empty, then nothing will be applied. Will be applied in
@@ -340,8 +465,8 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 	 * @param <PropertyType>
 	 *            The type of the property to bind.
 	 * @param property
-	 *            The {@link ModelProperty} to bind the new {@link DateTimeField} to;
-	 *            <b>not</b> allowed to be null.
+	 *            The {@link ModelProperty} to bind the new {@link DateTimeField}
+	 *            to; <b>not</b> allowed to be null.
 	 * @param converter
 	 *            The converter to convert the property type to the type used by the
 	 *            {@link DateTimeField}; <b>not</b> allowed to be null.
@@ -353,8 +478,9 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 	 *         {@link ModelProperty}; never null
 	 */
 	@SafeVarargs
-	public final <PropertyType> DateTimeField bindDateTimeFieldForProperty(ModelProperty<ModelType, PropertyType> property,
-			Converter<LocalDateTime, PropertyType> converter, OptionPattern<? super DateTimeField>... patterns) {
+	public final <PropertyType> DateTimeField bindDateTimeFieldForProperty(
+			ModelProperty<ModelType, PropertyType> property, PropertyConverter<LocalDateTime, PropertyType> converter,
+			OptionPattern<? super DateTimeField>... patterns) {
 		return buildAndBind(ComponentFactory::buildDateTimeField, property, converter, patterns);
 	}
 
@@ -401,7 +527,7 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 	 */
 	@SafeVarargs
 	public final <PropertyType> CheckBox bindCheckBoxForProperty(ModelProperty<ModelType, PropertyType> property,
-			Converter<Boolean, PropertyType> converter, OptionPattern<? super CheckBox>... patterns) {
+			PropertyConverter<Boolean, PropertyType> converter, OptionPattern<? super CheckBox>... patterns) {
 		return buildAndBind(ComponentFactory::buildCheckBox, property, converter, patterns);
 	}
 
@@ -453,7 +579,7 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 	 */
 	@SafeVarargs
 	public final <T, PropertyType> RadioButtonGroup<T> bindRadioButtonGroupForProperty(
-			ModelProperty<ModelType, PropertyType> property, Converter<T, PropertyType> converter,
+			ModelProperty<ModelType, PropertyType> property, PropertyConverter<T, PropertyType> converter,
 			OptionPattern<? super RadioButtonGroup<?>>... patterns) {
 		HasValueProvider<RadioButtonGroup<T>, T> provider = ComponentFactory::buildRadioButtonGroup;
 		return buildAndBind(provider, property, converter, patterns);
@@ -507,7 +633,7 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 	 */
 	@SafeVarargs
 	public final <T, PropertyType> ComboBox<T> bindComboBoxForProperty(ModelProperty<ModelType, PropertyType> property,
-			Converter<T, PropertyType> converter, OptionPattern<? super ComboBox<?>>... patterns) {
+			PropertyConverter<T, PropertyType> converter, OptionPattern<? super ComboBox<?>>... patterns) {
 		HasValueProvider<ComboBox<T>, T> provider = ComponentFactory::buildComboBox;
 		return buildAndBind(provider, property, converter, patterns);
 	}

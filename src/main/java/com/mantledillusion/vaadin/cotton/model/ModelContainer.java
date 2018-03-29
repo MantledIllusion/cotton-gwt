@@ -27,7 +27,7 @@ import com.mantledillusion.vaadin.cotton.exception.WebException.HttpErrorCodes;
 import com.mantledillusion.vaadin.cotton.model.ValidationContext.ValidationErrorRegistry;
 
 /**
- * Model Container that enables model browsing via {@link ModelProperty} and can
+ * Model container that enables model browsing via {@link ModelProperty} and can
  * be used by {@link ModelAccessor}s as model data source.
  * <p>
  * NOTE: Should be injected, since the {@link Injector} handles the instance's
@@ -44,6 +44,8 @@ import com.mantledillusion.vaadin.cotton.model.ValidationContext.ValidationError
  *            contain.
  */
 public final class ModelContainer<ModelType> extends ModelProxy<ModelType> {
+
+	public static final String DEFAULT_SINGLETON_ID = "_containerSingletonId";
 
 	private final Map<ModelProperty<ModelType, ?>, ModelPersistor<ModelType, ?>> persistors = new IdentityHashMap<>();
 
@@ -219,7 +221,9 @@ public final class ModelContainer<ModelType> extends ModelProxy<ModelType> {
 
 		registerPropertyChange(property, indexContext);
 
-		updatePropertyBoundFieldsOfChildren(property, indexContext);
+		if (!property.isRoot()) {
+			updatePropertyBoundFieldsOfChildren(property, indexContext);
+		}
 	}
 
 	@Override

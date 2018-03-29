@@ -9,6 +9,7 @@ import org.junit.Test;
 import com.mantledillusion.injection.hura.Injector;
 import com.mantledillusion.injection.hura.Predefinable.Singleton;
 import com.mantledillusion.injection.hura.annotation.Construct;
+import com.mantledillusion.injection.hura.exception.InjectionException;
 import com.mantledillusion.injection.hura.exception.ProcessorException;
 import com.mantledillusion.injection.hura.exception.ValidatorException;
 import com.mantledillusion.vaadin.cotton.EventBus;
@@ -57,7 +58,7 @@ public final class PresenterEventHandlingTest {
 		this.suite.injectInSuiteContext(MultiParamListenMethodPresenterView.class);
 	}
 	
-	@Test(expected=ProcessorException.class)
+	@Test(expected=InjectionException.class)
 	public void testListenMethodChecking_NoComponent() {
 		this.suite.injectInSuiteContext(NoComponentListenMethodPresenterView.class);
 	}
