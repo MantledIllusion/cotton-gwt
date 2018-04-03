@@ -454,7 +454,6 @@ public abstract class CottonUI extends com.vaadin.ui.UI {
 					"Closing expired session"));
 		}
 
-		super.detach();
 		try {
 			this.eventBus.dispatch(new ShutdownEvent(), null);
 		} catch (Throwable t) {
@@ -462,6 +461,7 @@ public abstract class CottonUI extends com.vaadin.ui.UI {
 					+ "' could not be shutdown correctly; an error occurred during notifying event bus subscribers of the shutdown.",
 					t);
 		} finally {
+			super.detach();
 			this.injector.destroyInjector();
 		}
 	}
