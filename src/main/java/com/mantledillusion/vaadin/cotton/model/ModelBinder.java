@@ -43,14 +43,14 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 		FieldType build(@SuppressWarnings("unchecked") OptionPattern<? super FieldType>... patterns);
 	}
 
-	private interface Getter<PropertyTargetType> {
+	private interface Getter<PropertyType> {
 
-		PropertyTargetType get();
+		PropertyType get();
 	}
 
-	private interface Setter<PropertyTargetType> {
+	private interface Setter<PropertyType> {
 
-		void set(PropertyTargetType value);
+		void set(PropertyType value);
 	}
 
 	private interface ErrorRetriever {
@@ -58,18 +58,18 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 		Collection<ValidationError> validate();
 	}
 
-	private static final class HasValueDelegate<PropertyTargetType> {
+	private static final class HasValueDelegate<PropertyType> {
 
 		private final HasValue<?> field;
-		private final Getter<PropertyTargetType> getter;
-		private final Setter<PropertyTargetType> setter;
-		private final Getter<PropertyTargetType> emptyRepresentationGetter;
+		private final Getter<PropertyType> getter;
+		private final Setter<PropertyType> setter;
+		private final Getter<PropertyType> emptyRepresentationGetter;
 		private final ErrorRetriever errorRetriever;
 		private final Setter<ErrorMessage> errorSetter;
 
-		private HasValueDelegate(HasValue<?> field, Getter<PropertyTargetType> getter,
-				Setter<PropertyTargetType> setter, ErrorRetriever inputChecker,
-				Getter<PropertyTargetType> emptyRepresentationProvider) {
+		private HasValueDelegate(HasValue<?> field, Getter<PropertyType> getter,
+				Setter<PropertyType> setter, ErrorRetriever inputChecker,
+				Getter<PropertyType> emptyRepresentationProvider) {
 			this.field = field;
 			this.getter = getter;
 			this.setter = setter;
@@ -83,11 +83,11 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 			}
 		}
 
-		PropertyTargetType getValue() {
+		PropertyType getValue() {
 			return this.getter.get();
 		}
 
-		void setValue(PropertyTargetType value) {
+		void setValue(PropertyType value) {
 			if (value == null) {
 				this.setter.set(this.emptyRepresentationGetter.get());
 			} else {
@@ -121,16 +121,16 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 	}
 
 	@SuppressWarnings({ "rawtypes" })
-	final class PropertyBinding<PropertyTargetType> implements ValueChangeListener {
+	final class PropertyBinding<PropertyType> implements ValueChangeListener {
 
 		private static final long serialVersionUID = 1L;
 
-		private final ModelProperty<ModelType, PropertyTargetType> property;
-		private final HasValueDelegate<PropertyTargetType> hasValue;
+		private final ModelProperty<ModelType, PropertyType> property;
+		private final HasValueDelegate<PropertyType> hasValue;
 		private final Registration registration;
 
-		private PropertyBinding(ModelProperty<ModelType, PropertyTargetType> property,
-				HasValueDelegate<PropertyTargetType> hasValue) {
+		private PropertyBinding(ModelProperty<ModelType, PropertyType> property,
+				HasValueDelegate<PropertyType> hasValue) {
 			this.property = property;
 			this.hasValue = hasValue;
 			this.registration = this.hasValue.register(this);
@@ -193,21 +193,21 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 		}
 	}
 
-	<PropertyTargetType> PropertyBinding<PropertyTargetType> bindingOf(
-			ModelProperty<ModelType, PropertyTargetType> property, HasValue<PropertyTargetType> field) {
+	<PropertyType> PropertyBinding<PropertyType> bindingOf(
+			ModelProperty<ModelType, PropertyType> property, HasValue<PropertyType> field) {
 		return bindingOf(property, field, value -> null);
 	}
 
-	<PropertyTargetType> PropertyBinding<PropertyTargetType> bindingOf(
-			ModelProperty<ModelType, PropertyTargetType> property, HasValue<PropertyTargetType> field,
-			InputValidator<PropertyTargetType> inputValidator) {
+	<PropertyType> PropertyBinding<PropertyType> bindingOf(
+			ModelProperty<ModelType, PropertyType> property, HasValue<PropertyType> field,
+			InputValidator<PropertyType> inputValidator) {
 		return new PropertyBinding<>(property, new HasValueDelegate<>(field, field::getValue, field::setValue,
 				() -> inputValidator.validateInput(field.getValue()), field::getEmptyValue));
 	}
 
-	<PropertyTargetType, FieldValueType> PropertyBinding<PropertyTargetType> bindingOf(
-			ModelProperty<ModelType, PropertyTargetType> property, HasValue<FieldValueType> field,
-			Converter<FieldValueType, PropertyTargetType> converter) {
+	<PropertyType, FieldValueType> PropertyBinding<PropertyType> bindingOf(
+			ModelProperty<ModelType, PropertyType> property, HasValue<FieldValueType> field,
+			Converter<FieldValueType, PropertyType> converter) {
 		return new PropertyBinding<>(property, new HasValueDelegate<>(field,
 				() -> converter.toProperty(field.getValue()), (value) -> field.setValue(converter.toField(value)),
 				() -> converter.validateInput(field.getValue()), () -> converter.toProperty(field.getEmptyValue())));
