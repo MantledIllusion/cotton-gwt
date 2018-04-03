@@ -166,13 +166,8 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 		synchronized void update() {
 			if (!this.updating) {
 				this.updating = true;
-				if (ModelBinder.this.exists(this.property)) {
-					this.hasValue.setReadOnly(false);
-					this.hasValue.setValue(ModelBinder.this.getProperty(this.property));
-				} else {
-					this.hasValue.setReadOnly(true);
-					this.hasValue.setValue(null);
-				}
+				this.hasValue.setReadOnly(!ModelBinder.this.exists(this.property));
+				this.hasValue.setValue(ModelBinder.this.getProperty(this.property));
 				this.updating = false;
 			}
 		}
