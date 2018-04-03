@@ -443,9 +443,9 @@ public abstract class CottonUI extends com.vaadin.ui.UI {
 			this.internalErrorHandler.error(new com.vaadin.server.ErrorEvent(e));
 		}
 	}
-
+	
 	@Override
-	public final void close() {
+	public final void detach() {
 		if (getSession() != null && getSession().getSession() != null) {
 			appendToLog(SessionLogEntry.of(SessionLogContext.SESSION, SessionLogType.INFO,
 					"Closing session '" + getSession().getSession().getId() + "'"));
