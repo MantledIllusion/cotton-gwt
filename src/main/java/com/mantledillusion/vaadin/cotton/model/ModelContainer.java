@@ -24,7 +24,6 @@ import com.mantledillusion.injection.hura.annotation.Construct;
 import com.mantledillusion.injection.hura.annotation.Process;
 import com.mantledillusion.vaadin.cotton.exception.WebException;
 import com.mantledillusion.vaadin.cotton.exception.WebException.HttpErrorCodes;
-import com.mantledillusion.vaadin.cotton.model.ValidationContext.ValidationErrorRegistry;
 
 /**
  * Model container that enables model browsing via {@link ModelProperty} and can
@@ -295,6 +294,14 @@ public final class ModelContainer<ModelType> extends ModelProxy<ModelType> {
 	// ############################################################ VALIDATION ##############################################################
 	// ######################################################################################################################################
 
+	@Override
+	final void gatherPreevalutationErrors(ValidationErrorRegistry<ModelType> errorRegistry) {
+		for (ModelAccessor<ModelType> childAccessor : getChildren()) {
+			childAccessor.gatherPreevalutationErrors(errorRegistry);
+		}
+	}
+	
+	@Override
 	final void applyErrors(ValidationErrorRegistry<ModelType> errorRegistry) {
 		for (ModelAccessor<ModelType> childAccessor : getChildren()) {
 			childAccessor.applyErrors(errorRegistry);
