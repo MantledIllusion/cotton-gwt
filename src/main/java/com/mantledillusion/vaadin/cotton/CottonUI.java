@@ -446,8 +446,13 @@ public abstract class CottonUI extends com.vaadin.ui.UI {
 
 	@Override
 	public final void close() {
-		appendToLog(SessionLogEntry.of(SessionLogContext.SESSION, SessionLogType.INFO,
-				"Closing session '" + getSession().getSession().getId() + "'"));
+		if (getSession() != null && getSession().getSession() != null) {
+			appendToLog(SessionLogEntry.of(SessionLogContext.SESSION, SessionLogType.INFO,
+					"Closing session '" + getSession().getSession().getId() + "'"));
+		} else {
+			appendToLog(SessionLogEntry.of(SessionLogContext.SESSION, SessionLogType.INFO,
+					"Closing expired session"));
+		}
 
 		super.close();
 		try {
