@@ -266,7 +266,7 @@ public class ModelAccessor<ModelType> extends ModelBinder<ModelType> {
 		return field;
 	}
 	
-	private final <PropertyTargetType> void bind(ModelProperty<ModelType, PropertyTargetType> property, PropertyBinding<PropertyTargetType> binding) {
+	private final <PropertyType> void bind(ModelProperty<ModelType, PropertyType> property, PropertyBinding<PropertyType> binding) {
 		if (!this.boundFields.containsKey(property)) {
 			this.boundFields.put(property, new HashSet<>());
 		}
