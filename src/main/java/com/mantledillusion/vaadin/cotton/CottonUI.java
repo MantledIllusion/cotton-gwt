@@ -396,8 +396,10 @@ public abstract class CottonUI extends com.vaadin.ui.UI {
 			appendToLog(SessionLogEntry.of(SessionLogContext.SESSION, SessionLogType.INFO,
 					"Initializing session '" + request.getWrappedSession().getId() + "'"));
 
-			for (Cookie cookie : request.getCookies()) {
-				this.currentCookies.put(cookie.getName(), new CookieInstance(cookie.getValue(), cookie.getMaxAge()));
+			if (request.getCookies() != null) {
+				for (Cookie cookie : request.getCookies()) {
+					this.currentCookies.put(cookie.getName(), new CookieInstance(cookie.getValue(), cookie.getMaxAge()));
+				}
 			}
 
 			Page.getCurrent().addPopStateListener(new PopStateListener() {
