@@ -37,7 +37,7 @@
 		<!-- maven dependency versions -->
 		<com.vaadin.version>8.3.1</com.vaadin.version>
 		<injection.hura.version>1.0.0.ALPHA7</injection.hura.version>
-		<data.epiphy.version>1.1.2-SNAPSHOT</data.epiphy.version>
+		<data.epiphy.version>1.1.2</data.epiphy.version>
 		<slf4j.version>1.7.25</slf4j.version>
 		<junit.version>4.12</junit.version>
 		<javax.servlet.api.version>4.0.0</javax.servlet.api.version>

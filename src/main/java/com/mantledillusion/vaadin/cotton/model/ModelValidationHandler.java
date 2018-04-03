@@ -3,7 +3,7 @@ package com.mantledillusion.vaadin.cotton.model;
 import com.mantledillusion.data.epiphy.ModelProperty;
 import com.mantledillusion.vaadin.cotton.exception.WebException;
 import com.mantledillusion.vaadin.cotton.exception.WebException.HttpErrorCodes;
-import com.mantledillusion.vaadin.cotton.model.ValidationContext.ValidationErrorRegistry;
+import com.mantledillusion.vaadin.cotton.model.ValidationError.ValidityLevel;
 
 /**
  * Framework internal type <b>(DO NOT USE!)</b> for types that can validate a
@@ -11,8 +11,8 @@ import com.mantledillusion.vaadin.cotton.model.ValidationContext.ValidationError
  * {@link ModelProperty}s.
  *
  * @param <ModelType>
- *            The root type of the data model the
- *            {@link ModelValidationHandler} is able to validate.
+ *            The root type of the data model the {@link ModelValidationHandler}
+ *            is able to validate.
  */
 abstract class ModelValidationHandler<ModelType> extends ModelPersistingHandler<ModelType> {
 
@@ -26,7 +26,7 @@ abstract class ModelValidationHandler<ModelType> extends ModelPersistingHandler<
 	/**
 	 * Validates the model against the given context.
 	 * <P>
-	 * The errors found by the {@link Validator}s in the given
+	 * The errors found by the {@link PropertyValidator}s in the given
 	 * {@link ValidationContext} will be displayed on the ui components bound to the
 	 * properties that were invalid.
 	 * <P>
@@ -35,20 +35,29 @@ abstract class ModelValidationHandler<ModelType> extends ModelPersistingHandler<
 	 * 
 	 * @param context
 	 *            The context to validate against; <b>not</b> allowed to be null.
-	 * @return Whether or not the model is valid
+	 * @return The determined level of validity; never null
 	 */
-	public final synchronized boolean validate(ValidationContext<ModelType> context) {
+	public final synchronized ValidityLevel validate(ValidationContext<ModelType> context) {
 		if (context == null) {
 			throw new WebException(HttpErrorCodes.HTTP901_ILLEGAL_ARGUMENT_ERROR,
 					"Cannot validate against a null validation context.");
 		} else if (!hasModel()) {
 			throw new WebException(HttpErrorCodes.HTTP902_ILLEGAL_STATE_ERROR, "Cannot validate against a null model.");
 		}
-		ValidationErrorRegistry<ModelType> errorRegistry = context.validate(this);
-		boolean result = errorRegistry.errorMessages.isEmpty();
-		applyErrors(errorRegistry);
-		return result;
+
+		ValidationErrorRegistry<ModelType> errorRegistry = new ValidationErrorRegistry<>();
+		gatherPreevalutationErrors(errorRegistry);
+		ValidityLevel validity = errorRegistry.getValidity();
+		if (validity.isValid()) {
+			context.validate(this, errorRegistry);
+			applyErrors(errorRegistry);
+			return errorRegistry.getValidity();
+		} else {
+			return validity;
+		}
 	}
+
+	abstract void gatherPreevalutationErrors(ValidationErrorRegistry<ModelType> errorRegistry);
 
 	abstract void applyErrors(ValidationErrorRegistry<ModelType> errorRegistry);
 

@@ -8,39 +8,39 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
 import com.mantledillusion.injection.hura.annotation.Validated;
-import com.mantledillusion.vaadin.cotton.model.ValidationContext.PreEvaluateValidator;
+import com.mantledillusion.vaadin.cotton.model.ValidationContext.PreEvaluatedValidator;
 
 /**
- * {@link Annotation} for {@link Validator}s that points at one or more other
- * {@link Validator}s whose evaluation results are {@link PreEvaluated.Prerequisite}s for
- * the annotated {@link Validator} to be evaluated itself.
+ * {@link Annotation} for {@link PropertyValidator}s that points at one or more other
+ * {@link PropertyValidator}s whose evaluation results are {@link PreEvaluated.Prerequisite}s for
+ * the annotated {@link PropertyValidator} to be evaluated itself.
  */
 @Retention(RUNTIME)
 @Target(TYPE)
-@Validated(PreEvaluateValidator.class)
+@Validated(PreEvaluatedValidator.class)
 public @interface PreEvaluated {
 	
 	/**
-	 * Defines a {@link Prerequisite} of a {@link Validator}.
+	 * Defines a {@link Prerequisite} of a {@link PropertyValidator}.
 	 * <P>
-	 * This {@link Prerequisite} will be evaluated before the {@link Validator}
+	 * This {@link Prerequisite} will be evaluated before the {@link PropertyValidator}
 	 * annotated with @{@link PreEvaluated}; the {@link Prerequisite}'s result will
-	 * determine whether the annotated {@link Validator} is even executed.
+	 * determine whether the annotated {@link PropertyValidator} is even executed.
 	 */
 	public @interface Prerequisite {
 	
 		/**
 		 * The {@link Prerequisite}s class type.
 		 * 
-		 * @return The {@link Class} of the {@link Validator} implementation to
+		 * @return The {@link Class} of the {@link PropertyValidator} implementation to
 		 *         instantiate and execute beforehand; never null
 		 */
-		Class<? extends Validator<?>> value();
+		Class<? extends PropertyValidator<?>> value();
 	
 		/**
 		 * Determines whether this {@link Prerequisite}'s validation result has to be
 		 * true (no errors) or false (one or more validation errors) in order for the
-		 * {@link Validator} annotated with @{@link PreEvaluated} to be evaluated.
+		 * {@link PropertyValidator} annotated with @{@link PreEvaluated} to be evaluated.
 		 * 
 		 * @return True if the {@link Prerequisite} has to evaluate valid, false
 		 *         otherwise; true by default
@@ -49,10 +49,10 @@ public @interface PreEvaluated {
 	}
 
 	/**
-	 * The {@link PreEvaluated.Prerequisite} {@link Validator}s the annotated {@link Validator}
+	 * The {@link PreEvaluated.Prerequisite} {@link PropertyValidator}s the annotated {@link PropertyValidator}
 	 * requires to be evaluated beforehand.
 	 * 
-	 * @return the {@link PreEvaluated.Prerequisite}s to this {@link Validator}; never null, might be empty
+	 * @return the {@link PreEvaluated.Prerequisite}s to this {@link PropertyValidator}; never null, might be empty
 	 */
 	Prerequisite[] value();
 }

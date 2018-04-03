@@ -19,7 +19,6 @@ import com.mantledillusion.injection.hura.annotation.Inject.InjectionMode;
 import com.mantledillusion.injection.hura.annotation.Process;
 import com.mantledillusion.vaadin.cotton.exception.WebException;
 import com.mantledillusion.vaadin.cotton.exception.WebException.HttpErrorCodes;
-import com.mantledillusion.vaadin.cotton.model.ValidationContext.ValidationErrorRegistry;
 import com.vaadin.data.HasValue;
 
 /**
@@ -216,10 +215,33 @@ public class ModelAccessor<ModelType> extends ModelBinder<ModelType> {
 	public final <FieldType extends HasValue<PropertyValueType>, PropertyValueType> FieldType bindToProperty(
 			FieldType field, ModelProperty<ModelType, PropertyValueType> property) {
 		if (field == null) {
-			throw new IllegalArgumentException("Cannot bind a null HasValue.");
+			throw new WebException(HttpErrorCodes.HTTP901_ILLEGAL_ARGUMENT_ERROR,
+					"Cannot bind a null HasValue.");
+		} else if (property == null) {
+			throw new WebException(HttpErrorCodes.HTTP901_ILLEGAL_ARGUMENT_ERROR,
+					"Cannot bind a HasValue for a null property.");
 		}
 
-		bind(property, of(property, field));
+		bind(property, bindingOf(property, field));
+		
+		return field;
+	}
+
+	@Override
+	public <FieldType extends HasValue<PropertyType>, PropertyType> FieldType bindToProperty(FieldType field,
+			ModelProperty<ModelType, PropertyType> property, InputValidator<PropertyType> inputValidator) {
+		if (field == null) {
+			throw new WebException(HttpErrorCodes.HTTP901_ILLEGAL_ARGUMENT_ERROR,
+					"Cannot bind a null HasValue.");
+		} else if (property == null) {
+			throw new WebException(HttpErrorCodes.HTTP901_ILLEGAL_ARGUMENT_ERROR,
+					"Cannot bind a HasValue for a null property.");
+		} else if (inputValidator == null) {
+			throw new WebException(HttpErrorCodes.HTTP901_ILLEGAL_ARGUMENT_ERROR,
+					"Cannot bind a HasValue using a null input validator.");
+		}
+
+		bind(property, bindingOf(property, field, inputValidator));
 		
 		return field;
 	}
@@ -227,14 +249,19 @@ public class ModelAccessor<ModelType> extends ModelBinder<ModelType> {
 	@Override
 	public final <FieldType extends HasValue<FieldValueType>, FieldValueType, PropertyValueType> FieldType bindToProperty(
 			FieldType field, ModelProperty<ModelType, PropertyValueType> property,
-			PropertyConverter<FieldValueType, PropertyValueType> converter) {
+			Converter<FieldValueType, PropertyValueType> converter) {
 		if (field == null) {
-			throw new IllegalArgumentException("Cannot bind a null HasValue.");
+			throw new WebException(HttpErrorCodes.HTTP901_ILLEGAL_ARGUMENT_ERROR,
+					"Cannot bind a null HasValue.");
+		} else if (property == null) {
+			throw new WebException(HttpErrorCodes.HTTP901_ILLEGAL_ARGUMENT_ERROR,
+					"Cannot bind a HasValue for a null property.");
 		} else if (converter == null) {
-			throw new IllegalArgumentException("Cannot bind using a null converter.");
+			throw new WebException(HttpErrorCodes.HTTP901_ILLEGAL_ARGUMENT_ERROR,
+					"Cannot bind a HasValue to a differently typed property using a null converter.");
 		}
 
-		bind(property, of(property, field, converter));
+		bind(property, bindingOf(property, field, converter));
 		
 		return field;
 	}
@@ -279,10 +306,28 @@ public class ModelAccessor<ModelType> extends ModelBinder<ModelType> {
 	// ######################################################################################################################################
 
 	@Override
+	final void gatherPreevalutationErrors(ValidationErrorRegistry<ModelType> errorRegistry) {
+		Set<ValidationError> errors;
+		for (ModelProperty<ModelType, ?> property: this.boundFields.keySet()) {
+			for (PropertyBinding<?> binding : this.boundFields.get(property)) {
+				errors = binding.getError();
+				if (errors != null) {
+					for (ValidationError error: errors) {
+						errorRegistry.addError(error, property);
+					}
+				}
+			}
+		}
+		for (ModelAccessor<ModelType> child : getChildren()) {
+			child.gatherPreevalutationErrors(errorRegistry);
+		}
+	}
+
+	@Override
 	final void applyErrors(ValidationErrorRegistry<ModelType> errorRegistry) {
 		for (ModelProperty<ModelType, ?> property: this.boundFields.keySet()) {
 			for (PropertyBinding<?> binding : this.boundFields.get(property)) {
-				binding.setError(errorRegistry.errorMessages);
+				binding.setError(errorRegistry);
 			}
 		}
 		for (ModelAccessor<ModelType> child : getChildren()) {
