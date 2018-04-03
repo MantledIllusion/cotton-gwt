@@ -454,7 +454,7 @@ public abstract class CottonUI extends com.vaadin.ui.UI {
 					"Closing expired session"));
 		}
 
-		super.close();
+		super.detach();
 		try {
 			this.eventBus.dispatch(new ShutdownEvent(), null);
 		} catch (Throwable t) {
