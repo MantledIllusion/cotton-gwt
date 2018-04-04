@@ -239,10 +239,9 @@ public final class ModelContainer<ModelType> extends ModelProxy<ModelType> {
 
 		registerPropertyChange(property, indexContext);
 
-		updatePropertyIndexOfChildren(property, indexContext.indexOf(property), +1);
+		updatePropertyIndexOfChildren(property, indexContext, +1);
 
-		updatePropertyBoundFieldsOfChildren(property.getParent(),
-				indexContext.intersection(Collections.singleton(property)));
+		updatePropertyBoundFieldsOfChildren(property, indexContext.intersection(Collections.singleton(property)));
 	}
 
 	@Override
@@ -259,10 +258,9 @@ public final class ModelContainer<ModelType> extends ModelProxy<ModelType> {
 
 		registerPropertyChange(property, indexContext);
 
-		updatePropertyIndexOfChildren(property, indexContext.indexOf(property), -1);
+		updatePropertyIndexOfChildren(property, indexContext, -1);
 
-		updatePropertyBoundFieldsOfChildren(property.getParent(),
-				indexContext.intersection(Collections.singleton(property)));
+		updatePropertyBoundFieldsOfChildren(property, indexContext.intersection(Collections.singleton(property)));
 
 		return value;
 	}
@@ -274,10 +272,13 @@ public final class ModelContainer<ModelType> extends ModelProxy<ModelType> {
 		this.changeLog.get(property).add(indexContext.intersection(property.getIndices()));
 	}
 
-	private <PropertyType> void updatePropertyIndexOfChildren(ModelProperty<ModelType, PropertyType> property,
-			int baseIndex, int modification) {
-		for (ModelAccessor<ModelType> child : getChildren()) {
-			child.updatePropertyIndex(property, baseIndex, modification);
+	private <PropertyType> void updatePropertyIndexOfChildren(ModelPropertyList<ModelType, PropertyType> property,
+			IndexContext indexContext, int modification) {
+		if (indexContext.contains(property)) {
+			int baseIndex = indexContext.indexOf(property);
+			for (ModelAccessor<ModelType> child : getChildren()) {
+				child.updatePropertyIndex(property, baseIndex, modification);
+			}
 		}
 	}
 
@@ -300,7 +301,7 @@ public final class ModelContainer<ModelType> extends ModelProxy<ModelType> {
 			childAccessor.gatherPreevalutationErrors(errorRegistry);
 		}
 	}
-	
+
 	@Override
 	final void applyErrors(ValidationErrorRegistry<ModelType> errorRegistry) {
 		for (ModelAccessor<ModelType> childAccessor : getChildren()) {
