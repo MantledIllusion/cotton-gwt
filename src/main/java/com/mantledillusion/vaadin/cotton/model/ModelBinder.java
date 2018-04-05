@@ -53,28 +53,20 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 		void set(PropertyType value);
 	}
 
-	private interface ErrorRetriever {
-
-		Collection<ValidationError> validate();
-	}
-
 	private static final class HasValueDelegate<PropertyType> {
 
 		private final HasValue<?> field;
-		private final Getter<PropertyType> getter;
-		private final Setter<PropertyType> setter;
-		private final Getter<PropertyType> emptyRepresentationGetter;
-		private final ErrorRetriever errorRetriever;
+		private final Getter<PropertyType> valueGetter;
+		private final Setter<PropertyType> valueSetter;
+		private final Getter<Collection<ValidationError>> errorGetter;
 		private final Setter<ErrorMessage> errorSetter;
 
-		private HasValueDelegate(HasValue<?> field, Getter<PropertyType> getter,
-				Setter<PropertyType> setter, ErrorRetriever inputChecker,
-				Getter<PropertyType> emptyRepresentationProvider) {
+		private HasValueDelegate(HasValue<?> field, Getter<PropertyType> valueGetter,
+				Setter<PropertyType> valueSetter, Getter<Collection<ValidationError>> errorGetter) {
 			this.field = field;
-			this.getter = getter;
-			this.setter = setter;
-			this.errorRetriever = inputChecker;
-			this.emptyRepresentationGetter = emptyRepresentationProvider;
+			this.valueGetter = valueGetter;
+			this.valueSetter = valueSetter;
+			this.errorGetter = errorGetter;
 			if (this.field instanceof AbstractComponent) {
 				this.errorSetter = errorMessage -> ((AbstractComponent) this.field).setComponentError(errorMessage);
 			} else {
@@ -84,15 +76,11 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 		}
 
 		PropertyType getValue() {
-			return this.getter.get();
+			return this.valueGetter.get();
 		}
 
 		void setValue(PropertyType value) {
-			if (value == null) {
-				this.setter.set(this.emptyRepresentationGetter.get());
-			} else {
-				this.setter.set(value);
-			}
+			this.valueSetter.set(value);
 		}
 
 		void setReadOnly(boolean readOnly) {
@@ -100,7 +88,7 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 		}
 
 		Set<ValidationError> validate() {
-			Collection<ValidationError> errors = this.errorRetriever.validate();
+			Collection<ValidationError> errors = this.errorGetter.get();
 			if (errors != null) {
 				Set<ValidationError> errorSet = new HashSet<>(errors);
 				errorSet.remove(null);
@@ -201,16 +189,20 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 	<PropertyType> PropertyBinding<PropertyType> bindingOf(
 			ModelProperty<ModelType, PropertyType> property, HasValue<PropertyType> field,
 			InputValidator<PropertyType> inputValidator) {
-		return new PropertyBinding<>(property, new HasValueDelegate<>(field, field::getValue, field::setValue,
-				() -> inputValidator.validateInput(field.getValue()), field::getEmptyValue));
+		Getter<PropertyType> valueGetter = field::getValue;
+		Setter<PropertyType> valueSetter = value -> field.setValue(value == null ? field.getEmptyValue() : value);
+		Getter<Collection<ValidationError>> errorGetter = () -> inputValidator.validateInput(field.getValue());
+		return new PropertyBinding<>(property, new HasValueDelegate<>(field, valueGetter, valueSetter, errorGetter));
 	}
 
 	<PropertyType, FieldValueType> PropertyBinding<PropertyType> bindingOf(
 			ModelProperty<ModelType, PropertyType> property, HasValue<FieldValueType> field,
 			Converter<FieldValueType, PropertyType> converter) {
+		Getter<PropertyType> valueGetter = () -> converter.toProperty(field.getValue());
+		Setter<PropertyType> valueSetter = value -> field.setValue(value == null ? field.getEmptyValue() : converter.toField(value));
+		Getter<Collection<ValidationError>> errorGetter = () -> converter.validateInput(field.getValue());
 		return new PropertyBinding<>(property, new HasValueDelegate<>(field,
-				() -> converter.toProperty(field.getValue()), (value) -> field.setValue(converter.toField(value)),
-				() -> converter.validateInput(field.getValue()), () -> converter.toProperty(field.getEmptyValue())));
+				valueGetter, valueSetter, errorGetter));
 	}
 
 	ModelBinder() {
