@@ -584,8 +584,7 @@ public abstract class CottonUI extends com.vaadin.ui.UI {
 		NavigationType navigationType;
 		if (!urlPath.equals(this.currentUrl)) {
 			navigationType = NavigationType.SEGMENT_CHANGE;
-		} else if (!params.equals(this.currentParams) && Arrays.equals(params.get(QUERY_PARAM_KEY_LANGUAGE),
-				this.currentParams.get(QUERY_PARAM_KEY_LANGUAGE))) {
+		} else if (containsChangedParamsButUnchangedLanguage(params)) {
 			navigationType = NavigationType.QUERY_PARAM_CHANGE;
 		} else {
 			navigationType = NavigationType.REFRESH;
@@ -650,6 +649,22 @@ public abstract class CottonUI extends com.vaadin.ui.UI {
 			appendToLog(SessionLogEntry.of(SessionLogContext.NAVIGATION, SessionLogType.WARNING,
 					"Navigation to '" + buildFullUrl(urlPath, params) + "' denied."));
 			updateUrl(createBrowserNavEntry);
+			return false;
+		}
+	}
+	
+	boolean containsChangedParamsButUnchangedLanguage(Map<String, String[]> params) {
+		if (!Arrays.equals(params.get(QUERY_PARAM_KEY_LANGUAGE),
+				this.currentParams.get(QUERY_PARAM_KEY_LANGUAGE))) {
+			return false;
+		} else if (!this.currentParams.keySet().equals(params.keySet())) {
+			return true;
+		} else {
+			for (String key: params.keySet()) {
+				if (!Arrays.equals(params.get(key), this.currentParams.get(key))) {
+					return true;
+				}
+			}
 			return false;
 		}
 	}
