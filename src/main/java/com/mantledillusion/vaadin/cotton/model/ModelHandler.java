@@ -54,7 +54,7 @@ public interface ModelHandler<ModelType> {
 	 * <P>
 	 * For determination of existence, this handler's own index context is used.
 	 * 
-	 * @param <TargetPropertyType>
+	 * @param <PropertyType>
 	 *            The type of the property to check.
 	 * @param property
 	 *            The property to check for existence; <b>not</b> allowed to be
@@ -62,7 +62,7 @@ public interface ModelHandler<ModelType> {
 	 * @return True if all of the given properties' parents are non-null, false
 	 *         otherwise
 	 */
-	<TargetPropertyType> boolean exists(ModelProperty<ModelType, TargetPropertyType> property);
+	<PropertyType> boolean exists(ModelProperty<ModelType, PropertyType> property);
 
 	/**
 	 * Determines whether the given property exists in the model; or to put it
@@ -81,7 +81,7 @@ public interface ModelHandler<ModelType> {
 	 * For determination of existence, the given index context is used as an
 	 * extension to the handler's own index context.
 	 * 
-	 * @param <TargetPropertyType>
+	 * @param <PropertyType>
 	 *            The type of the property to check.
 	 * @param property
 	 *            The property to check for existence; <b>not</b> allowed to be
@@ -92,7 +92,7 @@ public interface ModelHandler<ModelType> {
 	 * @return True if all of the given properties' parents are non-null, false
 	 *         otherwise
 	 */
-	<TargetPropertyType> boolean exists(ModelProperty<ModelType, TargetPropertyType> property, IndexContext context);
+	<PropertyType> boolean exists(ModelProperty<ModelType, PropertyType> property, IndexContext context);
 
 	// ######################################################################################################################################
 	// ###################################################### PROPERTIED MODEL ACCESS #######################################################
@@ -107,7 +107,7 @@ public interface ModelHandler<ModelType> {
 	 * For determining the correct property, this handler's own index context is
 	 * used.
 	 * 
-	 * @param <TargetPropertyType>
+	 * @param <PropertyType>
 	 *            The type of the property to get.
 	 * @param property
 	 *            The property to fetch model data for; <b>not</b> allowed to be
@@ -115,7 +115,7 @@ public interface ModelHandler<ModelType> {
 	 * @return The target data in the model the given property points to; might be
 	 *         null if the property is null
 	 */
-	<TargetPropertyType> TargetPropertyType getProperty(ModelProperty<ModelType, TargetPropertyType> property);
+	<PropertyType> PropertyType getProperty(ModelProperty<ModelType, PropertyType> property);
 
 	/**
 	 * Fetches the value from inside the model data the given property points to.
@@ -126,7 +126,7 @@ public interface ModelHandler<ModelType> {
 	 * For determining the correct property, the given index context is used as an
 	 * extension to the handler's own index context.
 	 * 
-	 * @param <TargetPropertyType>
+	 * @param <PropertyType>
 	 *            The type of the property to get.
 	 * @param property
 	 *            The property to fetch model data for; <b>not</b> allowed to be
@@ -137,7 +137,7 @@ public interface ModelHandler<ModelType> {
 	 * @return The target data in the model the given property points to; might be
 	 *         null if the property is null
 	 */
-	<TargetPropertyType> TargetPropertyType getProperty(ModelProperty<ModelType, TargetPropertyType> property,
+	<PropertyType> PropertyType getProperty(ModelProperty<ModelType, PropertyType> property,
 			IndexContext context);
 
 	/**
@@ -149,7 +149,7 @@ public interface ModelHandler<ModelType> {
 	 * For determining the correct property, this handler's own index context is
 	 * used.
 	 * 
-	 * @param <TargetPropertyType>
+	 * @param <PropertyType>
 	 *            The type of the property to set.
 	 * @param property
 	 *            The property to set inside the model; <b>not</b> allowed to be
@@ -157,8 +157,8 @@ public interface ModelHandler<ModelType> {
 	 * @param value
 	 *            The value to inject into the model.
 	 */
-	<TargetPropertyType> void setProperty(ModelProperty<ModelType, TargetPropertyType> property,
-			TargetPropertyType value);
+	<PropertyType> void setProperty(ModelProperty<ModelType, PropertyType> property,
+			PropertyType value);
 
 	/**
 	 * Sets the value inside the model data the given property points to.
@@ -169,7 +169,7 @@ public interface ModelHandler<ModelType> {
 	 * For determining the correct property, the given index context is used as an
 	 * extension to the handler's own index context.
 	 * 
-	 * @param <TargetPropertyType>
+	 * @param <PropertyType>
 	 *            The type of the property to set.
 	 * @param property
 	 *            The property to set inside the model; <b>not</b> allowed to be
@@ -180,8 +180,8 @@ public interface ModelHandler<ModelType> {
 	 *            The context which is used for determining the correct property;
 	 *            might be null.
 	 */
-	<TargetPropertyType> void setProperty(ModelProperty<ModelType, TargetPropertyType> property,
-			TargetPropertyType value, IndexContext context);
+	<PropertyType> void setProperty(ModelProperty<ModelType, PropertyType> property,
+			PropertyType value, IndexContext context);
 
 	/**
 	 * Adds the value to a list inside the model data the given property points to.
@@ -194,7 +194,7 @@ public interface ModelHandler<ModelType> {
 	 * For determining the correct property, this handler's own index context is
 	 * used.
 	 * 
-	 * @param <TargetPropertyType>
+	 * @param <PropertyType>
 	 *            The type of the property to add.
 	 * @param property
 	 *            The property to set inside the model; <b>not</b> allowed to be
@@ -202,8 +202,8 @@ public interface ModelHandler<ModelType> {
 	 * @param value
 	 *            The value to insert into the list; might be null.
 	 */
-	<TargetPropertyType> void addProperty(ModelPropertyList<ModelType, TargetPropertyType> property,
-			TargetPropertyType value);
+	<PropertyType> void addProperty(ModelPropertyList<ModelType, PropertyType> property,
+			PropertyType value);
 
 	/**
 	 * Adds an item to a list inside the model data the given property points to.
@@ -216,7 +216,7 @@ public interface ModelHandler<ModelType> {
 	 * For determining the correct property, the given index context is used as an
 	 * extension to the handler's own index context.
 	 * 
-	 * @param <TargetPropertyType>
+	 * @param <PropertyType>
 	 *            The type of the property to add.
 	 * @param property
 	 *            The property to set inside the model; <b>not</b> allowed to be
@@ -227,8 +227,8 @@ public interface ModelHandler<ModelType> {
 	 *            The context which is used for determining the correct property;
 	 *            might be null.
 	 */
-	<TargetPropertyType> void addProperty(ModelPropertyList<ModelType, TargetPropertyType> property,
-			TargetPropertyType value, IndexContext context);
+	<PropertyType> void addProperty(ModelPropertyList<ModelType, PropertyType> property,
+			PropertyType value, IndexContext context);
 
 	/**
 	 * Removes an item from a list inside the model data the given property points
@@ -242,7 +242,7 @@ public interface ModelHandler<ModelType> {
 	 * For determining the correct property, this handler's own index context is
 	 * used.
 	 * 
-	 * @param <TargetPropertyType>
+	 * @param <PropertyType>
 	 *            The type of the property to remove.
 	 * @param property
 	 *            The property to set inside the model; <b>not</b> allowed to be
@@ -250,7 +250,7 @@ public interface ModelHandler<ModelType> {
 	 * @return The item that has been removed from the list; might be null if the
 	 *         property is null
 	 */
-	<TargetPropertyType> TargetPropertyType removeProperty(ModelPropertyList<ModelType, TargetPropertyType> property);
+	<PropertyType> PropertyType removeProperty(ModelPropertyList<ModelType, PropertyType> property);
 
 	/**
 	 * Removes an item from a list inside the model data the given property points
@@ -264,7 +264,7 @@ public interface ModelHandler<ModelType> {
 	 * For determining the correct property, the given index context is used as an
 	 * extension to the handler's own index context.
 	 * 
-	 * @param <TargetPropertyType>
+	 * @param <PropertyType>
 	 *            The type of the property to remove.
 	 * @param property
 	 *            The property to set inside the model; <b>not</b> allowed to be
@@ -275,6 +275,6 @@ public interface ModelHandler<ModelType> {
 	 * @return The item that has been removed from the list; might be null if the
 	 *         property is null
 	 */
-	<TargetPropertyType> TargetPropertyType removeProperty(ModelPropertyList<ModelType, TargetPropertyType> property,
+	<PropertyType> PropertyType removeProperty(ModelPropertyList<ModelType, PropertyType> property,
 			IndexContext context);
 }

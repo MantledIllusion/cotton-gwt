@@ -287,7 +287,7 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 	 *            The type of {@link HasValue} that is being bound.
 	 * @param <FieldValueType>
 	 *            The type of value the field accepts
-	 * @param <PropertyValueType>
+	 * @param <PropertyType>
 	 *            The type of data the property refers to.
 	 * @param field
 	 *            The {@link HasValue} to bind; might <b>not</b> be null.
@@ -298,9 +298,9 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 	 *            properties' value type and vice versa; might <b>not</b> be null.
 	 * @return The given field for in-line use
 	 */
-	public abstract <FieldType extends HasValue<FieldValueType>, FieldValueType, PropertyValueType> FieldType bindToProperty(
-			FieldType field, ModelProperty<ModelType, PropertyValueType> property,
-			Converter<FieldValueType, PropertyValueType> converter);
+	public abstract <FieldType extends HasValue<FieldValueType>, FieldValueType, PropertyType> FieldType bindToProperty(
+			FieldType field, ModelProperty<ModelType, PropertyType> property,
+			Converter<FieldValueType, PropertyType> converter);
 
 	// ##############################################################################################################
 	// ################################################## LABEL #####################################################
