@@ -60,6 +60,7 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 		private final Setter<PropertyType> valueSetter;
 		private final Getter<Collection<ValidationError>> errorGetter;
 		private final Setter<ErrorMessage> errorSetter;
+		private final Setter<Boolean> enablementSetter;
 
 		private HasValueDelegate(HasValue<?> field, Getter<PropertyType> valueGetter,
 				Setter<PropertyType> valueSetter, Getter<Collection<ValidationError>> errorGetter) {
@@ -67,11 +68,21 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 			this.valueGetter = valueGetter;
 			this.valueSetter = valueSetter;
 			this.errorGetter = errorGetter;
+			
 			if (this.field instanceof AbstractComponent) {
 				this.errorSetter = errorMessage -> ((AbstractComponent) this.field).setComponentError(errorMessage);
 			} else {
 				this.errorSetter = errorMessage -> {
 				};
+			}
+			
+			if (this.field instanceof Component) {
+				this.enablementSetter = enable -> {
+					this.field.setReadOnly(!enable);
+					((Component) this.field).setEnabled(enable);
+				};
+			} else { 
+				this.enablementSetter = enable -> this.field.setReadOnly(enable);
 			}
 		}
 
@@ -83,8 +94,8 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 			this.valueSetter.set(value);
 		}
 
-		void setReadOnly(boolean readOnly) {
-			this.field.setReadOnly(readOnly);
+		void setEnabled(boolean enabled) {
+			this.enablementSetter.set(enabled);
 		}
 
 		Set<ValidationError> validate() {
@@ -154,7 +165,7 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 		synchronized void update() {
 			if (!this.updating) {
 				this.updating = true;
-				this.hasValue.setReadOnly(!ModelBinder.this.exists(this.property));
+				this.hasValue.setEnabled(ModelBinder.this.exists(this.property));
 				this.hasValue.setValue(ModelBinder.this.getProperty(this.property));
 				this.updating = false;
 			}
