@@ -44,7 +44,7 @@ abstract class ModelPersistingHandler<ModelType> implements ModelHandler<ModelTy
 	 * <P>
 	 * For determination on changes, this handler's own index context is used.
 	 * 
-	 * @param <TargetPropertyType>
+	 * @param <PropertyType>
 	 *            The type of the property to check for changes.
 	 * @param property
 	 *            The property to check for changes for; <b>not</b> allowed to be
@@ -52,8 +52,8 @@ abstract class ModelPersistingHandler<ModelType> implements ModelHandler<ModelTy
 	 * @return True if there are pending changes to the given property, false
 	 *         otherwise or if there is no current model
 	 */
-	public abstract <TargetPropertyType> boolean isPropertyChanged(
-			ModelProperty<ModelType, TargetPropertyType> property);
+	public abstract <PropertyType> boolean isPropertyChanged(
+			ModelProperty<ModelType, PropertyType> property);
 
 	/**
 	 * Returns whether the given specific property of the model instance currently
@@ -68,7 +68,7 @@ abstract class ModelPersistingHandler<ModelType> implements ModelHandler<ModelTy
 	 * <P>
 	 * For determination on changes, the given index context is used.
 	 * 
-	 * @param <TargetPropertyType>
+	 * @param <PropertyType>
 	 *            The type of the property to check for changes.
 	 * @param property
 	 *            The property to check for changes for; <b>not</b> allowed to be
@@ -79,8 +79,8 @@ abstract class ModelPersistingHandler<ModelType> implements ModelHandler<ModelTy
 	 * @return True if there are pending changes to the given property, false
 	 *         otherwise or if there is no current model
 	 */
-	public abstract <TargetPropertyType> boolean isPropertyChanged(
-			ModelProperty<ModelType, TargetPropertyType> property, IndexContext context);
+	public abstract <PropertyType> boolean isPropertyChanged(
+			ModelProperty<ModelType, PropertyType> property, IndexContext context);
 
 	// ######################################################################################################################################
 	// ############################################################ PERSISTING ##############################################################

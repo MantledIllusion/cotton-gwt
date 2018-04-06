@@ -195,22 +195,22 @@ public final class ModelContainer<ModelType> extends ModelProxy<ModelType> {
 	}
 
 	@Override
-	public final <TargetPropertyType> TargetPropertyType getProperty(
-			ModelProperty<ModelType, TargetPropertyType> property, IndexContext indexContext) {
+	public final <PropertyType> PropertyType getProperty(
+			ModelProperty<ModelType, PropertyType> property, IndexContext indexContext) {
 		indexContext = ObjectUtils.defaultIfNull(indexContext, IndexContext.EMPTY);
 		return property.get(this.dataModel, indexContext, true);
 	}
 
 	@Override
-	public final <TargetPropertyType> void setProperty(ModelProperty<ModelType, TargetPropertyType> property,
-			TargetPropertyType value) {
+	public final <PropertyType> void setProperty(ModelProperty<ModelType, PropertyType> property,
+			PropertyType value) {
 		setProperty(property, value, IndexContext.EMPTY);
 	}
 
 	@Override
 	@SuppressWarnings("unchecked")
-	public final <TargetPropertyType> void setProperty(ModelProperty<ModelType, TargetPropertyType> property,
-			TargetPropertyType value, IndexContext indexContext) {
+	public final <PropertyType> void setProperty(ModelProperty<ModelType, PropertyType> property,
+			PropertyType value, IndexContext indexContext) {
 		if (property.isRoot()) {
 			setModel((ModelType) value);
 		} else {
@@ -226,14 +226,14 @@ public final class ModelContainer<ModelType> extends ModelProxy<ModelType> {
 	}
 
 	@Override
-	public <TargetPropertyType> void addProperty(ModelPropertyList<ModelType, TargetPropertyType> property,
-			TargetPropertyType value) {
+	public <PropertyType> void addProperty(ModelPropertyList<ModelType, PropertyType> property,
+			PropertyType value) {
 		addProperty(property, value, IndexContext.EMPTY);
 	}
 
 	@Override
-	public <TargetPropertyType> void addProperty(ModelPropertyList<ModelType, TargetPropertyType> property,
-			TargetPropertyType value, IndexContext indexContext) {
+	public <PropertyType> void addProperty(ModelPropertyList<ModelType, PropertyType> property,
+			PropertyType value, IndexContext indexContext) {
 		indexContext = ObjectUtils.defaultIfNull(indexContext, IndexContext.EMPTY);
 		property.add(this.dataModel, value, indexContext);
 
@@ -245,16 +245,16 @@ public final class ModelContainer<ModelType> extends ModelProxy<ModelType> {
 	}
 
 	@Override
-	public <TargetPropertyType> TargetPropertyType removeProperty(
-			ModelPropertyList<ModelType, TargetPropertyType> property) {
+	public <PropertyType> PropertyType removeProperty(
+			ModelPropertyList<ModelType, PropertyType> property) {
 		return removeProperty(property, IndexContext.EMPTY);
 	}
 
 	@Override
-	public <TargetPropertyType> TargetPropertyType removeProperty(
-			ModelPropertyList<ModelType, TargetPropertyType> property, IndexContext indexContext) {
+	public <PropertyType> PropertyType removeProperty(
+			ModelPropertyList<ModelType, PropertyType> property, IndexContext indexContext) {
 		indexContext = ObjectUtils.defaultIfNull(indexContext, IndexContext.EMPTY);
-		TargetPropertyType value = property.remove(this.dataModel, indexContext);
+		PropertyType value = property.remove(this.dataModel, indexContext);
 
 		registerPropertyChange(property, indexContext);
 
@@ -397,14 +397,14 @@ public final class ModelContainer<ModelType> extends ModelProxy<ModelType> {
 		return this.dataModel;
 	}
 
-	final <TargetPropertyType> List<TargetPropertyType> persistProperty(
-			ModelProperty<ModelType, TargetPropertyType> property, IndexContext context) {
-		List<TargetPropertyType> persistedInstances = new ArrayList<>();
+	final <PropertyType> List<PropertyType> persistProperty(
+			ModelProperty<ModelType, PropertyType> property, IndexContext context) {
+		List<PropertyType> persistedInstances = new ArrayList<>();
 		for (IndexContext possibleContext : determinePossiblePropertyContexts(property, context)) {
-			TargetPropertyType instance = getProperty(property, possibleContext);
+			PropertyType instance = getProperty(property, possibleContext);
 			if (instance != null) {
 				@SuppressWarnings("unchecked")
-				ModelPersistor<ModelType, TargetPropertyType> persistor = (ModelPersistor<ModelType, TargetPropertyType>) this.persistors
+				ModelPersistor<ModelType, PropertyType> persistor = (ModelPersistor<ModelType, PropertyType>) this.persistors
 						.get(property);
 
 				try {

@@ -134,23 +134,23 @@ public class ModelAccessor<ModelType> extends ModelBinder<ModelType> {
 	}
 
 	@Override
-	public final <TargetPropertyType> boolean isPropertyChanged(ModelProperty<ModelType, TargetPropertyType> property) {
+	public final <PropertyType> boolean isPropertyChanged(ModelProperty<ModelType, PropertyType> property) {
 		return this.parent.isPropertyChanged(property, this.indexContext);
 	}
 
 	@Override
-	public final <TargetPropertyType> boolean isPropertyChanged(ModelProperty<ModelType, TargetPropertyType> property,
+	public final <PropertyType> boolean isPropertyChanged(ModelProperty<ModelType, PropertyType> property,
 			IndexContext context) {
 		return this.parent.isPropertyChanged(property, this.indexContext.union(context));
 	}
 
 	@Override
-	public <TargetPropertyType> boolean exists(ModelProperty<ModelType, TargetPropertyType> property) {
+	public <PropertyType> boolean exists(ModelProperty<ModelType, PropertyType> property) {
 		return this.parent.exists(property, this.indexContext);
 	}
 
 	@Override
-	public <TargetPropertyType> boolean exists(ModelProperty<ModelType, TargetPropertyType> property,
+	public <PropertyType> boolean exists(ModelProperty<ModelType, PropertyType> property,
 			IndexContext context) {
 		return this.parent.exists(property, this.indexContext.union(context));
 	}
@@ -160,50 +160,50 @@ public class ModelAccessor<ModelType> extends ModelBinder<ModelType> {
 	// ######################################################################################################################################
 
 	@Override
-	public final <TargetPropertyType> TargetPropertyType getProperty(
-			ModelProperty<ModelType, TargetPropertyType> property) {
+	public final <PropertyType> PropertyType getProperty(
+			ModelProperty<ModelType, PropertyType> property) {
 		return this.parent.getProperty(property, this.indexContext);
 	}
 
 	@Override
-	public final <TargetPropertyType> TargetPropertyType getProperty(
-			ModelProperty<ModelType, TargetPropertyType> property, IndexContext indexContext) {
+	public final <PropertyType> PropertyType getProperty(
+			ModelProperty<ModelType, PropertyType> property, IndexContext indexContext) {
 		return this.parent.getProperty(property, this.indexContext.union(indexContext));
 	}
 
 	@Override
-	public final <TargetPropertyType> void setProperty(ModelProperty<ModelType, TargetPropertyType> property,
-			TargetPropertyType value) {
+	public final <PropertyType> void setProperty(ModelProperty<ModelType, PropertyType> property,
+			PropertyType value) {
 		this.parent.setProperty(property, value, this.indexContext);
 	}
 
 	@Override
-	public final <TargetPropertyType> void setProperty(ModelProperty<ModelType, TargetPropertyType> property,
-			TargetPropertyType value, IndexContext indexContext) {
+	public final <PropertyType> void setProperty(ModelProperty<ModelType, PropertyType> property,
+			PropertyType value, IndexContext indexContext) {
 		this.parent.setProperty(property, value, this.indexContext.union(indexContext));
 	}
 
 	@Override
-	public final <TargetPropertyType> void addProperty(ModelPropertyList<ModelType, TargetPropertyType> property,
-			TargetPropertyType value) {
+	public final <PropertyType> void addProperty(ModelPropertyList<ModelType, PropertyType> property,
+			PropertyType value) {
 		this.parent.addProperty(property, value, this.indexContext);
 	}
 
 	@Override
-	public final <TargetPropertyType> void addProperty(ModelPropertyList<ModelType, TargetPropertyType> property,
-			TargetPropertyType value, IndexContext indexContext) {
+	public final <PropertyType> void addProperty(ModelPropertyList<ModelType, PropertyType> property,
+			PropertyType value, IndexContext indexContext) {
 		this.parent.addProperty(property, value, this.indexContext.union(indexContext));
 	}
 
 	@Override
-	public final <TargetPropertyType> TargetPropertyType removeProperty(
-			ModelPropertyList<ModelType, TargetPropertyType> property) {
+	public final <PropertyType> PropertyType removeProperty(
+			ModelPropertyList<ModelType, PropertyType> property) {
 		return this.parent.removeProperty(property, this.indexContext);
 	}
 
 	@Override
-	public final <TargetPropertyType> TargetPropertyType removeProperty(
-			ModelPropertyList<ModelType, TargetPropertyType> property, IndexContext indexContext) {
+	public final <PropertyType> PropertyType removeProperty(
+			ModelPropertyList<ModelType, PropertyType> property, IndexContext indexContext) {
 		return this.parent.removeProperty(property, this.indexContext.union(indexContext));
 	}
 
@@ -212,8 +212,8 @@ public class ModelAccessor<ModelType> extends ModelBinder<ModelType> {
 	// ######################################################################################################################################
 
 	@Override
-	public final <FieldType extends HasValue<PropertyValueType>, PropertyValueType> FieldType bindToProperty(
-			FieldType field, ModelProperty<ModelType, PropertyValueType> property) {
+	public final <FieldType extends HasValue<PropertyType>, PropertyType> FieldType bindToProperty(
+			FieldType field, ModelProperty<ModelType, PropertyType> property) {
 		if (field == null) {
 			throw new WebException(HttpErrorCodes.HTTP901_ILLEGAL_ARGUMENT_ERROR,
 					"Cannot bind a null HasValue.");
@@ -247,9 +247,9 @@ public class ModelAccessor<ModelType> extends ModelBinder<ModelType> {
 	}
 
 	@Override
-	public final <FieldType extends HasValue<FieldValueType>, FieldValueType, PropertyValueType> FieldType bindToProperty(
-			FieldType field, ModelProperty<ModelType, PropertyValueType> property,
-			Converter<FieldValueType, PropertyValueType> converter) {
+	public final <FieldType extends HasValue<FieldValueType>, FieldValueType, PropertyType> FieldType bindToProperty(
+			FieldType field, ModelProperty<ModelType, PropertyType> property,
+			Converter<FieldValueType, PropertyType> converter) {
 		if (field == null) {
 			throw new WebException(HttpErrorCodes.HTTP901_ILLEGAL_ARGUMENT_ERROR,
 					"Cannot bind a null HasValue.");
@@ -278,7 +278,7 @@ public class ModelAccessor<ModelType> extends ModelBinder<ModelType> {
 	// ############################################################## UPDATE ################################################################
 	// ######################################################################################################################################
 
-	final <PropertyValueType> void updatePropertyBoundFields(IndexContext context,
+	final void updatePropertyBoundFields(IndexContext context,
 			Set<ModelProperty<ModelType, ?>> properties) {
 		if (context.contains(this.indexContext)) {
 			for (ModelProperty<ModelType, ?> property : properties) {

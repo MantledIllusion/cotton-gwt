@@ -19,13 +19,13 @@ import com.mantledillusion.vaadin.cotton.exception.WebException.HttpErrorCodes;
  * @param <ModelType>
  *            The root type of the data model the {@link ModelPersistor}
  *            persists.
- * @param <TargetPropertyType>
+ * @param <PropertyType>
  *            The type this {@link ModelPersistor}s property points to.
  */
-public abstract class ModelPersistor<ModelType, TargetPropertyType> {
+public abstract class ModelPersistor<ModelType, PropertyType> {
 
 	private final ModelContainer<ModelType> parentContainer;
-	private final ModelProperty<ModelType, TargetPropertyType> property;
+	private final ModelProperty<ModelType, PropertyType> property;
 
 	/**
 	 * {@link Constructor}.
@@ -38,7 +38,7 @@ public abstract class ModelPersistor<ModelType, TargetPropertyType> {
 	 *            be null.
 	 */
 	protected ModelPersistor(ModelContainer<ModelType> parentContainer,
-			ModelProperty<ModelType, TargetPropertyType> property) {
+			ModelProperty<ModelType, PropertyType> property) {
 		if (parentContainer == null) {
 			throw new WebException(HttpErrorCodes.HTTP901_ILLEGAL_ARGUMENT_ERROR,
 					"Cannot create a persistor for a null parent container.");
@@ -72,7 +72,7 @@ public abstract class ModelPersistor<ModelType, TargetPropertyType> {
 	 * @return The property this {@link ModelPersistor} has registered itself on its
 	 *         parent {@link ModelContainer} to persist; never null
 	 */
-	public final ModelProperty<ModelType, TargetPropertyType> getProperty() {
+	public final ModelProperty<ModelType, PropertyType> getProperty() {
 		return this.property;
 	}
 
@@ -94,7 +94,7 @@ public abstract class ModelPersistor<ModelType, TargetPropertyType> {
 	 * @return The results of the persisting processes; never null, might be empty
 	 *         if there are none
 	 */
-	public final List<TargetPropertyType> persist() {
+	public final List<PropertyType> persist() {
 		return this.parentContainer.persistProperty(this.property, IndexContext.EMPTY);
 	}
 
@@ -119,7 +119,7 @@ public abstract class ModelPersistor<ModelType, TargetPropertyType> {
 	 * @return The results of the persisting processes; never null, might be empty
 	 *         if there are none.
 	 */
-	public final List<TargetPropertyType> persist(IndexContext context) {
+	public final List<PropertyType> persist(IndexContext context) {
 		return this.parentContainer.persistProperty(this.property, context);
 	}
 
@@ -145,5 +145,5 @@ public abstract class ModelPersistor<ModelType, TargetPropertyType> {
 	 *             Any {@link Throwable} the persisting process might throw. If it
 	 *             is no {@link WebException}, it will be wrapped into one.
 	 */
-	protected abstract TargetPropertyType persistInstance(TargetPropertyType propertyInstance) throws Throwable;
+	protected abstract PropertyType persistInstance(PropertyType propertyInstance) throws Throwable;
 }
