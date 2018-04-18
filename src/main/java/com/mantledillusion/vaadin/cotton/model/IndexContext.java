@@ -5,27 +5,26 @@ import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.Set;
 
-import com.mantledillusion.data.epiphy.ModelProperty;
-import com.mantledillusion.data.epiphy.ModelPropertyList;
 import com.mantledillusion.data.epiphy.index.PropertyIndex;
+import com.mantledillusion.data.epiphy.interfaces.ListedProperty;
+import com.mantledillusion.data.epiphy.interfaces.ReadableProperty;
 import com.mantledillusion.injection.hura.Blueprint.TypedBlueprint;
 import com.mantledillusion.injection.hura.Predefinable.Singleton;
 import com.mantledillusion.injection.hura.annotation.Context;
 
 /**
- * {@link IndexContext} implementation that is used in
- * {@link ModelAccessor}s to allow indexed access to their parent.
+ * {@link IndexContext} implementation that is used in {@link ModelAccessor}s to
+ * allow indexed access to their parent.
  * <P>
  * Basically, {@link IndexContext}s hold
- * {@link ModelPropertyList}-&gt;{@link Integer} mappings; see the
- * documentation of {@link IndexContext} for reference.
+ * {@link ListedProperty}-&gt;{@link Integer} mappings; see the documentation of
+ * {@link IndexContext} for reference.
  * <p>
- * To supply an instance of {@link IndexContext} to
- * {@link ModelAccessor}s, it has to be given to them during their
- * injection. Use {@link IndexContext#asSingleton()} to retrieve a singleton
- * with a specific singletonId and give the returned {@link Singleton} instance
- * to the {@link TypedBlueprint} the {@link ModelAccessor}s are injected
- * with.
+ * To supply an instance of {@link IndexContext} to {@link ModelAccessor}s, it
+ * has to be given to them during their injection. Use
+ * {@link IndexContext#asSingleton()} to retrieve a singleton with a specific
+ * singletonId and give the returned {@link Singleton} instance to the
+ * {@link TypedBlueprint} the {@link ModelAccessor}s are injected with.
  */
 @Context
 public final class IndexContext implements com.mantledillusion.data.epiphy.index.IndexContext {
@@ -34,23 +33,23 @@ public final class IndexContext implements com.mantledillusion.data.epiphy.index
 
 	public static final IndexContext EMPTY = new IndexContext();
 
-	private final Map<ModelPropertyList<?, ?>, Integer> indices;
+	private final Map<ListedProperty<?, ?>, Integer> indices;
 
 	private IndexContext() {
 		this(new IdentityHashMap<>());
 	}
 
-	private IndexContext(IdentityHashMap<ModelPropertyList<?, ?>, Integer> indices) {
+	private IndexContext(IdentityHashMap<ListedProperty<?, ?>, Integer> indices) {
 		this.indices = indices;
 	}
 
 	@Override
-	public Integer indexOf(ModelProperty<?, ?> listedProperty) {
+	public Integer indexOf(ReadableProperty<?, ?> listedProperty) {
 		return this.indices.get(listedProperty);
 	}
 
 	@Override
-	public boolean contains(ModelProperty<?, ?> listedProperty) {
+	public boolean contains(ReadableProperty<?, ?> listedProperty) {
 		return this.indices.containsKey(listedProperty);
 	}
 
@@ -66,7 +65,7 @@ public final class IndexContext implements com.mantledillusion.data.epiphy.index
 	 */
 	public boolean contains(IndexContext other) {
 		if (other != null) {
-			for (ModelPropertyList<?, ?> listedProperty : other.indices.keySet()) {
+			for (ListedProperty<?, ?> listedProperty : other.indices.keySet()) {
 				if (!this.indices.containsKey(listedProperty)
 						|| !this.indices.get(listedProperty).equals(other.indices.get(listedProperty))) {
 					return false;
@@ -97,12 +96,12 @@ public final class IndexContext implements com.mantledillusion.data.epiphy.index
 	 * @return A new sub context containing indices for the given properties that
 	 *         were indexed by this context; never null
 	 */
-	public <M> IndexContext intersection(Set<ModelProperty<M, ?>> properties) {
-		IdentityHashMap<ModelPropertyList<?, ?>, Integer> indices = new IdentityHashMap<>();
+	public <M> IndexContext intersection(Set<ReadableProperty<M, ?>> properties) {
+		IdentityHashMap<ListedProperty<?, ?>, Integer> indices = new IdentityHashMap<>();
 		if (properties != null) {
-			for (ModelProperty<?, ?> property : properties) {
+			for (ReadableProperty<?, ?> property : properties) {
 				if (this.indices.containsKey(property)) {
-					indices.put((ModelPropertyList<?, ?>) property, this.indices.get(property));
+					indices.put((ListedProperty<?, ?>) property, this.indices.get(property));
 				}
 			}
 		}
@@ -126,7 +125,7 @@ public final class IndexContext implements com.mantledillusion.data.epiphy.index
 	 * @return The extended {@link IndexContext}; never null
 	 */
 	public IndexContext union(PropertyIndex... indices) {
-		IdentityHashMap<ModelPropertyList<?, ?>, Integer> newIndices = new IdentityHashMap<>(this.indices);
+		IdentityHashMap<ListedProperty<?, ?>, Integer> newIndices = new IdentityHashMap<>(this.indices);
 		if (indices != null) {
 			for (PropertyIndex index : indices) {
 				if (index != null) {
@@ -160,7 +159,7 @@ public final class IndexContext implements com.mantledillusion.data.epiphy.index
 	 * @return The extended {@link IndexContext}; never null
 	 */
 	public IndexContext union(IndexContext other) {
-		IdentityHashMap<ModelPropertyList<?, ?>, Integer> indices = new IdentityHashMap<>(this.indices);
+		IdentityHashMap<ListedProperty<?, ?>, Integer> indices = new IdentityHashMap<>(this.indices);
 		if (other != null) {
 			indices.putAll(other.indices);
 		}
@@ -191,10 +190,10 @@ public final class IndexContext implements com.mantledillusion.data.epiphy.index
 	 *            The modification amount.
 	 * @return The updated {@link IndexContext}; never null
 	 */
-	public IndexContext update(ModelProperty<?, ?> property, int baseIndex, int modification) {
-		IdentityHashMap<ModelPropertyList<?, ?>, Integer> indices = new IdentityHashMap<>(this.indices);
+	public IndexContext update(ReadableProperty<?, ?> property, int baseIndex, int modification) {
+		IdentityHashMap<ListedProperty<?, ?>, Integer> indices = new IdentityHashMap<>(this.indices);
 		if (property != null && indices.containsKey(property) && indices.get(property) >= baseIndex) {
-			indices.put((ModelPropertyList<?, ?>) property, indices.get(property) + modification);
+			indices.put((ListedProperty<?, ?>) property, indices.get(property) + modification);
 		}
 		return new IndexContext(indices);
 	}

@@ -1,12 +1,12 @@
 package com.mantledillusion.vaadin.cotton.model;
 
-import com.mantledillusion.data.epiphy.ModelProperty;
+import com.mantledillusion.data.epiphy.interfaces.ReadableProperty;
 import com.mantledillusion.vaadin.cotton.exception.WebException;
 
 /**
  * Framework internal type <b>(DO NOT USE!)</b> for types that can persist a
  * model or just some parts of it using a change log containing changed
- * {@link ModelProperty}s.
+ * {@link ReadableProperty}s.
  *
  * @param <ModelType>
  *            The root type of the data model the {@link ModelValidationHandler}
@@ -52,8 +52,7 @@ abstract class ModelPersistingHandler<ModelType> implements ModelHandler<ModelTy
 	 * @return True if there are pending changes to the given property, false
 	 *         otherwise or if there is no current model
 	 */
-	public abstract <PropertyType> boolean isPropertyChanged(
-			ModelProperty<ModelType, PropertyType> property);
+	public abstract <PropertyType> boolean isPropertyChanged(ReadableProperty<ModelType, PropertyType> property);
 
 	/**
 	 * Returns whether the given specific property of the model instance currently
@@ -79,8 +78,8 @@ abstract class ModelPersistingHandler<ModelType> implements ModelHandler<ModelTy
 	 * @return True if there are pending changes to the given property, false
 	 *         otherwise or if there is no current model
 	 */
-	public abstract <PropertyType> boolean isPropertyChanged(
-			ModelProperty<ModelType, PropertyType> property, IndexContext context);
+	public abstract <PropertyType> boolean isPropertyChanged(ReadableProperty<ModelType, PropertyType> property,
+			IndexContext context);
 
 	// ######################################################################################################################################
 	// ############################################################ PERSISTING ##############################################################

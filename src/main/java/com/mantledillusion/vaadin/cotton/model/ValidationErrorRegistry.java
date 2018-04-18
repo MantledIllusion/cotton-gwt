@@ -6,7 +6,7 @@ import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.Set;
 
-import com.mantledillusion.data.epiphy.ModelProperty;
+import com.mantledillusion.data.epiphy.interfaces.ReadableProperty;
 import com.mantledillusion.vaadin.cotton.WebEnv;
 import com.mantledillusion.vaadin.cotton.exception.WebException;
 import com.mantledillusion.vaadin.cotton.exception.WebException.HttpErrorCodes;
@@ -22,14 +22,14 @@ import com.vaadin.shared.ui.ErrorLevel;
  */
 public final class ValidationErrorRegistry<ModelType> {
 
-	private final Map<ModelProperty<ModelType, ?>, Set<ValidationError>> errorMessages = new IdentityHashMap<>();
+	private final Map<ReadableProperty<ModelType, ?>, Set<ValidationError>> errorMessages = new IdentityHashMap<>();
 
 	ValidationErrorRegistry() {
 	}
 
 	/**
 	 * Adds the given error message to the registry for all the given
-	 * {@link ModelProperty}s.
+	 * {@link ReadableProperty}s.
 	 * <P>
 	 * Use of a message id is allowed here to use auto-localization via
 	 * {@link WebEnv}.
@@ -45,21 +45,21 @@ public final class ValidationErrorRegistry<ModelType> {
 	 *            The error message (or localizable error message id) to use;
 	 *            <b>not</b> allowed to be null.
 	 * @param property
-	 *            The first {@link ModelProperty} to register the error for;
+	 *            The first {@link ReadableProperty} to register the error for;
 	 *            <b>not</b> allowed to be null.
 	 * @param additionalProperties
-	 *            The second -&gt; nth {@link ModelProperty} to register the error
-	 *            for; might be null or contain null.
+	 *            The second -&gt; nth {@link ReadableProperty} to register the
+	 *            error for; might be null or contain null.
 	 */
 	@SafeVarargs
-	public final void addError(String errorMsgId, ModelProperty<ModelType, ?> property,
-			ModelProperty<ModelType, ?>... additionalProperties) {
+	public final void addError(String errorMsgId, ReadableProperty<ModelType, ?> property,
+			ReadableProperty<ModelType, ?>... additionalProperties) {
 		addError(ValidationError.of(errorMsgId), property, additionalProperties);
 	}
 
 	/**
 	 * Adds the given error message to the registry for all the given
-	 * {@link ModelProperty}s.
+	 * {@link ReadableProperty}s.
 	 * <P>
 	 * Use of a message id is allowed here to use auto-localization via
 	 * {@link WebEnv}.
@@ -75,21 +75,21 @@ public final class ValidationErrorRegistry<ModelType> {
 	 * @param errorLevel
 	 *            The error level of the error; might <b>not</b> be null.
 	 * @param property
-	 *            The first {@link ModelProperty} to register the error for; might
-	 *            <b>not</b> be null.
+	 *            The first {@link ReadableProperty} to register the error for;
+	 *            might <b>not</b> be null.
 	 * @param additionalProperties
-	 *            The second -&gt; nth {@link ModelProperty} to register the error
-	 *            for; might be null or contain null.
+	 *            The second -&gt; nth {@link ReadableProperty} to register the
+	 *            error for; might be null or contain null.
 	 */
 	@SafeVarargs
-	public final void addError(String errorMsgId, ErrorLevel errorLevel, ModelProperty<ModelType, ?> property,
-			ModelProperty<ModelType, ?>... additionalProperties) {
+	public final void addError(String errorMsgId, ErrorLevel errorLevel, ReadableProperty<ModelType, ?> property,
+			ReadableProperty<ModelType, ?>... additionalProperties) {
 		addError(ValidationError.of(errorMsgId, errorLevel), property, additionalProperties);
 	}
 
 	/**
 	 * Adds the given error message to the registry for all the given
-	 * {@link ModelProperty}s.
+	 * {@link ReadableProperty}s.
 	 * <p>
 	 * Note that errors with an error level ordinal lower than
 	 * {@link ErrorLevel#ERROR} (such as {@link ErrorLevel#INFO} or
@@ -99,15 +99,15 @@ public final class ValidationErrorRegistry<ModelType> {
 	 * @param error
 	 *            The error to add; <b>not</b> allowed to be null.
 	 * @param property
-	 *            The first {@link ModelProperty} to register the error for;
+	 *            The first {@link ReadableProperty} to register the error for;
 	 *            <b>not</b> allowed to be null.
 	 * @param additionalProperties
-	 *            The second -&gt; nth {@link ModelProperty} to register the error
-	 *            for; might be null or contain null.
+	 *            The second -&gt; nth {@link ReadableProperty} to register the
+	 *            error for; might be null or contain null.
 	 */
 	@SafeVarargs
-	public final void addError(ValidationError error, ModelProperty<ModelType, ?> property,
-			ModelProperty<ModelType, ?>... additionalProperties) {
+	public final void addError(ValidationError error, ReadableProperty<ModelType, ?> property,
+			ReadableProperty<ModelType, ?>... additionalProperties) {
 		if (property == null) {
 			throw new WebException(HttpErrorCodes.HTTP901_ILLEGAL_ARGUMENT_ERROR,
 					"Unable to add an error for a null property.");
@@ -117,7 +117,7 @@ public final class ValidationErrorRegistry<ModelType> {
 		}
 		add(property, error);
 		if (additionalProperties != null) {
-			for (ModelProperty<ModelType, ?> prop : additionalProperties) {
+			for (ReadableProperty<ModelType, ?> prop : additionalProperties) {
 				if (prop != null) {
 					add(prop, error);
 				}
@@ -125,7 +125,7 @@ public final class ValidationErrorRegistry<ModelType> {
 		}
 	}
 
-	private void add(ModelProperty<ModelType, ?> property, ValidationError error) {
+	private void add(ReadableProperty<ModelType, ?> property, ValidationError error) {
 		if (!this.errorMessages.containsKey(property)) {
 			this.errorMessages.put(property, new HashSet<>());
 		}
@@ -133,7 +133,7 @@ public final class ValidationErrorRegistry<ModelType> {
 	}
 
 	void addAll(ValidationErrorRegistry<ModelType> other) {
-		for (ModelProperty<ModelType, ?> property : other.errorMessages.keySet()) {
+		for (ReadableProperty<ModelType, ?> property : other.errorMessages.keySet()) {
 			if (this.errorMessages.containsKey(property)) {
 				this.errorMessages.get(property).addAll(other.errorMessages.get(property));
 			} else {
@@ -179,12 +179,12 @@ public final class ValidationErrorRegistry<ModelType> {
 	 * property.
 	 * 
 	 * @param property
-	 *            The {@link ModelProperty} to check; might be null, although the
+	 *            The {@link ReadableProperty} to check; might be null, although the
 	 *            result will always be false
 	 * @return True if there is one or more errors for the given property, false
 	 *         otherwise
 	 */
-	public boolean hasErrorsForProperty(ModelProperty<ModelType, ?> property) {
+	public boolean hasErrorsForProperty(ReadableProperty<ModelType, ?> property) {
 		return this.errorMessages.containsKey(property);
 	}
 
@@ -192,12 +192,12 @@ public final class ValidationErrorRegistry<ModelType> {
 	 * Returns the {@link Set} of {@link ValidationError}s of the given property.
 	 * 
 	 * @param property
-	 *            The {@link ModelProperty} to get the errors of; might be null,
+	 *            The {@link ReadableProperty} to get the errors of; might be null,
 	 *            although the result will always be an empty {@link Set}
 	 * @return The errors of the given property; never null, might be empty if there
 	 *         are none
 	 */
-	public Set<ValidationError> getErrorsOfProperty(ModelProperty<ModelType, ?> property) {
+	public Set<ValidationError> getErrorsOfProperty(ReadableProperty<ModelType, ?> property) {
 		if (this.errorMessages.containsKey(property)) {
 			return Collections.unmodifiableSet(this.errorMessages.get(property));
 		} else {

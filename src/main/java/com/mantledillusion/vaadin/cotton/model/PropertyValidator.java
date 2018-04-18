@@ -1,10 +1,10 @@
 package com.mantledillusion.vaadin.cotton.model;
 
-import com.mantledillusion.data.epiphy.ModelProperty;
+import com.mantledillusion.data.epiphy.interfaces.ReadableProperty;
 
 /**
- * Interface for types that validate {@link ModelProperty}s of a specific model
- * type.
+ * Interface for types that validate {@link ReadableProperty}s of a specific
+ * model type.
  *
  * @param <ModelType>
  *            The root type of the data model whose properties the
@@ -18,7 +18,7 @@ public interface PropertyValidator<ModelType> {
 	 * 
 	 * @param handler
 	 *            The {@link ModelHandler} validating the model, can be used for
-	 *            {@link ModelProperty}ed access on the model.
+	 *            {@link ReadableProperty}ed access on the model.
 	 * @param errorRegistry
 	 *            The {@link ValidationErrorRegistry} to register found errors at.
 	 */

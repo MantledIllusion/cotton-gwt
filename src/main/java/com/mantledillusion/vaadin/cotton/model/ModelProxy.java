@@ -4,17 +4,17 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.IdentityHashMap;
 
+import com.mantledillusion.data.epiphy.interfaces.ReadableProperty;
 import com.mantledillusion.injection.hura.Processor.Phase;
 import com.mantledillusion.injection.hura.annotation.Process;
 
 /**
  * Framework internal type <b>(DO NOT USE!)</b> for types that are able to proxy
- * {@link IModelProperty}ed model access of child
- * {@link ModelAccessor}s.
+ * {@link ReadableProperty}ed model access of child {@link ModelAccessor}s.
  *
  * @param <ModelType>
- *            The root type of the data model the
- *            {@link ModelValidationHandler} is able to persist.
+ *            The root type of the data model the {@link ModelValidationHandler}
+ *            is able to persist.
  */
 abstract class ModelProxy<ModelType> extends ModelValidationHandler<ModelType> {
 
@@ -50,8 +50,8 @@ abstract class ModelProxy<ModelType> extends ModelValidationHandler<ModelType> {
 	// ######################################################################################################################################
 
 	/**
-	 * Returns the {@link IndexContext} of this {@link ModelProxy}
-	 * implementation's instance.
+	 * Returns the {@link IndexContext} of this {@link ModelProxy} implementation's
+	 * instance.
 	 * 
 	 * @return The {@link IndexContext} of this proxy; never null
 	 */

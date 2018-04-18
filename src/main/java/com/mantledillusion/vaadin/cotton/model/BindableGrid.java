@@ -10,9 +10,9 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import com.mantledillusion.data.epiphy.ModelProperty;
-import com.mantledillusion.data.epiphy.ModelPropertyList;
 import com.mantledillusion.data.epiphy.index.PropertyIndex;
+import com.mantledillusion.data.epiphy.interfaces.ListedProperty;
+import com.mantledillusion.data.epiphy.interfaces.ReadableProperty;
 import com.mantledillusion.injection.hura.Blueprint;
 import com.mantledillusion.injection.hura.Injector;
 import com.mantledillusion.injection.hura.Predefinable.Singleton;
@@ -38,9 +38,9 @@ import com.vaadin.ui.Grid.Column;
 import com.vaadin.ui.TextField;
 
 /**
- * {@link Grid} extension that is bound to a {@link ModelPropertyList}, so its
- * table cells display that {@link ModelPropertyList} element's
- * {@link ModelProperty}s.
+ * {@link Grid} extension that is bound to a {@link ListedProperty}, so its
+ * table cells display that {@link ListedProperty} element's
+ * {@link ReadableProperty}s.
  *
  * @param <RowType>
  *            The item type that represents a row in the grid.
@@ -195,16 +195,16 @@ public final class BindableGrid<RowType, ModelType> extends Composite {
 	 * Interface for a grid column that creates a {@link Component} for every row in
 	 * the column, or put differently, for every table cell.
 	 * <P>
-	 * A single {@link ModelPropertyColumn} instance can be added to multiple
+	 * A single {@link PropertyColumn} instance can be added to multiple
 	 * {@link BindableGrid}s without any problem, as the raw implementation is
 	 * stateless and the configuration is done separately for every time the column
 	 * is added to a {@link BindableGrid}.
 	 *
 	 * @param <ModelType>
-	 *            The root type of the data model the {@link ModelPropertyColumn}'s
-	 *            row item's list is contained in.
+	 *            The root type of the data model the {@link PropertyColumn}'s row
+	 *            item's list is contained in.
 	 */
-	public interface ModelPropertyColumn<ModelType> {
+	public interface PropertyColumn<ModelType> {
 
 		/**
 		 * Returns a {@link Component} that will represent a table cell in the column,
@@ -212,7 +212,7 @@ public final class BindableGrid<RowType, ModelType> extends Composite {
 		 * <P>
 		 * Access to the data is provided by the given {@link RowAccessor}; normally, it
 		 * should be used to build and bind a {@link Component} that displays data of a
-		 * sub-{@link ModelProperty} of the grid row item's {@link ModelProperty}.
+		 * sub-{@link ReadableProperty} of the grid row item's {@link ReadableProperty}.
 		 * <P>
 		 * The {@link RowAccessor} is automatically indexed for its row.
 		 * <P>
@@ -231,7 +231,7 @@ public final class BindableGrid<RowType, ModelType> extends Composite {
 		 * 
 		 * @param rowAccessor
 		 *            A {@link RowAccessor} indexed for a single list item that is used
-		 *            on all {@link ModelPropertyColumn}s to display the content of the
+		 *            on all {@link PropertyColumn}s to display the content of the
 		 *            single row it is indexed for; might <b>not</b> be null.
 		 * @return A {@link Component} that displays a single table cell's content;
 		 *         might be null
@@ -240,22 +240,22 @@ public final class BindableGrid<RowType, ModelType> extends Composite {
 	}
 
 	/**
-	 * A configuration that can be used any time an {@link ModelPropertyColumn}'s
+	 * A configuration that can be used any time an {@link PropertyColumn}'s
 	 * relation to a {@link BindableGrid} has to be changed.
 	 * <P>
-	 * NOTE: If the same {@link ModelPropertyColumn} instance is also added to a
+	 * NOTE: If the same {@link PropertyColumn} instance is also added to a
 	 * different {@link BindableGrid}, changes made to this
-	 * {@link ModelPropertyColumnConfiguration} do <b>not</b> have any effect on the
+	 * {@link PropertyColumnConfiguration} do <b>not</b> have any effect on the
 	 * configuration of the column in the other {@link BindableGrid}.
 	 * 
 	 * @param <TableRowType>
 	 *            The item type that represents a row in the grid.
 	 */
-	public static final class ModelPropertyColumnConfiguration<TableRowType> {
+	public static final class PropertyColumnConfiguration<TableRowType> {
 
 		private final Column<? extends Wrapper<TableRowType>, Component> column;
 
-		private ModelPropertyColumnConfiguration(Column<? extends Wrapper<TableRowType>, Component> column) {
+		private PropertyColumnConfiguration(Column<? extends Wrapper<TableRowType>, Component> column) {
 			this.column = column;
 		}
 
@@ -414,29 +414,28 @@ public final class BindableGrid<RowType, ModelType> extends Composite {
 	}
 
 	/**
-	 * Interface for configurators of {@link ModelPropertyColumn}s that handle a
-	 * {@link ModelPropertyColumnConfiguration} coming in during the columns
-	 * registration on a {@link BindableGrid}.
+	 * Interface for configurators of {@link PropertyColumn}s that handle a
+	 * {@link PropertyColumnConfiguration} coming in during the columns registration
+	 * on a {@link BindableGrid}.
 	 *
 	 * @param <TableRowType>
 	 *            The item type that represents a row in the grid.
 	 */
-	public interface ModelPropertyColumnConfigurator<TableRowType> {
+	public interface PropertyColumnConfigurator<TableRowType> {
 
 		/**
-		 * Is called when this {@link ModelPropertyColumnConfigurator} is given to a
-		 * {@link BindableGrid} along with an {@link ModelPropertyColumn} to add to the
-		 * grid.
+		 * Is called when this {@link PropertyColumnConfigurator} is given to a
+		 * {@link BindableGrid} along with an {@link PropertyColumn} to add to the grid.
 		 * 
 		 * @param config
-		 *            The configuration this {@link ModelPropertyColumnConfigurator} may
-		 *            work with.
+		 *            The configuration this {@link PropertyColumnConfigurator} may work
+		 *            with.
 		 */
-		public void configure(ModelPropertyColumnConfiguration<TableRowType> config);
+		public void configure(PropertyColumnConfiguration<TableRowType> config);
 	}
 
 	private final ModelBinder<ModelType> parent;
-	private final ModelPropertyList<ModelType, RowType> listedProperty;
+	private final ListedProperty<ModelType, RowType> listedProperty;
 	private final BindableHasValue hasValue = new BindableHasValue();
 
 	private final Injector injector;
@@ -444,13 +443,13 @@ public final class BindableGrid<RowType, ModelType> extends Composite {
 	private final IdentityHashMap<RowType, Integer> itemRegistry = new IdentityHashMap<>();
 	private final List<RowWrapper> itemCollection = new ArrayList<>();
 	private final ListDataProvider<RowWrapper> dataProvider = new ListDataProvider<>(this.itemCollection);
-	private final IdentityHashMap<ModelPropertyColumn<ModelType>, String> columnRegistry = new IdentityHashMap<>();
+	private final IdentityHashMap<PropertyColumn<ModelType>, String> columnRegistry = new IdentityHashMap<>();
 	private final Grid<RowWrapper> grid = new Grid<>(this.dataProvider);
 
 	private final SelectionListener<RowWrapper> gridSelectionListener = new MultiModeSelectionListener();
 	private final Set<BindableTableSelectionEventListener<RowType>> selectionListeners = new HashSet<>();
 
-	BindableGrid(ModelBinder<ModelType> parent, ModelPropertyList<ModelType, RowType> listedProperty) {
+	BindableGrid(ModelBinder<ModelType> parent, ListedProperty<ModelType, RowType> listedProperty) {
 		if (parent == null) {
 			throw new WebException(HttpErrorCodes.HTTP901_ILLEGAL_ARGUMENT_ERROR,
 					"The parent binder of a bindable table cannot be null.");
@@ -484,11 +483,11 @@ public final class BindableGrid<RowType, ModelType> extends Composite {
 	 *            The type of the property to bind.
 	 * @param property
 	 *            The property to bind the column to; might <b>not</b> be null.
-	 * @return A {@link ModelPropertyColumnConfiguration} to configure the
-	 *         registration of the given column in this grid with.
+	 * @return A {@link PropertyColumnConfiguration} to configure the registration
+	 *         of the given column in this grid with.
 	 */
-	public <PropertyType> ModelPropertyColumnConfiguration<RowType> addColumn(
-			ModelProperty<ModelType, PropertyType> property) {
+	public <PropertyType> PropertyColumnConfiguration<RowType> addColumn(
+			ReadableProperty<ModelType, PropertyType> property) {
 		return addColumn(rowAccessor -> rowAccessor.bindLabelForProperty(property));
 	}
 
@@ -503,11 +502,11 @@ public final class BindableGrid<RowType, ModelType> extends Composite {
 	 * @param renderer
 	 *            The {@link StringRenderer} to render the bound property with;
 	 *            might <b>not</b> be null.
-	 * @return A {@link ModelPropertyColumnConfiguration} to configure the
-	 *         registration of the given column in this grid with.
+	 * @return A {@link PropertyColumnConfiguration} to configure the registration
+	 *         of the given column in this grid with.
 	 */
-	public <PropertyType> ModelPropertyColumnConfiguration<RowType> addColumn(
-			ModelProperty<ModelType, PropertyType> property, StringRenderer<PropertyType> renderer) {
+	public <PropertyType> PropertyColumnConfiguration<RowType> addColumn(
+			ReadableProperty<ModelType, PropertyType> property, StringRenderer<PropertyType> renderer) {
 		return addColumn(rowAccessor -> rowAccessor.bindLabelForProperty(property, renderer));
 	}
 
@@ -526,25 +525,25 @@ public final class BindableGrid<RowType, ModelType> extends Composite {
 	 * @param configurator
 	 *            The configurator to use on the given columns registration; might
 	 *            be null.
-	 * @return A {@link ModelPropertyColumnConfiguration} to configure the
-	 *         registration of the given column in this grid with.
+	 * @return A {@link PropertyColumnConfiguration} to configure the registration
+	 *         of the given column in this grid with.
 	 */
-	public <PropertyType> ModelPropertyColumnConfiguration<RowType> addColumn(
-			ModelProperty<ModelType, PropertyType> property, StringRenderer<PropertyType> renderer,
-			ModelPropertyColumnConfigurator<RowType> configurator) {
+	public <PropertyType> PropertyColumnConfiguration<RowType> addColumn(
+			ReadableProperty<ModelType, PropertyType> property, StringRenderer<PropertyType> renderer,
+			PropertyColumnConfigurator<RowType> configurator) {
 		return addColumn(rowAccessor -> rowAccessor.bindLabelForProperty(property, renderer), configurator);
 	}
 
 	/**
-	 * Adds the given {@link ModelPropertyColumn} to this {@link BindableGrid}.
+	 * Adds the given {@link PropertyColumn} to this {@link BindableGrid}.
 	 * 
 	 * @param column
 	 *            The column to add; might <b>not</b> be null, might not be already
 	 *            added.
-	 * @return A {@link ModelPropertyColumnConfiguration} to configure the
-	 *         registration of the given column in this grid with.
+	 * @return A {@link PropertyColumnConfiguration} to configure the registration
+	 *         of the given column in this grid with.
 	 */
-	public ModelPropertyColumnConfiguration<RowType> addColumn(ModelPropertyColumn<ModelType> column) {
+	public PropertyColumnConfiguration<RowType> addColumn(PropertyColumn<ModelType> column) {
 		if (column == null) {
 			throw new WebException(HttpErrorCodes.HTTP901_ILLEGAL_ARGUMENT_ERROR,
 					"A column to add to a table can never be null.");
@@ -580,19 +579,19 @@ public final class BindableGrid<RowType, ModelType> extends Composite {
 
 		gridColumn.setId(columnId);
 
-		return new ModelPropertyColumnConfiguration<RowType>(gridColumn);
+		return new PropertyColumnConfiguration<RowType>(gridColumn);
 	}
 
 	/**
-	 * Adds the given {@link ModelPropertyColumn} to this {@link BindableGrid}.
+	 * Adds the given {@link PropertyColumn} to this {@link BindableGrid}.
 	 * <P>
-	 * Also passes the generated {@link ModelPropertyColumnConfiguration} to the
-	 * given {@link ModelPropertyColumnConfigurator}.
+	 * Also passes the generated {@link PropertyColumnConfiguration} to the given
+	 * {@link PropertyColumnConfigurator}.
 	 * <P>
 	 * This method makes it possible for a column to be self-configuring, by using a
-	 * type that implements {@link ModelPropertyColumn} and
-	 * {@link ModelPropertyColumnConfigurator} and then call this method with an
-	 * instance of that type as both arguments.
+	 * type that implements {@link PropertyColumn} and
+	 * {@link PropertyColumnConfigurator} and then call this method with an instance
+	 * of that type as both arguments.
 	 * 
 	 * @param column
 	 *            The column to add; might <b>not</b> be null, might not be already
@@ -600,12 +599,12 @@ public final class BindableGrid<RowType, ModelType> extends Composite {
 	 * @param configurator
 	 *            The configurator to use on the given columns registration; might
 	 *            be null.
-	 * @return A {@link ModelPropertyColumnConfiguration} to configure the
-	 *         registration of the given column in this grid with; never null
+	 * @return A {@link PropertyColumnConfiguration} to configure the registration
+	 *         of the given column in this grid with; never null
 	 */
-	public ModelPropertyColumnConfiguration<RowType> addColumn(ModelPropertyColumn<ModelType> column,
-			ModelPropertyColumnConfigurator<RowType> configurator) {
-		ModelPropertyColumnConfiguration<RowType> config = addColumn(column);
+	public PropertyColumnConfiguration<RowType> addColumn(PropertyColumn<ModelType> column,
+			PropertyColumnConfigurator<RowType> configurator) {
+		PropertyColumnConfiguration<RowType> config = addColumn(column);
 		if (configurator != null) {
 			configurator.configure(config);
 		}
@@ -618,7 +617,7 @@ public final class BindableGrid<RowType, ModelType> extends Composite {
 	 * @param column
 	 *            The column to remove; might <b>not</b> be null.
 	 */
-	public void removeColumn(ModelPropertyColumn<ModelType> column) {
+	public void removeColumn(PropertyColumn<ModelType> column) {
 		if (column == null) {
 			throw new WebException(HttpErrorCodes.HTTP901_ILLEGAL_ARGUMENT_ERROR,
 					"A column to remove from a table can never be null.");

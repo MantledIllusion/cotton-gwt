@@ -40,10 +40,6 @@ public class ModelAccessTest {
 		assertTrue(this.suite.container.hasModel());
 		this.suite.container.setModel(null);
 		assertFalse(this.suite.container.hasModel());
-		this.suite.container.setProperty(TestModelProperties.MODEL, new Model());
-		assertTrue(this.suite.container.hasModel());
-		this.suite.container.setProperty(TestModelProperties.MODEL, null);
-		assertFalse(this.suite.container.hasModel());
 	}
 
 	@Test

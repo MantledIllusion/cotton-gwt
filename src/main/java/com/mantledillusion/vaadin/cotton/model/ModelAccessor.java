@@ -6,8 +6,9 @@ import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.Set;
 
-import com.mantledillusion.data.epiphy.ModelProperty;
-import com.mantledillusion.data.epiphy.ModelPropertyList;
+import com.mantledillusion.data.epiphy.interfaces.ListedProperty;
+import com.mantledillusion.data.epiphy.interfaces.ReadableProperty;
+import com.mantledillusion.data.epiphy.interfaces.WriteableProperty;
 import com.mantledillusion.injection.hura.Injector;
 import com.mantledillusion.injection.hura.Predefinable.Singleton;
 import com.mantledillusion.injection.hura.Processor.Phase;
@@ -54,7 +55,7 @@ public class ModelAccessor<ModelType> extends ModelBinder<ModelType> {
 	private IndexContext indexContext = IndexContext.EMPTY;
 
 	private final ModelProxy<ModelType> parent;
-	private final Map<ModelProperty<ModelType, ?>, Set<PropertyBinding<?>>> boundFields = new IdentityHashMap<>();
+	private final Map<ReadableProperty<ModelType, ?>, Set<PropertyBinding<?>>> boundFields = new IdentityHashMap<>();
 
 	@Construct
 	private ModelAccessor(@Inject(ModelContainer.DEFAULT_SINGLETON_ID) ModelContainer<ModelType> parentContainer) {
@@ -117,10 +118,10 @@ public class ModelAccessor<ModelType> extends ModelBinder<ModelType> {
 	public final ModelType getModel() {
 		return this.parent.getModel();
 	}
-	
+
 	@Override
 	final void setModel(ModelType model) {
-		for (ModelProperty<ModelType, ?> property: this.boundFields.keySet()) {
+		for (ReadableProperty<ModelType, ?> property : this.boundFields.keySet()) {
 			for (PropertyBinding<?> binding : this.boundFields.get(property)) {
 				binding.update();
 			}
@@ -134,24 +135,23 @@ public class ModelAccessor<ModelType> extends ModelBinder<ModelType> {
 	}
 
 	@Override
-	public final <PropertyType> boolean isPropertyChanged(ModelProperty<ModelType, PropertyType> property) {
+	public final <PropertyType> boolean isPropertyChanged(ReadableProperty<ModelType, PropertyType> property) {
 		return this.parent.isPropertyChanged(property, this.indexContext);
 	}
 
 	@Override
-	public final <PropertyType> boolean isPropertyChanged(ModelProperty<ModelType, PropertyType> property,
+	public final <PropertyType> boolean isPropertyChanged(ReadableProperty<ModelType, PropertyType> property,
 			IndexContext context) {
 		return this.parent.isPropertyChanged(property, this.indexContext.union(context));
 	}
 
 	@Override
-	public <PropertyType> boolean exists(ModelProperty<ModelType, PropertyType> property) {
+	public <PropertyType> boolean exists(ReadableProperty<ModelType, PropertyType> property) {
 		return this.parent.exists(property, this.indexContext);
 	}
 
 	@Override
-	public <PropertyType> boolean exists(ModelProperty<ModelType, PropertyType> property,
-			IndexContext context) {
+	public <PropertyType> boolean exists(ReadableProperty<ModelType, PropertyType> property, IndexContext context) {
 		return this.parent.exists(property, this.indexContext.union(context));
 	}
 
@@ -160,50 +160,47 @@ public class ModelAccessor<ModelType> extends ModelBinder<ModelType> {
 	// ######################################################################################################################################
 
 	@Override
-	public final <PropertyType> PropertyType getProperty(
-			ModelProperty<ModelType, PropertyType> property) {
+	public final <PropertyType> PropertyType getProperty(ReadableProperty<ModelType, PropertyType> property) {
 		return this.parent.getProperty(property, this.indexContext);
 	}
 
 	@Override
-	public final <PropertyType> PropertyType getProperty(
-			ModelProperty<ModelType, PropertyType> property, IndexContext indexContext) {
+	public final <PropertyType> PropertyType getProperty(ReadableProperty<ModelType, PropertyType> property,
+			IndexContext indexContext) {
 		return this.parent.getProperty(property, this.indexContext.union(indexContext));
 	}
 
 	@Override
-	public final <PropertyType> void setProperty(ModelProperty<ModelType, PropertyType> property,
+	public final <PropertyType> void setProperty(WriteableProperty<ModelType, PropertyType> property,
 			PropertyType value) {
 		this.parent.setProperty(property, value, this.indexContext);
 	}
 
 	@Override
-	public final <PropertyType> void setProperty(ModelProperty<ModelType, PropertyType> property,
+	public final <PropertyType> void setProperty(WriteableProperty<ModelType, PropertyType> property,
 			PropertyType value, IndexContext indexContext) {
 		this.parent.setProperty(property, value, this.indexContext.union(indexContext));
 	}
 
 	@Override
-	public final <PropertyType> void addProperty(ModelPropertyList<ModelType, PropertyType> property,
-			PropertyType value) {
+	public final <PropertyType> void addProperty(ListedProperty<ModelType, PropertyType> property, PropertyType value) {
 		this.parent.addProperty(property, value, this.indexContext);
 	}
 
 	@Override
-	public final <PropertyType> void addProperty(ModelPropertyList<ModelType, PropertyType> property,
-			PropertyType value, IndexContext indexContext) {
+	public final <PropertyType> void addProperty(ListedProperty<ModelType, PropertyType> property, PropertyType value,
+			IndexContext indexContext) {
 		this.parent.addProperty(property, value, this.indexContext.union(indexContext));
 	}
 
 	@Override
-	public final <PropertyType> PropertyType removeProperty(
-			ModelPropertyList<ModelType, PropertyType> property) {
+	public final <PropertyType> PropertyType removeProperty(ListedProperty<ModelType, PropertyType> property) {
 		return this.parent.removeProperty(property, this.indexContext);
 	}
 
 	@Override
-	public final <PropertyType> PropertyType removeProperty(
-			ModelPropertyList<ModelType, PropertyType> property, IndexContext indexContext) {
+	public final <PropertyType> PropertyType removeProperty(ListedProperty<ModelType, PropertyType> property,
+			IndexContext indexContext) {
 		return this.parent.removeProperty(property, this.indexContext.union(indexContext));
 	}
 
@@ -212,27 +209,25 @@ public class ModelAccessor<ModelType> extends ModelBinder<ModelType> {
 	// ######################################################################################################################################
 
 	@Override
-	public final <FieldType extends HasValue<PropertyType>, PropertyType> FieldType bindToProperty(
-			FieldType field, ModelProperty<ModelType, PropertyType> property) {
+	public final <FieldType extends HasValue<PropertyType>, PropertyType> FieldType bindToProperty(FieldType field,
+			ReadableProperty<ModelType, PropertyType> property) {
 		if (field == null) {
-			throw new WebException(HttpErrorCodes.HTTP901_ILLEGAL_ARGUMENT_ERROR,
-					"Cannot bind a null HasValue.");
+			throw new WebException(HttpErrorCodes.HTTP901_ILLEGAL_ARGUMENT_ERROR, "Cannot bind a null HasValue.");
 		} else if (property == null) {
 			throw new WebException(HttpErrorCodes.HTTP901_ILLEGAL_ARGUMENT_ERROR,
 					"Cannot bind a HasValue for a null property.");
 		}
 
 		bind(property, bindingOf(property, field));
-		
+
 		return field;
 	}
 
 	@Override
 	public <FieldType extends HasValue<PropertyType>, PropertyType> FieldType bindToProperty(FieldType field,
-			ModelProperty<ModelType, PropertyType> property, InputValidator<PropertyType> inputValidator) {
+			ReadableProperty<ModelType, PropertyType> property, InputValidator<PropertyType> inputValidator) {
 		if (field == null) {
-			throw new WebException(HttpErrorCodes.HTTP901_ILLEGAL_ARGUMENT_ERROR,
-					"Cannot bind a null HasValue.");
+			throw new WebException(HttpErrorCodes.HTTP901_ILLEGAL_ARGUMENT_ERROR, "Cannot bind a null HasValue.");
 		} else if (property == null) {
 			throw new WebException(HttpErrorCodes.HTTP901_ILLEGAL_ARGUMENT_ERROR,
 					"Cannot bind a HasValue for a null property.");
@@ -242,17 +237,16 @@ public class ModelAccessor<ModelType> extends ModelBinder<ModelType> {
 		}
 
 		bind(property, bindingOf(property, field, inputValidator));
-		
+
 		return field;
 	}
 
 	@Override
 	public final <FieldType extends HasValue<FieldValueType>, FieldValueType, PropertyType> FieldType bindToProperty(
-			FieldType field, ModelProperty<ModelType, PropertyType> property,
+			FieldType field, ReadableProperty<ModelType, PropertyType> property,
 			Converter<FieldValueType, PropertyType> converter) {
 		if (field == null) {
-			throw new WebException(HttpErrorCodes.HTTP901_ILLEGAL_ARGUMENT_ERROR,
-					"Cannot bind a null HasValue.");
+			throw new WebException(HttpErrorCodes.HTTP901_ILLEGAL_ARGUMENT_ERROR, "Cannot bind a null HasValue.");
 		} else if (property == null) {
 			throw new WebException(HttpErrorCodes.HTTP901_ILLEGAL_ARGUMENT_ERROR,
 					"Cannot bind a HasValue for a null property.");
@@ -262,11 +256,12 @@ public class ModelAccessor<ModelType> extends ModelBinder<ModelType> {
 		}
 
 		bind(property, bindingOf(property, field, converter));
-		
+
 		return field;
 	}
-	
-	private final <PropertyType> void bind(ModelProperty<ModelType, PropertyType> property, PropertyBinding<PropertyType> binding) {
+
+	private final <PropertyType> void bind(ReadableProperty<ModelType, PropertyType> property,
+			PropertyBinding<PropertyType> binding) {
 		if (!this.boundFields.containsKey(property)) {
 			this.boundFields.put(property, new HashSet<>());
 		}
@@ -278,10 +273,9 @@ public class ModelAccessor<ModelType> extends ModelBinder<ModelType> {
 	// ############################################################## UPDATE ################################################################
 	// ######################################################################################################################################
 
-	final void updatePropertyBoundFields(IndexContext context,
-			Set<ModelProperty<ModelType, ?>> properties) {
+	final void updatePropertyBoundFields(IndexContext context, Set<ReadableProperty<ModelType, ?>> properties) {
 		if (context.contains(this.indexContext)) {
-			for (ModelProperty<ModelType, ?> property : properties) {
+			for (ReadableProperty<ModelType, ?> property : properties) {
 				if (this.boundFields.containsKey(property)) {
 					for (PropertyBinding<?> binding : this.boundFields.get(property)) {
 						binding.update();
@@ -294,7 +288,7 @@ public class ModelAccessor<ModelType> extends ModelBinder<ModelType> {
 		}
 	}
 
-	final void updatePropertyIndex(ModelProperty<ModelType, ?> property, int baseIndex, int modification) {
+	final void updatePropertyIndex(ReadableProperty<ModelType, ?> property, int baseIndex, int modification) {
 		this.indexContext = this.indexContext.update(property, baseIndex, modification);
 		for (ModelAccessor<ModelType> child : getChildren()) {
 			child.updatePropertyIndex(property, baseIndex, modification);
@@ -308,11 +302,11 @@ public class ModelAccessor<ModelType> extends ModelBinder<ModelType> {
 	@Override
 	final void gatherPreevalutationErrors(ValidationErrorRegistry<ModelType> errorRegistry) {
 		Set<ValidationError> errors;
-		for (ModelProperty<ModelType, ?> property: this.boundFields.keySet()) {
+		for (ReadableProperty<ModelType, ?> property : this.boundFields.keySet()) {
 			for (PropertyBinding<?> binding : this.boundFields.get(property)) {
 				errors = binding.getError();
 				if (errors != null) {
-					for (ValidationError error: errors) {
+					for (ValidationError error : errors) {
 						errorRegistry.addError(error, property);
 					}
 				}
@@ -325,7 +319,7 @@ public class ModelAccessor<ModelType> extends ModelBinder<ModelType> {
 
 	@Override
 	final void applyErrors(ValidationErrorRegistry<ModelType> errorRegistry) {
-		for (ModelProperty<ModelType, ?> property: this.boundFields.keySet()) {
+		for (ReadableProperty<ModelType, ?> property : this.boundFields.keySet()) {
 			for (PropertyBinding<?> binding : this.boundFields.get(property)) {
 				binding.setError(errorRegistry);
 			}
@@ -337,7 +331,7 @@ public class ModelAccessor<ModelType> extends ModelBinder<ModelType> {
 
 	@Override
 	final void clearErrors() {
-		for (ModelProperty<ModelType, ?> property: this.boundFields.keySet()) {
+		for (ReadableProperty<ModelType, ?> property : this.boundFields.keySet()) {
 			for (PropertyBinding<?> binding : this.boundFields.get(property)) {
 				binding.clearError();
 			}

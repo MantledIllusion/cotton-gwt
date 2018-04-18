@@ -15,9 +15,10 @@ import java.util.Set;
 import org.apache.commons.collections4.SetUtils;
 import org.apache.commons.lang3.ObjectUtils;
 
-import com.mantledillusion.data.epiphy.ModelProperty;
-import com.mantledillusion.data.epiphy.ModelPropertyList;
 import com.mantledillusion.data.epiphy.index.PropertyIndex;
+import com.mantledillusion.data.epiphy.interfaces.ListedProperty;
+import com.mantledillusion.data.epiphy.interfaces.ReadableProperty;
+import com.mantledillusion.data.epiphy.interfaces.WriteableProperty;
 import com.mantledillusion.injection.hura.Injector;
 import com.mantledillusion.injection.hura.Processor.Phase;
 import com.mantledillusion.injection.hura.annotation.Construct;
@@ -26,17 +27,17 @@ import com.mantledillusion.vaadin.cotton.exception.WebException;
 import com.mantledillusion.vaadin.cotton.exception.WebException.HttpErrorCodes;
 
 /**
- * Model container that enables model browsing via {@link ModelProperty} and can
- * be used by {@link ModelAccessor}s as model data source.
+ * Model container that enables model browsing via {@link ReadableProperty} and
+ * can be used by {@link ModelAccessor}s as model data source.
  * <p>
  * NOTE: Should be injected, since the {@link Injector} handles the instance's
  * life cycles.
  * <p>
  * {@link ModelContainer}s are always unindexed; for accessing
- * {@link ModelPropertyList}s or their children in this container's model
- * instance, either provide an {@link IndexContext} to the containers several
- * data {@link Method}s or create an {@link ModelAccessor} with this container
- * as a parent that is able to index and proxy calls to is data {@link Method}s.
+ * {@link ListedProperty}s or their children in this container's model instance,
+ * either provide an {@link IndexContext} to the containers several data
+ * {@link Method}s or create an {@link ModelAccessor} with this container as a
+ * parent that is able to index and proxy calls to is data {@link Method}s.
  *
  * @param <ModelType>
  *            The root type of the data model the {@link ModelContainer} can
@@ -46,10 +47,10 @@ public final class ModelContainer<ModelType> extends ModelProxy<ModelType> {
 
 	public static final String DEFAULT_SINGLETON_ID = "_containerSingletonId";
 
-	private final Map<ModelProperty<ModelType, ?>, ModelPersistor<ModelType, ?>> persistors = new IdentityHashMap<>();
+	private final Map<ReadableProperty<ModelType, ?>, ModelPersistor<ModelType, ?>> persistors = new IdentityHashMap<>();
 
 	private ModelType dataModel;
-	private final Map<ModelProperty<ModelType, ?>, Set<IndexContext>> changeLog = new IdentityHashMap<>();
+	private final Map<ReadableProperty<ModelType, ?>, Set<IndexContext>> changeLog = new IdentityHashMap<>();
 
 	@Construct
 	private ModelContainer() {
@@ -140,12 +141,12 @@ public final class ModelContainer<ModelType> extends ModelProxy<ModelType> {
 	}
 
 	@Override
-	public final <PropertyType> boolean isPropertyChanged(ModelProperty<ModelType, PropertyType> property) {
+	public final <PropertyType> boolean isPropertyChanged(ReadableProperty<ModelType, PropertyType> property) {
 		return isPropertyChanged(property, null);
 	}
 
 	@Override
-	public final <PropertyType> boolean isPropertyChanged(ModelProperty<ModelType, PropertyType> property,
+	public final <PropertyType> boolean isPropertyChanged(ReadableProperty<ModelType, PropertyType> property,
 			IndexContext indexContext) {
 		if (property == null) {
 			throw new WebException(HttpErrorCodes.HTTP901_ILLEGAL_ARGUMENT_ERROR,
@@ -163,7 +164,7 @@ public final class ModelContainer<ModelType> extends ModelProxy<ModelType> {
 		}
 	}
 
-	private <PropertyType> boolean isSinglePropertyChanged(ModelProperty<ModelType, PropertyType> property,
+	private <PropertyType> boolean isSinglePropertyChanged(ReadableProperty<ModelType, PropertyType> property,
 			IndexContext indexContext) {
 		if (this.changeLog.containsKey(property)) {
 			for (IndexContext changedContext : this.changeLog.get(property)) {
@@ -176,12 +177,13 @@ public final class ModelContainer<ModelType> extends ModelProxy<ModelType> {
 	}
 
 	@Override
-	public final <PropertyType> boolean exists(ModelProperty<ModelType, PropertyType> property) {
+	public final <PropertyType> boolean exists(ReadableProperty<ModelType, PropertyType> property) {
 		return exists(property, IndexContext.EMPTY);
 	}
 
 	@Override
-	public final <PropertyType> boolean exists(ModelProperty<ModelType, PropertyType> property, IndexContext context) {
+	public final <PropertyType> boolean exists(ReadableProperty<ModelType, PropertyType> property,
+			IndexContext context) {
 		return property.exists(this.dataModel, context);
 	}
 
@@ -190,26 +192,26 @@ public final class ModelContainer<ModelType> extends ModelProxy<ModelType> {
 	// ######################################################################################################################################
 
 	@Override
-	public final <PropertyType> PropertyType getProperty(ModelProperty<ModelType, PropertyType> property) {
+	public final <PropertyType> PropertyType getProperty(ReadableProperty<ModelType, PropertyType> property) {
 		return getProperty(property, IndexContext.EMPTY);
 	}
 
 	@Override
-	public final <PropertyType> PropertyType getProperty(
-			ModelProperty<ModelType, PropertyType> property, IndexContext indexContext) {
+	public final <PropertyType> PropertyType getProperty(ReadableProperty<ModelType, PropertyType> property,
+			IndexContext indexContext) {
 		indexContext = ObjectUtils.defaultIfNull(indexContext, IndexContext.EMPTY);
 		return property.get(this.dataModel, indexContext, true);
 	}
 
 	@Override
-	public final <PropertyType> void setProperty(ModelProperty<ModelType, PropertyType> property,
+	public final <PropertyType> void setProperty(WriteableProperty<ModelType, PropertyType> property,
 			PropertyType value) {
 		setProperty(property, value, IndexContext.EMPTY);
 	}
 
 	@Override
 	@SuppressWarnings("unchecked")
-	public final <PropertyType> void setProperty(ModelProperty<ModelType, PropertyType> property,
+	public final <PropertyType> void setProperty(WriteableProperty<ModelType, PropertyType> property,
 			PropertyType value, IndexContext indexContext) {
 		if (property.isRoot()) {
 			setModel((ModelType) value);
@@ -226,14 +228,13 @@ public final class ModelContainer<ModelType> extends ModelProxy<ModelType> {
 	}
 
 	@Override
-	public <PropertyType> void addProperty(ModelPropertyList<ModelType, PropertyType> property,
-			PropertyType value) {
+	public <PropertyType> void addProperty(ListedProperty<ModelType, PropertyType> property, PropertyType value) {
 		addProperty(property, value, IndexContext.EMPTY);
 	}
 
 	@Override
-	public <PropertyType> void addProperty(ModelPropertyList<ModelType, PropertyType> property,
-			PropertyType value, IndexContext indexContext) {
+	public <PropertyType> void addProperty(ListedProperty<ModelType, PropertyType> property, PropertyType value,
+			IndexContext indexContext) {
 		indexContext = ObjectUtils.defaultIfNull(indexContext, IndexContext.EMPTY);
 		property.add(this.dataModel, value, indexContext);
 
@@ -245,14 +246,13 @@ public final class ModelContainer<ModelType> extends ModelProxy<ModelType> {
 	}
 
 	@Override
-	public <PropertyType> PropertyType removeProperty(
-			ModelPropertyList<ModelType, PropertyType> property) {
+	public <PropertyType> PropertyType removeProperty(ListedProperty<ModelType, PropertyType> property) {
 		return removeProperty(property, IndexContext.EMPTY);
 	}
 
 	@Override
-	public <PropertyType> PropertyType removeProperty(
-			ModelPropertyList<ModelType, PropertyType> property, IndexContext indexContext) {
+	public <PropertyType> PropertyType removeProperty(ListedProperty<ModelType, PropertyType> property,
+			IndexContext indexContext) {
 		indexContext = ObjectUtils.defaultIfNull(indexContext, IndexContext.EMPTY);
 		PropertyType value = property.remove(this.dataModel, indexContext);
 
@@ -265,14 +265,14 @@ public final class ModelContainer<ModelType> extends ModelProxy<ModelType> {
 		return value;
 	}
 
-	private void registerPropertyChange(ModelProperty<ModelType, ?> property, IndexContext indexContext) {
+	private void registerPropertyChange(ReadableProperty<ModelType, ?> property, IndexContext indexContext) {
 		if (!this.changeLog.containsKey(property)) {
 			this.changeLog.put(property, new HashSet<>());
 		}
 		this.changeLog.get(property).add(indexContext.intersection(property.getIndices()));
 	}
 
-	private <PropertyType> void updatePropertyIndexOfChildren(ModelPropertyList<ModelType, PropertyType> property,
+	private <PropertyType> void updatePropertyIndexOfChildren(ListedProperty<ModelType, PropertyType> property,
 			IndexContext indexContext, int modification) {
 		if (indexContext.contains(property)) {
 			int baseIndex = indexContext.indexOf(property);
@@ -282,9 +282,9 @@ public final class ModelContainer<ModelType> extends ModelProxy<ModelType> {
 		}
 	}
 
-	private <PropertyType> void updatePropertyBoundFieldsOfChildren(ModelProperty<ModelType, PropertyType> property,
+	private <PropertyType> void updatePropertyBoundFieldsOfChildren(ReadableProperty<ModelType, PropertyType> property,
 			IndexContext indexContext) {
-		Set<ModelProperty<ModelType, ?>> changedProperties = SetUtils.union(Collections.singleton(property),
+		Set<ReadableProperty<ModelType, ?>> changedProperties = SetUtils.union(Collections.singleton(property),
 				property.getAllChildren());
 		for (ModelAccessor<ModelType> child : getChildren()) {
 			child.updatePropertyBoundFields(indexContext, changedProperties);
@@ -331,11 +331,11 @@ public final class ModelContainer<ModelType> extends ModelProxy<ModelType> {
 		context = ObjectUtils.defaultIfNull(context, IndexContext.EMPTY);
 
 		// EXTRACT THE PROPERTIES (OR THEIR PARENTS) FROM THE PROPERTIES IN THE CHANGE LOG THAT HAVE A PERSISTOR REGISTERED
-		Map<ModelProperty<ModelType, ?>, Set<IndexContext>> persistableProperties = new IdentityHashMap<>();
-		for (ModelProperty<ModelType, ?> baseProperty : this.changeLog.keySet()) {
+		Map<ReadableProperty<ModelType, ?>, Set<IndexContext>> persistableProperties = new IdentityHashMap<>();
+		for (ReadableProperty<ModelType, ?> baseProperty : this.changeLog.keySet()) {
 
 			// FIND THE (PARENT) PROPERTY WHOSE PERSISTOR IS AVAILABLE
-			ModelProperty<ModelType, ?> persistableProperty = baseProperty;
+			ReadableProperty<ModelType, ?> persistableProperty = baseProperty;
 			while (!this.persistors.containsKey(persistableProperty)) {
 				if (persistableProperty == null) {
 					throw new WebException(HttpErrorCodes.HTTP902_ILLEGAL_STATE_ERROR,
@@ -366,8 +366,8 @@ public final class ModelContainer<ModelType> extends ModelProxy<ModelType> {
 		}
 
 		// REMOVE THOSE PROPERTIES WHOSE PERSISTING WILL BE INCLUDED IN THE PERSISTING OF PARENTS
-		for (ModelProperty<ModelType, ?> parent : new HashSet<>(persistableProperties.keySet())) {
-			for (ModelProperty<ModelType, ?> child : parent.getAllChildren()) {
+		for (ReadableProperty<ModelType, ?> parent : new HashSet<>(persistableProperties.keySet())) {
+			for (ReadableProperty<ModelType, ?> child : parent.getAllChildren()) {
 				if (parent != child && persistableProperties.containsKey(child)) {
 					Iterator<IndexContext> iter = persistableProperties.get(child).iterator();
 					IndexContext childContext;
@@ -388,7 +388,7 @@ public final class ModelContainer<ModelType> extends ModelProxy<ModelType> {
 		}
 
 		// TRIGGER PERSISTING
-		for (ModelProperty<ModelType, ?> property : persistableProperties.keySet()) {
+		for (ReadableProperty<ModelType, ?> property : persistableProperties.keySet()) {
 			for (IndexContext current : persistableProperties.get(property)) {
 				persistProperty(property, current);
 			}
@@ -397,8 +397,8 @@ public final class ModelContainer<ModelType> extends ModelProxy<ModelType> {
 		return this.dataModel;
 	}
 
-	final <PropertyType> List<PropertyType> persistProperty(
-			ModelProperty<ModelType, PropertyType> property, IndexContext context) {
+	final <PropertyType> List<PropertyType> persistProperty(ReadableProperty<ModelType, PropertyType> property,
+			IndexContext context) {
 		List<PropertyType> persistedInstances = new ArrayList<>();
 		for (IndexContext possibleContext : determinePossiblePropertyContexts(property, context)) {
 			PropertyType instance = getProperty(property, possibleContext);
@@ -428,17 +428,17 @@ public final class ModelContainer<ModelType> extends ModelProxy<ModelType> {
 	 * property on the basis of the given context
 	 */
 	@SuppressWarnings("unchecked")
-	private final Set<IndexContext> determinePossiblePropertyContexts(ModelProperty<ModelType, ?> property,
+	private final Set<IndexContext> determinePossiblePropertyContexts(ReadableProperty<ModelType, ?> property,
 			IndexContext context) {
 		Set<IndexContext> contexts = new HashSet<>(Arrays.asList(context));
-		for (ModelProperty<ModelType, ?> pathProperty : property.getPath()) {
+		for (ReadableProperty<ModelType, ?> pathProperty : property.getPath()) {
 			if (pathProperty.isList() && !context.contains(pathProperty)) {
 				Set<IndexContext> newContexts = new HashSet<>();
 				for (IndexContext existingContext : contexts) {
 					int count = ((Collection<?>) getProperty(pathProperty, existingContext)).size();
 					for (int i = 0; i < count; i++) {
 						newContexts.add(existingContext
-								.union(PropertyIndex.of((ModelPropertyList<ModelType, ?>) pathProperty, i)));
+								.union(PropertyIndex.of((ListedProperty<ModelType, ?>) pathProperty, i)));
 					}
 				}
 				contexts = newContexts;
@@ -447,7 +447,7 @@ public final class ModelContainer<ModelType> extends ModelProxy<ModelType> {
 		return contexts;
 	}
 
-	private final void removeFromChangeLog(ModelProperty<ModelType, ?> property, IndexContext context) {
+	private final void removeFromChangeLog(ReadableProperty<ModelType, ?> property, IndexContext context) {
 		if (this.changeLog.containsKey(property)) {
 			Iterator<IndexContext> iter = this.changeLog.get(property).iterator();
 			IndexContext childContext;
