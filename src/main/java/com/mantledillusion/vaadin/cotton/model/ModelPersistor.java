@@ -3,7 +3,7 @@ package com.mantledillusion.vaadin.cotton.model;
 import java.lang.reflect.Constructor;
 import java.util.List;
 
-import com.mantledillusion.data.epiphy.ModelProperty;
+import com.mantledillusion.data.epiphy.interfaces.ReadableProperty;
 import com.mantledillusion.injection.hura.Processor.Phase;
 import com.mantledillusion.injection.hura.annotation.Process;
 import com.mantledillusion.vaadin.cotton.exception.WebException;
@@ -11,7 +11,7 @@ import com.mantledillusion.vaadin.cotton.exception.WebException.HttpErrorCodes;
 
 /**
  * A super type for an indexable persistence unit of a single
- * {@link ModelProperty}.
+ * {@link ReadableProperty}.
  * <P>
  * Persisting via this {@link ModelPersistor} will be forwarded to the parent
  * {@link ModelContainer}.
@@ -25,7 +25,7 @@ import com.mantledillusion.vaadin.cotton.exception.WebException.HttpErrorCodes;
 public abstract class ModelPersistor<ModelType, PropertyType> {
 
 	private final ModelContainer<ModelType> parentContainer;
-	private final ModelProperty<ModelType, PropertyType> property;
+	private final ReadableProperty<ModelType, PropertyType> property;
 
 	/**
 	 * {@link Constructor}.
@@ -38,7 +38,7 @@ public abstract class ModelPersistor<ModelType, PropertyType> {
 	 *            be null.
 	 */
 	protected ModelPersistor(ModelContainer<ModelType> parentContainer,
-			ModelProperty<ModelType, PropertyType> property) {
+			ReadableProperty<ModelType, PropertyType> property) {
 		if (parentContainer == null) {
 			throw new WebException(HttpErrorCodes.HTTP901_ILLEGAL_ARGUMENT_ERROR,
 					"Cannot create a persistor for a null parent container.");
@@ -66,13 +66,13 @@ public abstract class ModelPersistor<ModelType, PropertyType> {
 	// ######################################################################################################################################
 
 	/**
-	 * Returns the {@link ModelProperty} this {@link ModelPersistor} is able to
+	 * Returns the {@link ReadableProperty} this {@link ModelPersistor} is able to
 	 * persist.
 	 * 
 	 * @return The property this {@link ModelPersistor} has registered itself on its
 	 *         parent {@link ModelContainer} to persist; never null
 	 */
-	public final ModelProperty<ModelType, PropertyType> getProperty() {
+	public final ReadableProperty<ModelType, PropertyType> getProperty() {
 		return this.property;
 	}
 

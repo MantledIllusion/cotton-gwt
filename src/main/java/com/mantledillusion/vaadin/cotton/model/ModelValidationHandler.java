@@ -1,6 +1,6 @@
 package com.mantledillusion.vaadin.cotton.model;
 
-import com.mantledillusion.data.epiphy.ModelProperty;
+import com.mantledillusion.data.epiphy.interfaces.ReadableProperty;
 import com.mantledillusion.vaadin.cotton.exception.WebException;
 import com.mantledillusion.vaadin.cotton.exception.WebException.HttpErrorCodes;
 import com.mantledillusion.vaadin.cotton.model.ValidationError.ValidityLevel;
@@ -8,7 +8,7 @@ import com.mantledillusion.vaadin.cotton.model.ValidationError.ValidityLevel;
 /**
  * Framework internal type <b>(DO NOT USE!)</b> for types that can validate a
  * model and show the found errors on the ui components bound to the respecting
- * {@link ModelProperty}s.
+ * {@link ReadableProperty}s.
  *
  * @param <ModelType>
  *            The root type of the data model the {@link ModelValidationHandler}

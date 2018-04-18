@@ -7,8 +7,9 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-import com.mantledillusion.data.epiphy.ModelProperty;
-import com.mantledillusion.data.epiphy.ModelPropertyList;
+import com.mantledillusion.data.epiphy.interfaces.ListedProperty;
+import com.mantledillusion.data.epiphy.interfaces.ReadableProperty;
+import com.mantledillusion.data.epiphy.interfaces.WriteableProperty;
 import com.mantledillusion.vaadin.cotton.component.ComponentFactory;
 import com.mantledillusion.vaadin.cotton.component.ComponentFactory.OptionPattern;
 import com.vaadin.data.HasValue;
@@ -30,7 +31,7 @@ import com.vaadin.ui.TextField;
 
 /**
  * Framework internal type <b>(DO NOT USE!)</b> for types that can bind ui
- * components to {@link ModelProperty}s.
+ * components to {@link ReadableProperty}s.
  * 
  * @param <ModelType>
  *            The root type of the data model the {@link ModelBinder} is able to
@@ -62,27 +63,27 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 		private final Setter<ErrorMessage> errorSetter;
 		private final Setter<Boolean> enablementSetter;
 
-		private HasValueDelegate(HasValue<?> field, Getter<PropertyType> valueGetter,
-				Setter<PropertyType> valueSetter, Getter<Collection<ValidationError>> errorGetter) {
+		private HasValueDelegate(HasValue<?> field, Getter<PropertyType> valueGetter, Setter<PropertyType> valueSetter,
+				Getter<Collection<ValidationError>> errorGetter) {
 			this.field = field;
 			this.valueGetter = valueGetter;
 			this.valueSetter = valueSetter;
 			this.errorGetter = errorGetter;
-			
+
 			if (this.field instanceof AbstractComponent) {
 				this.errorSetter = errorMessage -> ((AbstractComponent) this.field).setComponentError(errorMessage);
 			} else {
 				this.errorSetter = errorMessage -> {
 				};
 			}
-			
+
 			if (this.field instanceof Component) {
 				this.enablementSetter = enable -> {
 					this.field.setReadOnly(!enable);
 					((Component) this.field).setEnabled(enable);
 				};
-			} else { 
-				this.enablementSetter = enable -> this.field.setReadOnly(enable);
+			} else {
+				this.enablementSetter = enable -> this.field.setReadOnly(!enable);
 			}
 		}
 
@@ -124,14 +125,16 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 
 		private static final long serialVersionUID = 1L;
 
-		private final ModelProperty<ModelType, PropertyType> property;
+		private final ReadableProperty<ModelType, PropertyType> property;
 		private final HasValueDelegate<PropertyType> hasValue;
+		private final boolean isWriteable;
 		private final Registration registration;
 
-		private PropertyBinding(ModelProperty<ModelType, PropertyType> property,
+		private PropertyBinding(ReadableProperty<ModelType, PropertyType> property,
 				HasValueDelegate<PropertyType> hasValue) {
 			this.property = property;
 			this.hasValue = hasValue;
+			this.isWriteable = property instanceof WriteableProperty;
 			this.registration = this.hasValue.register(this);
 		}
 
@@ -139,25 +142,27 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 
 		@Override
 		public synchronized void valueChange(ValueChangeEvent event) {
-			if (!this.updating && ModelBinder.this.exists(this.property)) {
+			if (this.isWriteable && !this.updating && ModelBinder.this.exists(this.property)) {
 				Set<ValidationError> errors = this.hasValue.validate();
 
 				this.updating = true;
 				switch (ValidationErrorRegistry.containsError(errors)) {
 				case VALID:
-					ModelBinder.this.setProperty(this.property, this.hasValue.getValue());
+					ModelBinder.this.setProperty((WriteableProperty<ModelType, PropertyType>) this.property,
+							this.hasValue.getValue());
 					this.hasValue.setError(null);
 					break;
 				case WARNING:
-					ModelBinder.this.setProperty(this.property, this.hasValue.getValue());
+					ModelBinder.this.setProperty((WriteableProperty<ModelType, PropertyType>) this.property,
+							this.hasValue.getValue());
 					this.hasValue.setError(new CompositeErrorMessage(errors));
 					break;
 				case ERROR:
-					ModelBinder.this.setProperty(this.property, null);
+					ModelBinder.this.setProperty((WriteableProperty<ModelType, PropertyType>) this.property, null);
 					this.hasValue.setError(new CompositeErrorMessage(errors));
 					break;
 				}
-				
+
 				this.updating = false;
 			}
 		}
@@ -165,7 +170,7 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 		synchronized void update() {
 			if (!this.updating) {
 				this.updating = true;
-				this.hasValue.setEnabled(ModelBinder.this.exists(this.property));
+				this.hasValue.setEnabled(this.isWriteable && ModelBinder.this.exists(this.property));
 				this.hasValue.setValue(ModelBinder.this.getProperty(this.property));
 				this.updating = false;
 			}
@@ -192,14 +197,13 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 		}
 	}
 
-	<PropertyType> PropertyBinding<PropertyType> bindingOf(
-			ModelProperty<ModelType, PropertyType> property, HasValue<PropertyType> field) {
+	<PropertyType> PropertyBinding<PropertyType> bindingOf(ReadableProperty<ModelType, PropertyType> property,
+			HasValue<PropertyType> field) {
 		return bindingOf(property, field, value -> null);
 	}
 
-	<PropertyType> PropertyBinding<PropertyType> bindingOf(
-			ModelProperty<ModelType, PropertyType> property, HasValue<PropertyType> field,
-			InputValidator<PropertyType> inputValidator) {
+	<PropertyType> PropertyBinding<PropertyType> bindingOf(ReadableProperty<ModelType, PropertyType> property,
+			HasValue<PropertyType> field, InputValidator<PropertyType> inputValidator) {
 		Getter<PropertyType> valueGetter = field::getValue;
 		Setter<PropertyType> valueSetter = value -> field.setValue(value == null ? field.getEmptyValue() : value);
 		Getter<Collection<ValidationError>> errorGetter = () -> inputValidator.validateInput(field.getValue());
@@ -207,20 +211,20 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 	}
 
 	<PropertyType, FieldValueType> PropertyBinding<PropertyType> bindingOf(
-			ModelProperty<ModelType, PropertyType> property, HasValue<FieldValueType> field,
+			ReadableProperty<ModelType, PropertyType> property, HasValue<FieldValueType> field,
 			Converter<FieldValueType, PropertyType> converter) {
 		Getter<PropertyType> valueGetter = () -> converter.toProperty(field.getValue());
-		Setter<PropertyType> valueSetter = value -> field.setValue(value == null ? field.getEmptyValue() : converter.toField(value));
+		Setter<PropertyType> valueSetter = value -> field
+				.setValue(value == null ? field.getEmptyValue() : converter.toField(value));
 		Getter<Collection<ValidationError>> errorGetter = () -> converter.validateInput(field.getValue());
-		return new PropertyBinding<>(property, new HasValueDelegate<>(field,
-				valueGetter, valueSetter, errorGetter));
+		return new PropertyBinding<>(property, new HasValueDelegate<>(field, valueGetter, valueSetter, errorGetter));
 	}
 
 	ModelBinder() {
 	}
 
 	private <FieldType extends Component & HasValue<FieldValueType>, FieldValueType> FieldType buildAndBind(
-			HasValueProvider<FieldType, FieldValueType> provider, ModelProperty<ModelType, FieldValueType> property,
+			HasValueProvider<FieldType, FieldValueType> provider, ReadableProperty<ModelType, FieldValueType> property,
 			@SuppressWarnings("unchecked") OptionPattern<? super FieldType>... patterns) {
 		FieldType comp = provider.build(patterns);
 		ModelBinder.this.bindToProperty(comp, property);
@@ -241,10 +245,10 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 	 * @return The given field for in-line use
 	 */
 	public abstract <FieldType extends HasValue<PropertyType>, PropertyType> FieldType bindToProperty(FieldType field,
-			ModelProperty<ModelType, PropertyType> property);
+			ReadableProperty<ModelType, PropertyType> property);
 
 	private <FieldType extends Component & HasValue<FieldValueType>, FieldValueType> FieldType buildAndBind(
-			HasValueProvider<FieldType, FieldValueType> provider, ModelProperty<ModelType, FieldValueType> property,
+			HasValueProvider<FieldType, FieldValueType> provider, ReadableProperty<ModelType, FieldValueType> property,
 			InputValidator<FieldValueType> inputValidator,
 			@SuppressWarnings("unchecked") OptionPattern<? super FieldType>... patterns) {
 		FieldType comp = provider.build(patterns);
@@ -269,10 +273,10 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 	 * @return The given field for in-line use
 	 */
 	public abstract <FieldType extends HasValue<PropertyType>, PropertyType> FieldType bindToProperty(FieldType field,
-			ModelProperty<ModelType, PropertyType> property, InputValidator<PropertyType> inputValidator);
+			ReadableProperty<ModelType, PropertyType> property, InputValidator<PropertyType> inputValidator);
 
 	private <FieldType extends Component & HasValue<FieldValueType>, FieldValueType, PropertyType> FieldType buildAndBind(
-			HasValueProvider<FieldType, FieldValueType> provider, ModelProperty<ModelType, PropertyType> property,
+			HasValueProvider<FieldType, FieldValueType> provider, ReadableProperty<ModelType, PropertyType> property,
 			Converter<FieldValueType, PropertyType> converter,
 			@SuppressWarnings("unchecked") OptionPattern<? super FieldType>... patterns) {
 		FieldType comp = provider.build(patterns);
@@ -299,7 +303,7 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 	 * @return The given field for in-line use
 	 */
 	public abstract <FieldType extends HasValue<FieldValueType>, FieldValueType, PropertyType> FieldType bindToProperty(
-			FieldType field, ModelProperty<ModelType, PropertyType> property,
+			FieldType field, ReadableProperty<ModelType, PropertyType> property,
 			Converter<FieldValueType, PropertyType> converter);
 
 	// ##############################################################################################################
@@ -312,17 +316,17 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 	 * @param <PropertyType>
 	 *            The type of the property to bind.
 	 * @param property
-	 *            The {@link ModelProperty} to bind the new {@link Label} to;
+	 *            The {@link ReadableProperty} to bind the new {@link Label} to;
 	 *            <b>not</b> allowed to be null.
 	 * @param patterns
 	 *            The {@link OptionPattern}s to apply to the new component; may be
 	 *            null or empty, then nothing will be applied. Will be applied in
 	 *            the given order.
 	 * @return A new {@link Label} instance, bound to the given
-	 *         {@link ModelProperty}; never null
+	 *         {@link ReadableProperty}; never null
 	 */
 	@SafeVarargs
-	public final <PropertyType> Label bindLabelForProperty(ModelProperty<ModelType, PropertyType> property,
+	public final <PropertyType> Label bindLabelForProperty(ReadableProperty<ModelType, PropertyType> property,
 			OptionPattern<? super Label>... patterns) {
 		return bindLabelForProperty(property, StringRenderer.defaultRenderer(), patterns);
 	}
@@ -333,7 +337,7 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 	 * @param <PropertyType>
 	 *            The type of the property to bind.
 	 * @param property
-	 *            The {@link ModelProperty} to bind the new {@link Label} to;
+	 *            The {@link ReadableProperty} to bind the new {@link Label} to;
 	 *            <b>not</b> allowed to be null.
 	 * @param renderer
 	 *            The renderer to convert the property type to Strings used by the
@@ -343,10 +347,10 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 	 *            null or empty, then nothing will be applied. Will be applied in
 	 *            the given order.
 	 * @return A new {@link Label} instance, bound to the given
-	 *         {@link ModelProperty}; never null
+	 *         {@link ReadableProperty}; never null
 	 */
 	@SafeVarargs
-	public final <PropertyType> Label bindLabelForProperty(ModelProperty<ModelType, PropertyType> property,
+	public final <PropertyType> Label bindLabelForProperty(ReadableProperty<ModelType, PropertyType> property,
 			StringRenderer<PropertyType> renderer, OptionPattern<? super Label>... patterns) {
 		if (renderer == null) {
 			throw new IllegalArgumentException("Cannot apply a null renderer.");
@@ -375,17 +379,17 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 	 * Directly builds a single {@link TextField} and binds it.
 	 * 
 	 * @param property
-	 *            The {@link ModelProperty} to bind the new {@link TextField} to;
+	 *            The {@link ReadableProperty} to bind the new {@link TextField} to;
 	 *            <b>not</b> allowed to be null.
 	 * @param patterns
 	 *            The {@link OptionPattern}s to apply to the new component; may be
 	 *            null or empty, then nothing will be applied. Will be applied in
 	 *            the given order.
 	 * @return A new {@link TextField} instance, bound to the given
-	 *         {@link ModelProperty}; never null
+	 *         {@link ReadableProperty}; never null
 	 */
 	@SafeVarargs
-	public final TextField bindTextFieldForProperty(ModelProperty<ModelType, String> property,
+	public final TextField bindTextFieldForProperty(ReadableProperty<ModelType, String> property,
 			OptionPattern<? super TextField>... patterns) {
 		return buildAndBind(ComponentFactory::buildTextField, property, patterns);
 	}
@@ -394,7 +398,7 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 	 * Directly builds a single {@link TextField} and binds it.
 	 * 
 	 * @param property
-	 *            The {@link ModelProperty} to bind the new {@link TextField} to;
+	 *            The {@link ReadableProperty} to bind the new {@link TextField} to;
 	 *            <b>not</b> allowed to be null.
 	 * @param inputValidator
 	 *            The validator to validate the {@link TextField}s raw input with;
@@ -404,10 +408,10 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 	 *            null or empty, then nothing will be applied. Will be applied in
 	 *            the given order.
 	 * @return A new {@link TextField} instance, bound to the given
-	 *         {@link ModelProperty}; never null
+	 *         {@link ReadableProperty}; never null
 	 */
 	@SafeVarargs
-	public final TextField bindTextFieldForProperty(ModelProperty<ModelType, String> property,
+	public final TextField bindTextFieldForProperty(ReadableProperty<ModelType, String> property,
 			InputValidator<String> inputValidator, OptionPattern<? super TextField>... patterns) {
 		return buildAndBind(ComponentFactory::buildTextField, property, inputValidator, patterns);
 	}
@@ -418,7 +422,7 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 	 * @param <PropertyType>
 	 *            The type of the property to bind.
 	 * @param property
-	 *            The {@link ModelProperty} to bind the new {@link TextField} to;
+	 *            The {@link ReadableProperty} to bind the new {@link TextField} to;
 	 *            <b>not</b> allowed to be null.
 	 * @param converter
 	 *            The converter to convert the property type to the type used by the
@@ -428,10 +432,10 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 	 *            null or empty, then nothing will be applied. Will be applied in
 	 *            the given order.
 	 * @return A new {@link TextField} instance, bound to the given
-	 *         {@link ModelProperty}; never null
+	 *         {@link ReadableProperty}; never null
 	 */
 	@SafeVarargs
-	public final <PropertyType> TextField bindTextFieldForProperty(ModelProperty<ModelType, PropertyType> property,
+	public final <PropertyType> TextField bindTextFieldForProperty(ReadableProperty<ModelType, PropertyType> property,
 			Converter<String, PropertyType> converter, OptionPattern<? super TextField>... patterns) {
 		return buildAndBind(ComponentFactory::buildTextField, property, converter, patterns);
 	}
@@ -444,17 +448,17 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 	 * Directly builds a single {@link TextArea} and binds it.
 	 * 
 	 * @param property
-	 *            The {@link ModelProperty} to bind the new {@link TextArea} to;
+	 *            The {@link ReadableProperty} to bind the new {@link TextArea} to;
 	 *            <b>not</b> allowed to be null.
 	 * @param patterns
 	 *            The {@link OptionPattern}s to apply to the new component; may be
 	 *            null or empty, then nothing will be applied. Will be applied in
 	 *            the given order.
 	 * @return A new {@link TextArea} instance, bound to the given
-	 *         {@link ModelProperty}; never null
+	 *         {@link ReadableProperty}; never null
 	 */
 	@SafeVarargs
-	public final TextArea bindTextAreaForProperty(ModelProperty<ModelType, String> property,
+	public final TextArea bindTextAreaForProperty(ReadableProperty<ModelType, String> property,
 			OptionPattern<? super TextArea>... patterns) {
 		return buildAndBind(ComponentFactory::buildTextArea, property, patterns);
 	}
@@ -463,7 +467,7 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 	 * Directly builds a single {@link TextArea} and binds it.
 	 * 
 	 * @param property
-	 *            The {@link ModelProperty} to bind the new {@link TextArea} to;
+	 *            The {@link ReadableProperty} to bind the new {@link TextArea} to;
 	 *            <b>not</b> allowed to be null.
 	 * @param inputValidator
 	 *            The validator to validate the {@link TextArea}s raw input with;
@@ -473,12 +477,11 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 	 *            null or empty, then nothing will be applied. Will be applied in
 	 *            the given order.
 	 * @return A new {@link TextArea} instance, bound to the given
-	 *         {@link ModelProperty}; never null
+	 *         {@link ReadableProperty}; never null
 	 */
 	@SafeVarargs
-	public final TextArea bindTextAreaForProperty(ModelProperty<ModelType, String> property,
-			InputValidator<String> inputValidator,
-			OptionPattern<? super TextArea>... patterns) {
+	public final TextArea bindTextAreaForProperty(ReadableProperty<ModelType, String> property,
+			InputValidator<String> inputValidator, OptionPattern<? super TextArea>... patterns) {
 		return buildAndBind(ComponentFactory::buildTextArea, property, inputValidator, patterns);
 	}
 
@@ -488,7 +491,7 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 	 * @param <PropertyType>
 	 *            The type of the property to bind.
 	 * @param property
-	 *            The {@link ModelProperty} to bind the new {@link TextArea} to;
+	 *            The {@link ReadableProperty} to bind the new {@link TextArea} to;
 	 *            <b>not</b> allowed to be null.
 	 * @param converter
 	 *            The converter to convert the property type to the type used by the
@@ -498,10 +501,10 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 	 *            null or empty, then nothing will be applied. Will be applied in
 	 *            the given order.
 	 * @return A new {@link TextArea} instance, bound to the given
-	 *         {@link ModelProperty}; never null
+	 *         {@link ReadableProperty}; never null
 	 */
 	@SafeVarargs
-	public final <PropertyType> TextArea bindTextAreaForProperty(ModelProperty<ModelType, PropertyType> property,
+	public final <PropertyType> TextArea bindTextAreaForProperty(ReadableProperty<ModelType, PropertyType> property,
 			Converter<String, PropertyType> converter, OptionPattern<? super TextArea>... patterns) {
 		return buildAndBind(ComponentFactory::buildTextArea, property, converter, patterns);
 	}
@@ -514,17 +517,17 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 	 * Directly builds a single {@link DateField} and binds it.
 	 * 
 	 * @param property
-	 *            The {@link ModelProperty} to bind the new {@link DateField} to;
+	 *            The {@link ReadableProperty} to bind the new {@link DateField} to;
 	 *            <b>not</b> allowed to be null.
 	 * @param patterns
 	 *            The {@link OptionPattern}s to apply to the new component; may be
 	 *            null or empty, then nothing will be applied. Will be applied in
 	 *            the given order.
 	 * @return A new {@link DateField} instance, bound to the given
-	 *         {@link ModelProperty}; never null
+	 *         {@link ReadableProperty}; never null
 	 */
 	@SafeVarargs
-	public final DateField bindDateFieldForProperty(ModelProperty<ModelType, LocalDate> property,
+	public final DateField bindDateFieldForProperty(ReadableProperty<ModelType, LocalDate> property,
 			OptionPattern<? super DateField>... patterns) {
 		return buildAndBind(ComponentFactory::buildDateField, property, patterns);
 	}
@@ -533,7 +536,7 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 	 * Directly builds a single {@link DateField} and binds it.
 	 * 
 	 * @param property
-	 *            The {@link ModelProperty} to bind the new {@link DateField} to;
+	 *            The {@link ReadableProperty} to bind the new {@link DateField} to;
 	 *            <b>not</b> allowed to be null.
 	 * @param inputValidator
 	 *            The validator to validate the {@link DateField}s raw input with;
@@ -543,12 +546,11 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 	 *            null or empty, then nothing will be applied. Will be applied in
 	 *            the given order.
 	 * @return A new {@link DateField} instance, bound to the given
-	 *         {@link ModelProperty}; never null
+	 *         {@link ReadableProperty}; never null
 	 */
 	@SafeVarargs
-	public final DateField bindDateFieldForProperty(ModelProperty<ModelType, LocalDate> property,
-			InputValidator<LocalDate> inputValidator,
-			OptionPattern<? super DateField>... patterns) {
+	public final DateField bindDateFieldForProperty(ReadableProperty<ModelType, LocalDate> property,
+			InputValidator<LocalDate> inputValidator, OptionPattern<? super DateField>... patterns) {
 		return buildAndBind(ComponentFactory::buildDateField, property, inputValidator, patterns);
 	}
 
@@ -558,7 +560,7 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 	 * @param <PropertyType>
 	 *            The type of the property to bind.
 	 * @param property
-	 *            The {@link ModelProperty} to bind the new {@link DateField} to;
+	 *            The {@link ReadableProperty} to bind the new {@link DateField} to;
 	 *            <b>not</b> allowed to be null.
 	 * @param converter
 	 *            The converter to convert the property type to the type used by the
@@ -568,10 +570,10 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 	 *            null or empty, then nothing will be applied. Will be applied in
 	 *            the given order.
 	 * @return A new {@link DateField} instance, bound to the given
-	 *         {@link ModelProperty}; never null
+	 *         {@link ReadableProperty}; never null
 	 */
 	@SafeVarargs
-	public final <PropertyType> DateField bindDateFieldForProperty(ModelProperty<ModelType, PropertyType> property,
+	public final <PropertyType> DateField bindDateFieldForProperty(ReadableProperty<ModelType, PropertyType> property,
 			Converter<LocalDate, PropertyType> converter, OptionPattern<? super DateField>... patterns) {
 		return buildAndBind(ComponentFactory::buildDateField, property, converter, patterns);
 	}
@@ -580,17 +582,17 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 	 * Directly builds a single {@link DateTimeField} and binds it.
 	 * 
 	 * @param property
-	 *            The {@link ModelProperty} to bind the new {@link DateTimeField}
+	 *            The {@link ReadableProperty} to bind the new {@link DateTimeField}
 	 *            to; <b>not</b> allowed to be null.
 	 * @param patterns
 	 *            The {@link OptionPattern}s to apply to the new component; may be
 	 *            null or empty, then nothing will be applied. Will be applied in
 	 *            the given order.
 	 * @return A new {@link DateTimeField} instance, bound to the given
-	 *         {@link ModelProperty}; never null
+	 *         {@link ReadableProperty}; never null
 	 */
 	@SafeVarargs
-	public final DateTimeField bindDateTimeFieldForProperty(ModelProperty<ModelType, LocalDateTime> property,
+	public final DateTimeField bindDateTimeFieldForProperty(ReadableProperty<ModelType, LocalDateTime> property,
 			OptionPattern<? super DateTimeField>... patterns) {
 		return buildAndBind(ComponentFactory::buildDateTimeField, property, patterns);
 	}
@@ -599,22 +601,21 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 	 * Directly builds a single {@link DateTimeField} and binds it.
 	 * 
 	 * @param property
-	 *            The {@link ModelProperty} to bind the new {@link DateTimeField}
+	 *            The {@link ReadableProperty} to bind the new {@link DateTimeField}
 	 *            to; <b>not</b> allowed to be null.
 	 * @param inputValidator
-	 *            The validator to validate the {@link DateTimeField}s raw input with;
-	 *            <b>not</b> allowed to be null.
+	 *            The validator to validate the {@link DateTimeField}s raw input
+	 *            with; <b>not</b> allowed to be null.
 	 * @param patterns
 	 *            The {@link OptionPattern}s to apply to the new component; may be
 	 *            null or empty, then nothing will be applied. Will be applied in
 	 *            the given order.
 	 * @return A new {@link DateTimeField} instance, bound to the given
-	 *         {@link ModelProperty}; never null
+	 *         {@link ReadableProperty}; never null
 	 */
 	@SafeVarargs
-	public final DateTimeField bindDateTimeFieldForProperty(ModelProperty<ModelType, LocalDateTime> property,
-			InputValidator<LocalDateTime> inputValidator,
-			OptionPattern<? super DateTimeField>... patterns) {
+	public final DateTimeField bindDateTimeFieldForProperty(ReadableProperty<ModelType, LocalDateTime> property,
+			InputValidator<LocalDateTime> inputValidator, OptionPattern<? super DateTimeField>... patterns) {
 		return buildAndBind(ComponentFactory::buildDateTimeField, property, inputValidator, patterns);
 	}
 
@@ -624,7 +625,7 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 	 * @param <PropertyType>
 	 *            The type of the property to bind.
 	 * @param property
-	 *            The {@link ModelProperty} to bind the new {@link DateTimeField}
+	 *            The {@link ReadableProperty} to bind the new {@link DateTimeField}
 	 *            to; <b>not</b> allowed to be null.
 	 * @param converter
 	 *            The converter to convert the property type to the type used by the
@@ -634,11 +635,11 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 	 *            null or empty, then nothing will be applied. Will be applied in
 	 *            the given order.
 	 * @return A new {@link DateTimeField} instance, bound to the given
-	 *         {@link ModelProperty}; never null
+	 *         {@link ReadableProperty}; never null
 	 */
 	@SafeVarargs
 	public final <PropertyType> DateTimeField bindDateTimeFieldForProperty(
-			ModelProperty<ModelType, PropertyType> property, Converter<LocalDateTime, PropertyType> converter,
+			ReadableProperty<ModelType, PropertyType> property, Converter<LocalDateTime, PropertyType> converter,
 			OptionPattern<? super DateTimeField>... patterns) {
 		return buildAndBind(ComponentFactory::buildDateTimeField, property, converter, patterns);
 	}
@@ -651,17 +652,17 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 	 * Directly builds a single {@link CheckBox} and binds it.
 	 * 
 	 * @param property
-	 *            The {@link ModelProperty} to bind the new {@link CheckBox} to;
+	 *            The {@link ReadableProperty} to bind the new {@link CheckBox} to;
 	 *            <b>not</b> allowed to be null.
 	 * @param patterns
 	 *            The {@link OptionPattern}s to apply to the new component; may be
 	 *            null or empty, then nothing will be applied. Will be applied in
 	 *            the given order.
 	 * @return A new {@link CheckBox} instance, bound to the given
-	 *         {@link ModelProperty}; never null
+	 *         {@link ReadableProperty}; never null
 	 */
 	@SafeVarargs
-	public final CheckBox bindCheckBoxForProperty(ModelProperty<ModelType, Boolean> property,
+	public final CheckBox bindCheckBoxForProperty(ReadableProperty<ModelType, Boolean> property,
 			OptionPattern<? super CheckBox>... patterns) {
 		return buildAndBind(ComponentFactory::buildCheckBox, property, patterns);
 	}
@@ -670,7 +671,7 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 	 * Directly builds a single {@link CheckBox} and binds it.
 	 * 
 	 * @param property
-	 *            The {@link ModelProperty} to bind the new {@link CheckBox} to;
+	 *            The {@link ReadableProperty} to bind the new {@link CheckBox} to;
 	 *            <b>not</b> allowed to be null.
 	 * @param inputValidator
 	 *            The validator to validate the {@link CheckBox}es raw input with;
@@ -680,12 +681,11 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 	 *            null or empty, then nothing will be applied. Will be applied in
 	 *            the given order.
 	 * @return A new {@link CheckBox} instance, bound to the given
-	 *         {@link ModelProperty}; never null
+	 *         {@link ReadableProperty}; never null
 	 */
 	@SafeVarargs
-	public final CheckBox bindCheckBoxForProperty(ModelProperty<ModelType, Boolean> property,
-			InputValidator<Boolean> inputValidator,
-			OptionPattern<? super CheckBox>... patterns) {
+	public final CheckBox bindCheckBoxForProperty(ReadableProperty<ModelType, Boolean> property,
+			InputValidator<Boolean> inputValidator, OptionPattern<? super CheckBox>... patterns) {
 		return buildAndBind(ComponentFactory::buildCheckBox, property, inputValidator, patterns);
 	}
 
@@ -695,7 +695,7 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 	 * @param <PropertyType>
 	 *            The type of the property to bind.
 	 * @param property
-	 *            The {@link ModelProperty} to bind the new {@link CheckBox} to;
+	 *            The {@link ReadableProperty} to bind the new {@link CheckBox} to;
 	 *            <b>not</b> allowed to be null.
 	 * @param converter
 	 *            The converter to convert the property type to the type used by the
@@ -705,10 +705,10 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 	 *            null or empty, then nothing will be applied. Will be applied in
 	 *            the given order.
 	 * @return A new {@link CheckBox} instance, bound to the given
-	 *         {@link ModelProperty}; never null
+	 *         {@link ReadableProperty}; never null
 	 */
 	@SafeVarargs
-	public final <PropertyType> CheckBox bindCheckBoxForProperty(ModelProperty<ModelType, PropertyType> property,
+	public final <PropertyType> CheckBox bindCheckBoxForProperty(ReadableProperty<ModelType, PropertyType> property,
 			Converter<Boolean, PropertyType> converter, OptionPattern<? super CheckBox>... patterns) {
 		return buildAndBind(ComponentFactory::buildCheckBox, property, converter, patterns);
 	}
@@ -723,17 +723,17 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 	 * @param <T>
 	 *            The type of the property to bind.
 	 * @param property
-	 *            The {@link ModelProperty} to bind the new {@link RadioButtonGroup}
-	 *            to; <b>not</b> allowed to be null.
+	 *            The {@link ReadableProperty} to bind the new
+	 *            {@link RadioButtonGroup} to; <b>not</b> allowed to be null.
 	 * @param patterns
 	 *            The {@link OptionPattern}s to apply to the new component; may be
 	 *            null or empty, then nothing will be applied. Will be applied in
 	 *            the given order.
 	 * @return A new {@link RadioButtonGroup} instance, bound to the given
-	 *         {@link ModelProperty}; never null
+	 *         {@link ReadableProperty}; never null
 	 */
 	@SafeVarargs
-	public final <T> RadioButtonGroup<T> bindRadioButtonGroupForProperty(ModelProperty<ModelType, T> property,
+	public final <T> RadioButtonGroup<T> bindRadioButtonGroupForProperty(ReadableProperty<ModelType, T> property,
 			OptionPattern<? super RadioButtonGroup<?>>... patterns) {
 		HasValueProvider<RadioButtonGroup<T>, T> provider = ComponentFactory::buildRadioButtonGroup;
 		return buildAndBind(provider, property, patterns);
@@ -745,22 +745,21 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 	 * @param <T>
 	 *            The type of the property to bind.
 	 * @param property
-	 *            The {@link ModelProperty} to bind the new {@link RadioButtonGroup}
-	 *            to; <b>not</b> allowed to be null.
+	 *            The {@link ReadableProperty} to bind the new
+	 *            {@link RadioButtonGroup} to; <b>not</b> allowed to be null.
 	 * @param inputValidator
-	 *            The validator to validate the {@link RadioButtonGroup}s raw input with;
-	 *            <b>not</b> allowed to be null.
+	 *            The validator to validate the {@link RadioButtonGroup}s raw input
+	 *            with; <b>not</b> allowed to be null.
 	 * @param patterns
 	 *            The {@link OptionPattern}s to apply to the new component; may be
 	 *            null or empty, then nothing will be applied. Will be applied in
 	 *            the given order.
 	 * @return A new {@link RadioButtonGroup} instance, bound to the given
-	 *         {@link ModelProperty}; never null
+	 *         {@link ReadableProperty}; never null
 	 */
 	@SafeVarargs
-	public final <T> RadioButtonGroup<T> bindRadioButtonGroupForProperty(ModelProperty<ModelType, T> property,
-			InputValidator<T> inputValidator,
-			OptionPattern<? super RadioButtonGroup<?>>... patterns) {
+	public final <T> RadioButtonGroup<T> bindRadioButtonGroupForProperty(ReadableProperty<ModelType, T> property,
+			InputValidator<T> inputValidator, OptionPattern<? super RadioButtonGroup<?>>... patterns) {
 		HasValueProvider<RadioButtonGroup<T>, T> provider = ComponentFactory::buildRadioButtonGroup;
 		return buildAndBind(provider, property, inputValidator, patterns);
 	}
@@ -773,8 +772,8 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 	 * @param <PropertyType>
 	 *            The type of the property to bind.
 	 * @param property
-	 *            The {@link ModelProperty} to bind the new {@link RadioButtonGroup}
-	 *            to; <b>not</b> allowed to be null.
+	 *            The {@link ReadableProperty} to bind the new
+	 *            {@link RadioButtonGroup} to; <b>not</b> allowed to be null.
 	 * @param converter
 	 *            The converter to convert the property type to the type used by the
 	 *            {@link RadioButtonGroup}; <b>not</b> allowed to be null.
@@ -783,11 +782,11 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 	 *            null or empty, then nothing will be applied. Will be applied in
 	 *            the given order.
 	 * @return A new {@link RadioButtonGroup} instance, bound to the given
-	 *         {@link ModelProperty}; never null
+	 *         {@link ReadableProperty}; never null
 	 */
 	@SafeVarargs
 	public final <T, PropertyType> RadioButtonGroup<T> bindRadioButtonGroupForProperty(
-			ModelProperty<ModelType, PropertyType> property, Converter<T, PropertyType> converter,
+			ReadableProperty<ModelType, PropertyType> property, Converter<T, PropertyType> converter,
 			OptionPattern<? super RadioButtonGroup<?>>... patterns) {
 		HasValueProvider<RadioButtonGroup<T>, T> provider = ComponentFactory::buildRadioButtonGroup;
 		return buildAndBind(provider, property, converter, patterns);
@@ -803,17 +802,17 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 	 * @param <T>
 	 *            The type of the property to bind.
 	 * @param property
-	 *            The {@link ModelProperty} to bind the new {@link ComboBox} to;
+	 *            The {@link ReadableProperty} to bind the new {@link ComboBox} to;
 	 *            <b>not</b> allowed to be null.
 	 * @param patterns
 	 *            The {@link OptionPattern}s to apply to the new component; may be
 	 *            null or empty, then nothing will be applied. Will be applied in
 	 *            the given order.
 	 * @return A new {@link ComboBox} instance, bound to the given
-	 *         {@link ModelProperty}; never null
+	 *         {@link ReadableProperty}; never null
 	 */
 	@SafeVarargs
-	public final <T> ComboBox<T> bindComboBoxForProperty(ModelProperty<ModelType, T> property,
+	public final <T> ComboBox<T> bindComboBoxForProperty(ReadableProperty<ModelType, T> property,
 			OptionPattern<? super ComboBox<?>>... patterns) {
 		HasValueProvider<ComboBox<T>, T> provider = ComponentFactory::buildComboBox;
 		return buildAndBind(provider, property, patterns);
@@ -825,7 +824,7 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 	 * @param <T>
 	 *            The type of the property to bind.
 	 * @param property
-	 *            The {@link ModelProperty} to bind the new {@link ComboBox} to;
+	 *            The {@link ReadableProperty} to bind the new {@link ComboBox} to;
 	 *            <b>not</b> allowed to be null.
 	 * @param inputValidator
 	 *            The validator to validate the {@link ComboBox}es raw input with;
@@ -835,12 +834,11 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 	 *            null or empty, then nothing will be applied. Will be applied in
 	 *            the given order.
 	 * @return A new {@link ComboBox} instance, bound to the given
-	 *         {@link ModelProperty}; never null
+	 *         {@link ReadableProperty}; never null
 	 */
 	@SafeVarargs
-	public final <T> ComboBox<T> bindComboBoxForProperty(ModelProperty<ModelType, T> property,
-			InputValidator<T> inputValidator,
-			OptionPattern<? super ComboBox<?>>... patterns) {
+	public final <T> ComboBox<T> bindComboBoxForProperty(ReadableProperty<ModelType, T> property,
+			InputValidator<T> inputValidator, OptionPattern<? super ComboBox<?>>... patterns) {
 		HasValueProvider<ComboBox<T>, T> provider = ComponentFactory::buildComboBox;
 		return buildAndBind(provider, property, inputValidator, patterns);
 	}
@@ -853,7 +851,7 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 	 * @param <PropertyType>
 	 *            The type of the property to bind.
 	 * @param property
-	 *            The {@link ModelProperty} to bind the new {@link ComboBox} to;
+	 *            The {@link ReadableProperty} to bind the new {@link ComboBox} to;
 	 *            <b>not</b> allowed to be null.
 	 * @param converter
 	 *            The converter to convert the property type to the type used by the
@@ -863,11 +861,12 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 	 *            null or empty, then nothing will be applied. Will be applied in
 	 *            the given order.
 	 * @return A new {@link ComboBox} instance, bound to the given
-	 *         {@link ModelProperty}; never null
+	 *         {@link ReadableProperty}; never null
 	 */
 	@SafeVarargs
-	public final <T, PropertyType> ComboBox<T> bindComboBoxForProperty(ModelProperty<ModelType, PropertyType> property,
-			Converter<T, PropertyType> converter, OptionPattern<? super ComboBox<?>>... patterns) {
+	public final <T, PropertyType> ComboBox<T> bindComboBoxForProperty(
+			ReadableProperty<ModelType, PropertyType> property, Converter<T, PropertyType> converter,
+			OptionPattern<? super ComboBox<?>>... patterns) {
 		HasValueProvider<ComboBox<T>, T> provider = ComponentFactory::buildComboBox;
 		return buildAndBind(provider, property, converter, patterns);
 	}
@@ -882,17 +881,17 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 	 * @param <T>
 	 *            The type of the property to bind.
 	 * @param property
-	 *            The {@link ModelProperty} to bind the new {@link BindableGrid} to;
-	 *            <b>not</b> allowed to be null.
+	 *            The {@link ReadableProperty} to bind the new {@link BindableGrid}
+	 *            to; <b>not</b> allowed to be null.
 	 * @param patterns
 	 *            The {@link OptionPattern}s to apply to the new component; may be
 	 *            null or empty, then nothing will be applied. Will be applied in
 	 *            the given order.
 	 * @return A new {@link BindableGrid} instance, bound to the given
-	 *         {@link ModelProperty}; never null
+	 *         {@link ReadableProperty}; never null
 	 */
 	@SafeVarargs
-	public final <T> BindableGrid<T, ModelType> bindGridForProperty(ModelPropertyList<ModelType, T> property,
+	public final <T> BindableGrid<T, ModelType> bindGridForProperty(ListedProperty<ModelType, T> property,
 			OptionPattern<? super BindableGrid<?, ?>>... patterns) {
 		BindableGrid<T, ModelType> table = new BindableGrid<T, ModelType>(this, property);
 		bindToProperty(table.getBindable(), property);
