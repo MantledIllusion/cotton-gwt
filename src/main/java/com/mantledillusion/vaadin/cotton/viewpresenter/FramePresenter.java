@@ -2,7 +2,7 @@ package com.mantledillusion.vaadin.cotton.viewpresenter;
 
 import java.lang.reflect.Method;
 
-import com.mantledillusion.vaadin.cotton.CottonUI;
+import com.vaadin.ui.UI;
 import com.vaadin.ui.Window;
 
 /**
@@ -23,7 +23,7 @@ public abstract class FramePresenter<T extends Frame> extends Presenter<T> {
 	// #########################################################################################################################################
 
 	/**
-	 * Adds the frame to the current {@link CottonUI} to show it.
+	 * Adds the frame to the current {@link UI} to show it.
 	 */
 	protected final void showFrame() {
 		getView().show();

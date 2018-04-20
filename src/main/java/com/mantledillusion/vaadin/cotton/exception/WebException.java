@@ -4,9 +4,10 @@ import java.lang.reflect.Constructor;
 
 import org.apache.commons.lang3.StringUtils;
 
-import com.mantledillusion.vaadin.cotton.CottonUI;
 import com.mantledillusion.vaadin.cotton.User;
-import com.mantledillusion.vaadin.cotton.CottonUI.LoginView;
+import com.mantledillusion.vaadin.cotton.environment.views.LoginView;
+import com.vaadin.ui.UI;
+import com.mantledillusion.vaadin.cotton.CottonServlet;
 import com.mantledillusion.vaadin.cotton.QueryParam;
 import com.mantledillusion.vaadin.cotton.RequiredQueryParam;
 import com.mantledillusion.vaadin.cotton.UrlResourceRegistry;
@@ -36,14 +37,14 @@ public class WebException extends RuntimeException {
 		 * <P>
 		 * If this code is thrown in a {@link WebException}, no {@link User} is logged
 		 * in at that moment and a default {@link LoginView} is configured in the
-		 * {@link CottonUI}, a login + reload is attempted by the framework
+		 * {@link CottonServlet}, a login + reload is attempted by the framework
 		 * automatically.
 		 */
 		HTTP403_FORBIDDEN,
 
 		/**
 		 * HTTP standard code; Used by the framework for cases when the user navigates
-		 * to an URL that has no resource registered at the {@link CottonUI}'s
+		 * to an URL that has no resource registered at the {@link CottonServlet}'s
 		 * {@link UrlResourceRegistry}.
 		 */
 		HTTP404_NOT_FOUND,
@@ -59,7 +60,7 @@ public class WebException extends RuntimeException {
 		/**
 		 * HTTP standard code; Used by the framework for cases when the user navigates
 		 * to an URL that has been explicitly registered as gone at the
-		 * {@link CottonUI}'s {@link UrlResourceRegistry}.
+		 * {@link CottonServlet}'s {@link UrlResourceRegistry}.
 		 */
 		HTTP410_GONE,
 
@@ -78,7 +79,7 @@ public class WebException extends RuntimeException {
 
 		/**
 		 * Framework error code; Error that may occur when trying to statically execute
-		 * functions on the current {@link CottonUI} when there is none.
+		 * functions on the current {@link UI} when there is none.
 		 */
 		HTTP900_UI_INACTIVITY_ERROR,
 

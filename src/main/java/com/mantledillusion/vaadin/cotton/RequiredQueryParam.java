@@ -10,7 +10,7 @@ import java.util.regex.Pattern;
 
 import com.mantledillusion.injection.hura.annotation.Inspected;
 import com.mantledillusion.injection.hura.annotation.Validated;
-import com.mantledillusion.vaadin.cotton.CottonUI.NavigationEvent;
+import com.mantledillusion.vaadin.cotton.environment.events.navigation.NavigationEvent;
 import com.mantledillusion.vaadin.cotton.QueryParam.RequiredQueryParamInspector;
 import com.mantledillusion.vaadin.cotton.QueryParam.RequiredQueryParamValidator;
 import com.mantledillusion.vaadin.cotton.exception.WebException;
