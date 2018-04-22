@@ -141,7 +141,8 @@ public final class WebEnv {
 	 * @return A localized and parameter filled message, or the given msgId if
 	 *         localization was not possible
 	 */
-	public static String localize(String msgId, Object... messageParameters) {
+	@SafeVarargs
+	public static <T> String localize(String msgId, T... messageParameters) {
 		return CottonUI.current().localize(msgId, messageParameters);
 	}
 
