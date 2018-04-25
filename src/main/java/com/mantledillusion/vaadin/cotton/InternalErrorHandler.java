@@ -13,11 +13,11 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 import com.mantledillusion.injection.hura.Blueprint;
 import com.mantledillusion.injection.hura.Blueprint.TypedBlueprint;
 import com.mantledillusion.injection.hura.annotation.Construct;
-import com.mantledillusion.vaadin.cotton.CottonUI.ErrorView;
+import com.mantledillusion.vaadin.cotton.environment.views.ErrorView;
 import com.mantledillusion.vaadin.cotton.User.SessionLogContext;
 import com.mantledillusion.vaadin.cotton.User.SessionLogEntry;
 import com.mantledillusion.vaadin.cotton.User.SessionLogType;
-import com.mantledillusion.vaadin.cotton.CottonUI.ErrorHandlingDecider;
+import com.mantledillusion.vaadin.cotton.environment.views.ErrorHandlingDecider;
 import com.mantledillusion.vaadin.cotton.exception.WebException;
 import com.mantledillusion.vaadin.cotton.exception.WebException.HttpErrorCodes;
 import com.vaadin.server.DefaultErrorHandler;
@@ -36,7 +36,7 @@ final class InternalErrorHandler implements ErrorHandler {
 
 	private static final long serialVersionUID = 1L;
 
-	private static final class DefaultErrorView extends CottonUI.ErrorView<Throwable> {
+	private static final class DefaultErrorView extends ErrorView<Throwable> {
 
 		private static final long serialVersionUID = 1L;
 
@@ -81,7 +81,7 @@ final class InternalErrorHandler implements ErrorHandler {
 		}
 
 		@Override
-		protected void handleError(Throwable t) {
+		public void handleError(Throwable t) {
 			Throwable rootCause = ObjectUtils.defaultIfNull(ExceptionUtils.getRootCause(t), t);
 
 			this.errorTitle.setValue("<b><font size=\"5\">" + rootCause.getClass().getSimpleName() + ":</font></b>");

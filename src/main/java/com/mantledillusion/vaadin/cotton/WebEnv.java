@@ -7,8 +7,8 @@ import java.util.Locale;
 import java.util.ResourceBundle;
 import java.util.Set;
 
-import com.mantledillusion.vaadin.cotton.CottonUI.NavigationAnnouncementEvent;
-import com.mantledillusion.vaadin.cotton.CottonUI.UserChangeAnnouncementEvent;
+import com.mantledillusion.vaadin.cotton.environment.events.navigation.NavigationAnnouncementEvent;
+import com.mantledillusion.vaadin.cotton.environment.events.user.UserChangeAnnouncementEvent;
 import com.mantledillusion.vaadin.cotton.User.SessionLogContext;
 import com.mantledillusion.vaadin.cotton.User.SessionLogEntry;
 import com.mantledillusion.vaadin.cotton.User.SessionLogType;
@@ -141,7 +141,8 @@ public final class WebEnv {
 	 * @return A localized and parameter filled message, or the given msgId if
 	 *         localization was not possible
 	 */
-	public static String localize(String msgId, Object... messageParameters) {
+	@SafeVarargs
+	public static <T> String localize(String msgId, T... messageParameters) {
 		return CottonUI.current().localize(msgId, messageParameters);
 	}
 

@@ -12,7 +12,7 @@ import com.mantledillusion.vaadin.cotton.viewpresenter.View;
 public class WebUtils {
 
 	/**
-	 * Extracts the @{@link Addressed} {@link Annotation} fromt he given
+	 * Extracts the @{@link Addressed} {@link Annotation} from the given
 	 * {@link View} implementation that it is addressed by.
 	 * 
 	 * @param viewClass

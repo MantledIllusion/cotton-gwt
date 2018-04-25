@@ -4,7 +4,6 @@ import java.lang.reflect.Constructor;
 
 import com.mantledillusion.injection.hura.Processor.Phase;
 import com.mantledillusion.injection.hura.annotation.Process;
-import com.mantledillusion.vaadin.cotton.CottonUI;
 import com.mantledillusion.vaadin.cotton.exception.WebException;
 import com.mantledillusion.vaadin.cotton.exception.WebException.HttpErrorCodes;
 import com.vaadin.server.Resource;
@@ -121,7 +120,7 @@ public abstract class Frame extends View {
 	// #########################################################################################################################################
 
 	/**
-	 * Adds this frame to the current {@link CottonUI} to show it.
+	 * Adds this frame to the current {@link UI} to show it.
 	 */
 	protected final void show() {
 		UI.getCurrent().addWindow(this.window);
