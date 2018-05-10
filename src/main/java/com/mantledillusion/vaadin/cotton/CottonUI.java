@@ -87,11 +87,11 @@ final class CottonUI extends com.vaadin.ui.UI {
 	private View currentView;
 	private User user;
 
-	CottonUI(CottonServlet.TemporalCottonServletConfiguration config, UrlResourceRegistry urlRegistry) {
+	CottonUI(CottonServlet.TemporalCottonServletConfiguration config) {
 		Singleton eventBus = Singleton.of(EventBus.PRESENTER_EVENT_BUS_ID, this.eventBus);
 		this.injector = Injector.of(ListUtils.union(config.getPredefinables(), Arrays.asList(eventBus)));
 
-		this.urlRegistry = urlRegistry;
+		this.urlRegistry = config.getUrlRegistry();
 
 		this.defaultLang = config.getDefaultLang();
 		this.resourceBundleRegistry = config.getResourceBundleRegistry();
@@ -102,6 +102,10 @@ final class CottonUI extends com.vaadin.ui.UI {
 		this.isInternalErrorHandler = true;
 		setErrorHandler(this.internalErrorHandler);
 		this.isInternalErrorHandler = false;
+	}
+	
+	UrlResourceRegistry getUrlRegistry() {
+		return this.urlRegistry;
 	}
 
 	@Override

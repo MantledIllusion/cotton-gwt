@@ -11,6 +11,9 @@ import com.mantledillusion.vaadin.cotton.viewpresenter.View;
 
 public class WebUtils {
 
+	private static final String URL_SEGMENT_REGEX = "[a-zA-Z0-9_]+";
+	public static final String URL_PATH_REGEX = "(" + URL_SEGMENT_REGEX + "(/" + URL_SEGMENT_REGEX + ")*)?";
+
 	/**
 	 * Extracts the @{@link Addressed} {@link Annotation} from the given
 	 * {@link View} implementation that it is addressed by.
@@ -37,5 +40,26 @@ public class WebUtils {
 		}
 
 		return urls.stream().skip(urls.size() - 1).findFirst().get().getAnnotation(Addressed.class);
+	}
+
+	/**
+	 * Checks whether the given URL is not null and matches the pattern for URL
+	 * paths, which is {@link #URL_PATH_REGEX}.
+	 * 
+	 * @param url
+	 *            The url to check; might <b>not</b> be null or not matching to the
+	 *            pattern for valid URL paths.
+	 * @throws WebException
+	 *             Thrown if the given URL is null or no valid URL path
+	 */
+	public static void checkUrlPattern(String url) throws WebException {
+		if (url == null) {
+			throw new WebException(HttpErrorCodes.HTTP901_ILLEGAL_ARGUMENT_ERROR,
+					"Cannot register a resource at a null url.");
+		} else if (!url.matches(URL_PATH_REGEX)) {
+			throw new WebException(HttpErrorCodes.HTTP901_ILLEGAL_ARGUMENT_ERROR,
+					"Cannot register the resource at url '" + url
+							+ "'; the url does not match the valid format for segmented url paths: " + URL_PATH_REGEX);
+		}
 	}
 }

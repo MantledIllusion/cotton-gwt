@@ -9,6 +9,7 @@ import java.util.Set;
 
 import com.mantledillusion.vaadin.cotton.environment.events.navigation.NavigationAnnouncementEvent;
 import com.mantledillusion.vaadin.cotton.environment.events.user.UserChangeAnnouncementEvent;
+import com.mantledillusion.injection.hura.Blueprint.TypedBlueprint;
 import com.mantledillusion.vaadin.cotton.User.SessionLogContext;
 import com.mantledillusion.vaadin.cotton.User.SessionLogEntry;
 import com.mantledillusion.vaadin.cotton.User.SessionLogType;
@@ -29,6 +30,76 @@ public final class WebEnv {
 	// #########################################################################################################################################
 	// ############################################################## NAVIGATION ###############################################################
 	// #########################################################################################################################################
+	
+	/**
+	 * Returns whether there is a redirect on the given URL.
+	 * 
+	 * @param urlPath
+	 *            The URL path to check; may be null, although the {@link Method}
+	 *            will always return false in that case.
+	 * @return True if there is a redirect registered at that URL, false otherwise
+	 */
+	public boolean hasRedirectAt(String urlPath) {
+		return CottonUI.current().getUrlRegistry().hasRedirectAt(urlPath);
+	}
+	
+	/**
+	 * Returns whether there is a view resource registered for the given URL.
+	 * 
+	 * @param urlPath
+	 *            The URL path to check; may be null, although the {@link Method}
+	 *            will always return false in that case.
+	 * @return True if there is a view resource registered at that URL, false
+	 *         otherwise
+	 */
+	public boolean hasViewAt(String urlPath) {
+		return CottonUI.current().getUrlRegistry().hasViewAt(urlPath);
+	}
+
+	/**
+	 * Returns whether there once was a view resource registered at the given URL,
+	 * but isn't anymore.
+	 * 
+	 * @param urlPath
+	 *            The URL path to check; may be null, although the {@link Method}
+	 *            will always return false in that case.
+	 * @return True if there once was a view resource registered at that URL and is
+	 *         missing now, false otherwise
+	 */
+	public boolean hasGoneAt(String urlPath) {
+		return CottonUI.current().getUrlRegistry().hasGoneAt(urlPath);
+	}
+
+	/**
+	 * Redirects the given URL until there is no more redirect registered for the
+	 * result, then returns it.
+	 * 
+	 * @param urlPath
+	 *            The URL path to check; may be null, although the {@link Method}
+	 *            will just return it since there can never be a redirect for a null
+	 *            URL.
+	 * @return The redirected URL; might be the unchanged given URL if it is null or
+	 *         there is no redirect registered for that URL
+	 */
+	public String getRedirectAt(String urlPath) {
+		return CottonUI.current().getUrlRegistry().getRedirectAt(urlPath);
+	}
+
+	/**
+	 * Returns the {@link TypedBlueprint} registered for view injection at the given
+	 * URL.
+	 * 
+	 * @param urlPath
+	 *            The URL path to retrieve the {@link TypedBlueprint} for; might
+	 *            <b>not</b> be null.
+	 * @return The registered {@link TypedBlueprint} for the URL; never null
+	 * @throws WebException
+	 *             If there is no view resource registered at the given URL; check
+	 *             using {@link #hasViewAt(String)}
+	 */
+	public TypedBlueprint<? extends View> getViewAt(String urlPath) {
+		return CottonUI.current().getUrlRegistry().getViewAt(urlPath);
+	}
 
 	/**
 	 * Convenience {@link Method} for {@link #navigateTo(NavigationTarget)} with the

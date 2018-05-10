@@ -2,11 +2,13 @@ package com.mantledillusion.vaadin.cotton;
 
 import com.mantledillusion.injection.hura.Blueprint;
 import com.mantledillusion.injection.hura.Predefinable;
+import com.mantledillusion.injection.hura.Blueprint.TypedBlueprint;
 import com.mantledillusion.injection.hura.annotation.Inject;
 import com.mantledillusion.vaadin.cotton.environment.views.ErrorHandlingDecider;
 import com.mantledillusion.vaadin.cotton.environment.views.ErrorView;
 import com.mantledillusion.vaadin.cotton.environment.views.LoginView;
 import com.mantledillusion.vaadin.cotton.exception.WebException;
+import com.mantledillusion.vaadin.cotton.exception.WebException.HttpErrorCodes;
 import com.mantledillusion.vaadin.cotton.viewpresenter.Addressed;
 import com.mantledillusion.vaadin.cotton.viewpresenter.View;
 import com.vaadin.annotations.PreserveOnRefresh;
@@ -59,6 +61,9 @@ public abstract class CottonServlet extends VaadinServlet {
 		private PushMode pushMode;
 		private Transport transport;
 
+		// NAVIGATION
+		private final UrlResourceRegistry urlRegistry;
+
 		// LOCALIZATION
 		private String defaultLang = Locale.US.getISO3Language();
 		private final Map<String, LocalizationResource> resourceBundleRegistry = new HashMap<>();
@@ -73,6 +78,7 @@ public abstract class CottonServlet extends VaadinServlet {
 		private List<Predefinable> predefinables = new ArrayList<>();
 
 		private TemporalCottonServletConfiguration() {
+			this.urlRegistry = new UrlResourceRegistry();
 			this.internalErrorHandler = new InternalErrorHandler();
 		}
 
@@ -91,9 +97,11 @@ public abstract class CottonServlet extends VaadinServlet {
 		 * 
 		 * @param theme
 		 *            The name of the theme to use; might be null
+		 * @return this
 		 */
-		public void setTheme(String theme) {
+		public TemporalCottonServletConfiguration setTheme(String theme) {
 			this.theme = theme;
+			return this;
 		}
 
 		/**
@@ -104,9 +112,11 @@ public abstract class CottonServlet extends VaadinServlet {
 		 * 
 		 * @param widgetSet
 		 *            The name of the widget set to use; might be null
+		 * @return this
 		 */
-		public void setWidgetSet(String widgetSet) {
+		public TemporalCottonServletConfiguration setWidgetSet(String widgetSet) {
 			this.widgetSet = widgetSet;
+			return this;
 		}
 
 		/**
@@ -117,9 +127,11 @@ public abstract class CottonServlet extends VaadinServlet {
 		 * 
 		 * @param preserveOnRefresh
 		 *            True if the {@link UI} should be preserved, false otherwise
+		 * @return this
 		 */
-		public void setPreserveOnRefresh(boolean preserveOnRefresh) {
+		public TemporalCottonServletConfiguration setPreserveOnRefresh(boolean preserveOnRefresh) {
 			this.preserveOnRefresh = preserveOnRefresh;
+			return this;
 		}
 
 		/**
@@ -130,9 +142,11 @@ public abstract class CottonServlet extends VaadinServlet {
 		 * 
 		 * @param pageTitle
 		 *            The page title; might be null
+		 * @return this
 		 */
-		public void setPageTitle(String pageTitle) {
+		public TemporalCottonServletConfiguration setPageTitle(String pageTitle) {
 			this.pageTitle = pageTitle;
+			return this;
 		}
 
 		/**
@@ -146,8 +160,9 @@ public abstract class CottonServlet extends VaadinServlet {
 		 * @param transport
 		 *            The {@link Transport} the {@link UI} should use; might <b>not</b>
 		 *            be null if push is enabled
+		 * @return this
 		 */
-		public void setPushMode(PushMode pushMode, Transport transport) {
+		public TemporalCottonServletConfiguration setPushMode(PushMode pushMode, Transport transport) {
 			if (pushMode != null) {
 				if (transport == null) {
 					throw new IllegalArgumentException(
@@ -158,6 +173,59 @@ public abstract class CottonServlet extends VaadinServlet {
 			}
 			this.pushMode = pushMode;
 			this.transport = transport;
+			return this;
+		}
+		
+		/**
+		 * Registers the given {@link View} implementation at the URL in the
+		 * view's @{@link Addressed} annotation.
+		 * 
+		 * @param viewClass
+		 *            The {@link View} implementation to register; might <b>not</b> be
+		 *            null, also the has to be annotated with @{@link Addressed}
+		 *            somewhere, view the documentation of {@link Addressed} for
+		 *            reference.
+		 * @return this
+		 */
+		public TemporalCottonServletConfiguration registerViewResource(Class<? extends View> viewClass) {
+			this.urlRegistry.registerViewResource(viewClass);
+			return this;
+		}
+
+		/**
+		 * Registers the given {@link TypedBlueprint}'s root type {@link View}
+		 * implementation at the URL in the view's @{@link Addressed} annotation.
+		 * 
+		 * @param viewBlueprint
+		 *            The {@link TypedBlueprint} whose view to register; might
+		 *            <b>not</b> be null, also the view has to be annotated
+		 *            with @{@link Addressed} somewhere, view the documentation of
+		 *            {@link Addressed} for reference.
+		 * @return this
+		 */
+		public TemporalCottonServletConfiguration registerViewResource(TypedBlueprint<? extends View> viewBlueprint) {
+			this.urlRegistry.registerViewResource(viewBlueprint);
+			return this;
+		}
+
+		/**
+		 * Returns whether there once was a view resource registered at the given URL,
+		 * but there is no redirect to a new location so the server should throw a
+		 * {@link WebException} with {@link HttpErrorCodes#HTTP410_GONE} when the URL is
+		 * visited.
+		 * 
+		 * @param urlPath
+		 *            Path to register the GONE resource at; might <b>not</b> be null
+		 *            and has to match {@link WebUtils#URL_PATH_REGEX}
+		 * @return this
+		 */
+		public TemporalCottonServletConfiguration registerGoneResource(String urlPath) {
+			this.urlRegistry.registerGoneResource(urlPath);
+			return this;
+		}
+		
+		UrlResourceRegistry getUrlRegistry() {
+			return urlRegistry;
 		}
 
 		/**
@@ -171,8 +239,9 @@ public abstract class CottonServlet extends VaadinServlet {
 		 * @param locale
 		 *            The {@link Locale} to set as default; <b>not</b> allowed to be
 		 *            null.
+		 * @return this
 		 */
-		public void setDefaultLocale(Locale locale) {
+		public TemporalCottonServletConfiguration setDefaultLocale(Locale locale) {
 			checkConfigurationAllowed();
 			if (locale == null) {
 				throw new WebException(WebException.HttpErrorCodes.HTTP901_ILLEGAL_ARGUMENT_ERROR,
@@ -182,6 +251,7 @@ public abstract class CottonServlet extends VaadinServlet {
 						"Cannot set the default language to a locale without an ISO3 language.");
 			}
 			this.defaultLang = locale.getISO3Language();
+			return this;
 		}
 
 		String getDefaultLang() {
@@ -216,8 +286,9 @@ public abstract class CottonServlet extends VaadinServlet {
 		 * @param locales
 		 *            Additional {@link Locale}s to find resource files for; might be
 		 *            null, empty or contain nulls.
+		 * @return this
 		 */
-		public void registerLocalization(String baseName, String fileExtension, Charset charset, Locale locale,
+		public TemporalCottonServletConfiguration registerLocalization(String baseName, String fileExtension, Charset charset, Locale locale,
 				Locale... locales) {
 			checkConfigurationAllowed();
 			if (StringUtils.isBlank(baseName)) {
@@ -282,6 +353,7 @@ public abstract class CottonServlet extends VaadinServlet {
 					this.resourceBundleRegistry.get(loc.getISO3Language()).addBundle(bundle, bundleKeys);
 				}
 			}
+			return this;
 		}
 
 		Map<String, LocalizationResource> getResourceBundleRegistry() {
@@ -299,10 +371,12 @@ public abstract class CottonServlet extends VaadinServlet {
 		 *
 		 * @param loginViewType
 		 *            The login view type to set; might be null.
+		 * @return this
 		 */
-		public void registerLoginView(Blueprint.TypedBlueprint<? extends LoginView> loginViewType) {
+		public TemporalCottonServletConfiguration registerLoginView(Blueprint.TypedBlueprint<? extends LoginView> loginViewType) {
 			checkConfigurationAllowed();
 			this.loginViewBlueprint = loginViewType;
+			return this;
 		}
 
 		Blueprint.TypedBlueprint<? extends LoginView> getLoginViewBlueprint() {
@@ -327,8 +401,9 @@ public abstract class CottonServlet extends VaadinServlet {
 		 * @param viewBlueprint
 		 *            The blueprint of the {@link ErrorView} type to use when the given
 		 *            error type occurs; <b>not</b> allowed to be null.
+		 * @return this
 		 */
-		public <ErrorType extends Exception> void registerErrorView(Class<ErrorType> errorType,
+		public <ErrorType extends Exception> TemporalCottonServletConfiguration registerErrorView(Class<ErrorType> errorType,
 				Blueprint.TypedBlueprint<? extends ErrorView<ErrorType>> viewBlueprint) {
 			checkConfigurationAllowed();
 			if (viewBlueprint == null) {
@@ -336,6 +411,7 @@ public abstract class CottonServlet extends VaadinServlet {
 						"The error view type to register can never be null.");
 			}
 			registerErrorViewDecider(errorType, (error) -> viewBlueprint);
+			return this;
 		}
 
 		/**
@@ -397,10 +473,12 @@ public abstract class CottonServlet extends VaadinServlet {
 		 *
 		 * @param errorHandler
 		 *            The {@link ErrorHandler} to set; might be null.
+		 * @return this
 		 */
-		public void setErrorHandler(ErrorHandler errorHandler) {
+		public TemporalCottonServletConfiguration setErrorHandler(ErrorHandler errorHandler) {
 			checkConfigurationAllowed();
 			this.internalErrorHandler.setExternalErrorHandler(errorHandler);
+			return this;
 		}
 
 		InternalErrorHandler getInternalErrorHandler() {
@@ -416,13 +494,15 @@ public abstract class CottonServlet extends VaadinServlet {
 		 * @param predefinables
 		 *            The predefinables to register; might be null or contain nulls,
 		 *            both is ignored.
+		 * @return this
 		 */
-		public void registerPredefinables(Predefinable... predefinables) {
+		public TemporalCottonServletConfiguration registerPredefinables(Predefinable... predefinables) {
 			if (predefinables != null) {
 				for (Predefinable predefinable : predefinables) {
 					this.predefinables.add(predefinable);
 				}
 			}
+			return this;
 		}
 
 		List<Predefinable> getPredefinables() {
@@ -436,7 +516,7 @@ public abstract class CottonServlet extends VaadinServlet {
 		VaadinServletService service = super.createServletService(deploymentConfiguration);
 
 		TemporalCottonServletConfiguration config = new TemporalCottonServletConfiguration();
-		UrlResourceRegistry urlResourceRegistry = configure(config);
+		configure(config);
 		config.allowConfiguration = false;
 
 		service.addSessionInitListener(
@@ -451,7 +531,7 @@ public abstract class CottonServlet extends VaadinServlet {
 
 					@Override
 					public UI createInstance(UICreateEvent event) {
-						return new CottonUI(config, urlResourceRegistry);
+						return new CottonUI(config);
 					}
 
 					@Override
@@ -516,7 +596,6 @@ public abstract class CottonServlet extends VaadinServlet {
 	 * @param config
 	 *            The {@link TemporalCottonServletConfiguration} to use for
 	 *            configuration; <b>not</b> allowed to be null.
-	 * @return An {@link UrlResourceRegistry} instance; never null.
 	 */
-	protected abstract UrlResourceRegistry configure(TemporalCottonServletConfiguration config);
+	protected abstract void configure(TemporalCottonServletConfiguration config);
 }

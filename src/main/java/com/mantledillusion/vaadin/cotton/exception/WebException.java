@@ -10,7 +10,6 @@ import com.vaadin.ui.UI;
 import com.mantledillusion.vaadin.cotton.CottonServlet;
 import com.mantledillusion.vaadin.cotton.QueryParam;
 import com.mantledillusion.vaadin.cotton.RequiredQueryParam;
-import com.mantledillusion.vaadin.cotton.UrlResourceRegistry;
 
 /**
  * {@link RuntimeException} sub type that is used for all Cotton internal
@@ -44,8 +43,7 @@ public class WebException extends RuntimeException {
 
 		/**
 		 * HTTP standard code; Used by the framework for cases when the user navigates
-		 * to an URL that has no resource registered at the {@link CottonServlet}'s
-		 * {@link UrlResourceRegistry}.
+		 * to an URL that has no resource registered at the {@link CottonServlet}.
 		 */
 		HTTP404_NOT_FOUND,
 
@@ -60,7 +58,7 @@ public class WebException extends RuntimeException {
 		/**
 		 * HTTP standard code; Used by the framework for cases when the user navigates
 		 * to an URL that has been explicitly registered as gone at the
-		 * {@link CottonServlet}'s {@link UrlResourceRegistry}.
+		 * {@link CottonServlet}.
 		 */
 		HTTP410_GONE,
 
