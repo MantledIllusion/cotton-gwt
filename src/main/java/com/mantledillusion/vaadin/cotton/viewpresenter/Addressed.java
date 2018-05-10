@@ -9,13 +9,13 @@ import java.lang.annotation.Target;
 import java.util.regex.Pattern;
 
 import com.mantledillusion.injection.hura.annotation.Validated;
-import com.mantledillusion.vaadin.cotton.UrlResourceRegistry;
+import com.mantledillusion.vaadin.cotton.WebUtils;
 import com.mantledillusion.vaadin.cotton.viewpresenter.View.AddressableValidator;
 
 /**
  * {@link Annotation} for {@link View} implementations that get manually
- * registered on an {@link UrlResourceRegistry} instance as the main view to be
- * available under a given URL path.
+ * registered on an URL as the main view to be
+ * available under that URL path.
  */
 @Retention(RUNTIME)
 @Target(TYPE)
@@ -31,7 +31,7 @@ public @interface Addressed {
 		 * The segmented URL path that will be redirected.
 		 * <P>
 		 * The URL has to be validateable by
-		 * {@link UrlResourceRegistry#checkUrlPattern(String)}.
+		 * {@link WebUtils#checkUrlPattern(String)}.
 		 * 
 		 * @return The URL that is redirected; never null
 		 */
@@ -42,7 +42,7 @@ public @interface Addressed {
 	 * The segmented URL path the annotated {@link View} has to be addressable by.
 	 * <P>
 	 * The URL has to match the {@link Pattern}
-	 * {@link UrlResourceRegistry#URL_PATH_REGEX}.
+	 * {@link WebUtils#URL_PATH_REGEX}.
 	 * 
 	 * @return The URL the annotated {@link View} has to be addressable by; never
 	 *         null

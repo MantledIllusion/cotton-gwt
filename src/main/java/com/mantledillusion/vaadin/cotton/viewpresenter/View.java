@@ -23,8 +23,8 @@ import com.mantledillusion.injection.hura.annotation.Construct;
 import com.mantledillusion.injection.hura.annotation.Define;
 import com.mantledillusion.injection.hura.annotation.Process;
 import com.mantledillusion.vaadin.cotton.EventBusSubscriber;
-import com.mantledillusion.vaadin.cotton.UrlResourceRegistry;
 import com.mantledillusion.vaadin.cotton.WebEnv;
+import com.mantledillusion.vaadin.cotton.WebUtils;
 import com.mantledillusion.vaadin.cotton.environment.events.user.UserChangeAnnouncementEvent;
 import com.mantledillusion.vaadin.cotton.environment.events.user.UserChangeType;
 import com.mantledillusion.vaadin.cotton.exception.WebException;
@@ -68,11 +68,11 @@ public abstract class View extends Composite {
 								+ "s cannot be addressed directly.");
 			}
 
-			UrlResourceRegistry.checkUrlPattern(annotationInstance.value());
+			WebUtils.checkUrlPattern(annotationInstance.value());
 
 			Set<String> redirects = new HashSet<>();
 			for (Addressed.Redirect redirect : annotationInstance.redirects()) {
-				UrlResourceRegistry.checkUrlPattern(redirect.value());
+				WebUtils.checkUrlPattern(redirect.value());
 				if (annotationInstance.value().equals(redirect.value())) {
 					throw new WebException(HttpErrorCodes.HTTP901_ILLEGAL_ARGUMENT_ERROR,
 							"Cannot redirect the view '" + annotatedElement.getSimpleName() + "' at URL '"

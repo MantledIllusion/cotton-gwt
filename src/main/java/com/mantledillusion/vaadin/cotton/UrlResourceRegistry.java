@@ -1,6 +1,5 @@
 package com.mantledillusion.vaadin.cotton;
 
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -18,18 +17,7 @@ import com.mantledillusion.vaadin.cotton.exception.WebException.HttpErrorCodes;
 import com.mantledillusion.vaadin.cotton.viewpresenter.Addressed;
 import com.mantledillusion.vaadin.cotton.viewpresenter.View;
 
-/**
- * Registry that basically holds URL-&gt;{@link TypedBlueprint} mappings to
- * determine which {@link TypedBlueprint} to use for view injection when the
- * user visits a specific URL.
- * <p>
- * In addition, the registry can also handle certain special cases like Http410
- * GONE resources and Http30X redirects.
- */
-public final class UrlResourceRegistry {
-
-	private static final String URL_SEGMENT_REGEX = "[a-zA-Z0-9_]+";
-	public static final String URL_PATH_REGEX = "(" + URL_SEGMENT_REGEX + "(/" + URL_SEGMENT_REGEX + ")*)?";
+final class UrlResourceRegistry {
 
 	private final Map<String, UrlResource> resourceRegistry = new HashMap<>();
 	private final Map<String, String> redirectRegistry = new HashMap<>();
@@ -76,76 +64,26 @@ public final class UrlResourceRegistry {
 		}
 	}
 
-	/**
-	 * Returns whether there is a redirect on the given URL.
-	 * 
-	 * @param urlPath
-	 *            The URL path to check; may be null, although the {@link Method}
-	 *            will always return false in that case.
-	 * @return True if there is a redirect registered at that URL, false otherwise
-	 */
-	public boolean hasRedirectAt(String urlPath) {
+	boolean hasRedirectAt(String urlPath) {
 		return this.redirectRegistry.containsKey(urlPath);
 	}
 
-	/**
-	 * Returns whether there is a view resource registered for the given URL.
-	 * 
-	 * @param urlPath
-	 *            The URL path to check; may be null, although the {@link Method}
-	 *            will always return false in that case.
-	 * @return True if there is a view resource registered at that URL, false
-	 *         otherwise
-	 */
-	public boolean hasViewAt(String urlPath) {
+	boolean hasViewAt(String urlPath) {
 		return this.resourceRegistry.containsKey(urlPath) && this.resourceRegistry.get(urlPath).isView;
 	}
 
-	/**
-	 * Returns whether there once was a view resource registered at the given URL,
-	 * but isn't anymore.
-	 * 
-	 * @param urlPath
-	 *            The URL path to check; may be null, although the {@link Method}
-	 *            will always return false in that case.
-	 * @return True if there once was a view resource registered at that URL and is
-	 *         missing now, false otherwise
-	 */
-	public boolean hasGoneAt(String urlPath) {
+	boolean hasGoneAt(String urlPath) {
 		return this.resourceRegistry.containsKey(urlPath) && this.resourceRegistry.get(urlPath).isGone;
 	}
 
-	/**
-	 * Redirects the given URL until there is no more redirect registered for the
-	 * result, then returns it.
-	 * 
-	 * @param urlPath
-	 *            The URL path to check; may be null, although the {@link Method}
-	 *            will just return it since there can never be a redirect for a null
-	 *            URL.
-	 * @return The redirected URL; might be the unchanged given URL if it is null or
-	 *         there is no redirect registered for that URL
-	 */
-	public String getRedirectAt(String urlPath) {
+	String getRedirectAt(String urlPath) {
 		while (this.redirectRegistry.containsKey(urlPath)) {
 			urlPath = this.redirectRegistry.get(urlPath);
 		}
 		return urlPath;
 	}
 
-	/**
-	 * Returns the {@link TypedBlueprint} registered for view injection at the given
-	 * URL.
-	 * 
-	 * @param urlPath
-	 *            The URL path to retrieve the {@link TypedBlueprint} for; might
-	 *            <b>not</b> be null.
-	 * @return The registered {@link TypedBlueprint} for the URL; never null
-	 * @throws WebException
-	 *             If there is no view resource registered at the given URL; check
-	 *             using {@link #hasViewAt(String)}
-	 */
-	public TypedBlueprint<? extends View> getViewAt(String urlPath) {
+	TypedBlueprint<? extends View> getViewAt(String urlPath) {
 		if (!hasViewAt(urlPath)) {
 			throw new WebException(HttpErrorCodes.HTTP902_ILLEGAL_STATE_ERROR,
 					"There is no view resource registered at url '" + urlPath + "'.");
@@ -153,31 +91,11 @@ public final class UrlResourceRegistry {
 		return this.resourceRegistry.get(urlPath).getViewResource();
 	}
 
-	/**
-	 * Registers the given {@link View} implementation at the URL in the
-	 * view's @{@link Addressed} annotation.
-	 * 
-	 * @param viewClass
-	 *            The {@link View} implementation to register; might <b>not</b> be
-	 *            null, also the has to be annotated with @{@link Addressed}
-	 *            somewhere, view the documentation of {@link Addressed} for
-	 *            reference.
-	 */
-	public void registerViewResource(Class<? extends View> viewClass) {
+	void registerViewResource(Class<? extends View> viewClass) {
 		registerViewResource(Blueprint.of(viewClass));
 	}
 
-	/**
-	 * Registers the given {@link TypedBlueprint}'s root type {@link View}
-	 * implementation at the URL in the view's @{@link Addressed} annotation.
-	 * 
-	 * @param viewBlueprint
-	 *            The {@link TypedBlueprint} whose view to register; might
-	 *            <b>not</b> be null, also the view has to be annotated
-	 *            with @{@link Addressed} somewhere, view the documentation of
-	 *            {@link Addressed} for reference.
-	 */
-	public void registerViewResource(TypedBlueprint<? extends View> viewBlueprint) {
+	void registerViewResource(TypedBlueprint<? extends View> viewBlueprint) {
 		if (viewBlueprint == null) {
 			throw new WebException(HttpErrorCodes.HTTP901_ILLEGAL_ARGUMENT_ERROR,
 					"Cannot register a null blueprint as view resoruce.");
@@ -213,40 +131,9 @@ public final class UrlResourceRegistry {
 		this.redirectRegistry.put(urlPath, redirectUrlPath);
 	}
 
-	/**
-	 * Returns whether there once was a view resource registered at the given URL,
-	 * but there is no redirect to a new location so the server should throw a
-	 * {@link WebException} with {@link HttpErrorCodes#HTTP410_GONE} when the URL is
-	 * visited.
-	 * 
-	 * @param urlPath
-	 *            Path to register the GONE resource at; might <b>not</b> be null
-	 *            and has to match {@link #URL_PATH_REGEX}
-	 */
-	public void registerGoneResource(String urlPath) {
-		UrlResourceRegistry.checkUrlPattern(urlPath);
+	void registerGoneResource(String urlPath) {
+		WebUtils.checkUrlPattern(urlPath);
 		register(urlPath, new GoneResource());
-	}
-
-	/**
-	 * Checks whether the given URL is not null and matches the pattern for URL
-	 * paths, which is {@link #URL_PATH_REGEX}.
-	 * 
-	 * @param url
-	 *            The url to check; might <b>not</b> be null or not matching to the
-	 *            pattern for valid URL paths.
-	 * @throws WebException
-	 *             Thrown if the given URL is null or no valid URL path
-	 */
-	public static void checkUrlPattern(String url) throws WebException {
-		if (url == null) {
-			throw new WebException(HttpErrorCodes.HTTP901_ILLEGAL_ARGUMENT_ERROR,
-					"Cannot register a resource at a null url.");
-		} else if (!url.matches(URL_PATH_REGEX)) {
-			throw new WebException(HttpErrorCodes.HTTP901_ILLEGAL_ARGUMENT_ERROR,
-					"Cannot register the resource at url '" + url
-							+ "'; the url does not match the valid format for segmented url paths: " + URL_PATH_REGEX);
-		}
 	}
 
 	private void register(String url, UrlResource resource) {
