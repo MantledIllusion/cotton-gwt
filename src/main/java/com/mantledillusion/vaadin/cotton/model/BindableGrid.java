@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import com.mantledillusion.data.epiphy.ModelProperty;
 import com.mantledillusion.data.epiphy.index.PropertyIndex;
 import com.mantledillusion.data.epiphy.interfaces.ListedProperty;
 import com.mantledillusion.data.epiphy.interfaces.ReadableProperty;
@@ -23,19 +24,19 @@ import com.mantledillusion.vaadin.cotton.component.ComponentFactory;
 import com.mantledillusion.vaadin.cotton.exception.WebException;
 import com.mantledillusion.vaadin.cotton.exception.WebException.HttpErrorCodes;
 import com.mantledillusion.vaadin.cotton.model.BindableGrid.BindableTableSelectionEvent.SelectionEventType;
-import com.vaadin.data.HasValue;
 import com.vaadin.data.ValueProvider;
 import com.vaadin.data.provider.ListDataProvider;
 import com.vaadin.event.selection.MultiSelectionEvent;
 import com.vaadin.event.selection.SelectionEvent;
 import com.vaadin.event.selection.SelectionListener;
 import com.vaadin.event.selection.SingleSelectionEvent;
-import com.vaadin.shared.Registration;
 import com.vaadin.ui.Component;
 import com.vaadin.ui.Composite;
 import com.vaadin.ui.Grid;
 import com.vaadin.ui.Grid.Column;
 import com.vaadin.ui.TextField;
+import com.vaadin.ui.renderers.AbstractRenderer;
+import com.vaadin.ui.renderers.TextRenderer;
 
 /**
  * {@link Grid} extension that is bound to a {@link ListedProperty}, so its
@@ -53,109 +54,7 @@ public final class BindableGrid<RowType, ModelType> extends Composite {
 	private static final long serialVersionUID = 1L;
 
 	private static final String TABLE_DATA_SOURCE_SINGLETON_ID = "tableDataSource";
-
-	private final class BindableHasValue implements HasValue<List<RowType>> {
-
-		private static final long serialVersionUID = 1L;
-
-		private boolean isRequiredIndicatorVisible = false;
-		private boolean isReadOnly = false;
-
-		@Override
-		public List<RowType> getValue() {
-			return BindableGrid.this.itemCollection.stream().map(wrapper -> wrapper.item).collect(Collectors.toList());
-		}
-
-		@Override
-		public void setValue(List<RowType> value) {
-			IdentityHashMap<RowType, Integer> newRegistry = new IdentityHashMap<>();
-			List<RowWrapper> newCollection = new ArrayList<>();
-
-			if (value != null) {
-				int i = 0;
-				RowWrapper wrapper;
-				for (RowType item : value) {
-					if (BindableGrid.this.itemRegistry.containsKey(item)) {
-						wrapper = BindableGrid.this.itemCollection.get(BindableGrid.this.itemRegistry.get(item));
-						BindableGrid.this.itemRegistry.remove(item);
-					} else {
-						wrapper = injectItem(item, i);
-					}
-
-					newRegistry.put(item, i);
-					newCollection.add(i, wrapper);
-					i++;
-				}
-			}
-
-			Set<Integer> selectIndeces = getSelectedIndeces();
-			Set<RowType> abandoned = new HashSet<>();
-			for (Integer destoryableIndex : BindableGrid.this.itemRegistry.values()) {
-				RowType destroyed = destroyItem(BindableGrid.this.itemCollection.get(destoryableIndex));
-				if (selectIndeces.contains(destoryableIndex)) {
-					abandoned.add(destroyed);
-				}
-			}
-
-			BindableGrid.this.itemRegistry.clear();
-			BindableGrid.this.itemRegistry.putAll(newRegistry);
-			BindableGrid.this.itemCollection.clear();
-			BindableGrid.this.itemCollection.addAll(newCollection);
-
-			BindableGrid.this.dataProvider.refreshAll();
-
-			if (!abandoned.isEmpty()) {
-				fireSelectionEvent(new BindableTableSelectionEvent<RowType>(BindableGrid.this, abandoned));
-			}
-		}
-
-		private RowWrapper injectItem(RowType item, int index) {
-			IndexContext context = IndexContext.of(PropertyIndex.of(BindableGrid.this.listedProperty, index));
-
-			@SuppressWarnings("unchecked")
-			RowAccessor<ModelType> accessor = BindableGrid.this.injector
-					.instantiate(Blueprint.of(RowAccessor.class, context.asSingleton()));
-
-			return new RowWrapper(item, accessor);
-		}
-
-		private RowType destroyItem(RowWrapper wrapper) {
-			BindableGrid.this.injector.destroy(wrapper.accessor);
-			return wrapper.item;
-		}
-
-		@Override
-		public Registration addValueChangeListener(ValueChangeListener<List<RowType>> listener) {
-			return () -> {
-			}; // The given listener is not added anywhere, so the registration can do nothing.
-		}
-
-		@Override
-		public boolean isRequiredIndicatorVisible() {
-			return this.isRequiredIndicatorVisible;
-		}
-
-		@Override
-		public void setRequiredIndicatorVisible(boolean requiredIndicatorVisible) {
-			this.isRequiredIndicatorVisible = requiredIndicatorVisible;
-		}
-
-		@Override
-		public boolean isReadOnly() {
-			return this.isReadOnly;
-		}
-
-		@Override
-		public void setReadOnly(boolean readOnly) {
-			this.isReadOnly = readOnly;
-			BindableGrid.this.itemCollection.parallelStream()
-					.forEach(wrapper -> wrapper.columnComponents.values().parallelStream().forEach(component -> {
-						if (component instanceof HasValue) {
-							((HasValue<?>) component).setReadOnly(readOnly);
-						}
-					}));
-		}
-	}
+	private static final AbstractRenderer<Object, Object> DEFAULT_RENDERER = new TextRenderer();
 
 	private abstract static class Wrapper<T> {
 		final T item;
@@ -168,6 +67,7 @@ public final class BindableGrid<RowType, ModelType> extends Composite {
 	private final class RowWrapper extends Wrapper<RowType> {
 		final RowAccessor<ModelType> accessor;
 		final IdentityHashMap<String, Component> columnComponents = new IdentityHashMap<>();
+		final HashSet<String> columnUpdaters = new HashSet<>();
 
 		public RowWrapper(RowType item, RowAccessor<ModelType> accessor) {
 			super(item);
@@ -192,9 +92,8 @@ public final class BindableGrid<RowType, ModelType> extends Composite {
 	}
 
 	/**
-	 * Interface for a grid column that creates a {@link Component} for every row in
-	 * the column, or put differently, for every table cell.
-	 * <P>
+	 * 
+	 * <p>
 	 * A single {@link PropertyColumn} instance can be added to multiple
 	 * {@link BindableGrid}s without any problem, as the raw implementation is
 	 * stateless and the configuration is done separately for every time the column
@@ -206,16 +105,125 @@ public final class BindableGrid<RowType, ModelType> extends Composite {
 	 */
 	public interface PropertyColumn<ModelType> {
 
+	}
+
+	/**
+	 * Type of grid column that directly renders every table cell using an
+	 * {@link AbstractRenderer}.
+	 *
+	 * @param <ModelType>
+	 *            The root type of the data model the
+	 *            {@link PropertyRenderedColumn}'s row item's list is contained in.
+	 * @param <RenderType>
+	 *            The type of value the {@link PropertyRenderedColumn} renders.
+	 */
+	public static final class PropertyRenderedColumn<ModelType, RenderType> implements PropertyColumn<ModelType> {
+
+		private final ReadableProperty<ModelType, ?> property;
+		private final ValueProvider<RowAccessor<ModelType>, RenderType> valueProvider;
+		private final AbstractRenderer<Object, ? super RenderType> renderer;
+
+		private PropertyRenderedColumn(ReadableProperty<ModelType, ?> property,
+				ValueProvider<RowAccessor<ModelType>, RenderType> valueProvider,
+				AbstractRenderer<Object, ? super RenderType> renderer) {
+			this.property = property;
+			this.valueProvider = valueProvider;
+			this.renderer = renderer;
+		}
+
+		private RenderType getRenderableValue(RowAccessor<ModelType> accessor) {
+			return this.valueProvider.apply(accessor);
+		}
+
+		/**
+		 * Factory method for creating a {@link PropertyRenderedColumn} that directly
+		 * renders a {@link ModelProperty}'s value.
+		 * 
+		 * @param <ModelType>
+		 *            The root type of the data model the
+		 *            {@link PropertyRenderedColumn}'s row item's list is contained in.
+		 * @param <RenderType>
+		 *            The type of value the {@link PropertyRenderedColumn} renders.
+		 * @param property
+		 *            The {@link ModelProperty} to render; might <b>not</b> be null.
+		 * @param renderer
+		 *            The {@link AbstractRenderer} to render with; might <b>not</b> be
+		 *            null.
+		 * @return A new {@link PropertyRenderedColumn} instance, never null
+		 */
+		public static <ModelType, RenderType> PropertyRenderedColumn<ModelType, RenderType> of(
+				ReadableProperty<ModelType, ? extends RenderType> property,
+				AbstractRenderer<Object, RenderType> renderer) {
+			if (property == null) {
+				throw new WebException(HttpErrorCodes.HTTP901_ILLEGAL_ARGUMENT_ERROR,
+						"Cannot create a rendered column for a null property.");
+			} else if (renderer == null) {
+				throw new WebException(HttpErrorCodes.HTTP901_ILLEGAL_ARGUMENT_ERROR,
+						"Cannot create a rendered column for a null renderer.");
+			}
+			return new PropertyRenderedColumn<>(property, rowAccessor -> rowAccessor.getProperty(property), renderer);
+		}
+
+		/**
+		 * Factory method for creating a {@link PropertyRenderedColumn} that directly
+		 * renders a {@link ModelProperty}'s value.
+		 * 
+		 * @param <ModelType>
+		 *            The root type of the data model the
+		 *            {@link PropertyRenderedColumn}'s row item's list is contained in.
+		 * @param <RenderType>
+		 *            The property type that needs to be converted in order to be
+		 *            rendered.
+		 * @param <RenderType>
+		 *            The type of value the {@link PropertyRenderedColumn} renders.
+		 * @param property
+		 *            The {@link ModelProperty} to convert; might <b>not</b> be null.
+		 * @param converter
+		 *            The {@link ValueProvider} to convert to the render type with;
+		 *            might <b>not</b> be null.
+		 * @param renderer
+		 *            The {@link AbstractRenderer} to render with; might <b>not</b> be
+		 *            null.
+		 * @return A new {@link PropertyRenderedColumn} instance, never null
+		 */
+		public static <ModelType, PropertyType, RenderType> PropertyRenderedColumn<ModelType, RenderType> of(
+				ReadableProperty<ModelType, PropertyType> property, ValueProvider<PropertyType, RenderType> converter,
+				AbstractRenderer<Object, ? super RenderType> renderer) {
+			if (property == null) {
+				throw new WebException(HttpErrorCodes.HTTP901_ILLEGAL_ARGUMENT_ERROR,
+						"Cannot create a rendered column for a null property.");
+			} else if (converter == null) {
+				throw new WebException(HttpErrorCodes.HTTP901_ILLEGAL_ARGUMENT_ERROR,
+						"Cannot create a rendered column for a null converter.");
+			} else if (renderer == null) {
+				throw new WebException(HttpErrorCodes.HTTP901_ILLEGAL_ARGUMENT_ERROR,
+						"Cannot create a rendered column for a null renderer.");
+			}
+			return new PropertyRenderedColumn<>(property,
+					rowAccessor -> converter.apply(rowAccessor.getProperty(property)), renderer);
+		}
+	}
+
+	/**
+	 * Interface for a grid column that creates a {@link Component} for every table
+	 * cell.
+	 *
+	 * @param <ModelType>
+	 *            The root type of the data model the
+	 *            {@link PropertyComponentColumn}'s row item's list is contained in.
+	 */
+	public interface PropertyComponentColumn<ModelType> extends PropertyColumn<ModelType> {
+
 		/**
 		 * Returns a {@link Component} that will represent a table cell in the column,
 		 * hence this method is called for every row.
-		 * <P>
+		 * <p>
 		 * Access to the data is provided by the given {@link RowAccessor}; normally, it
 		 * should be used to build and bind a {@link Component} that displays data of a
 		 * sub-{@link ReadableProperty} of the grid row item's {@link ReadableProperty}.
-		 * <P>
+		 * <p>
 		 * The {@link RowAccessor} is automatically indexed for its row.
-		 * <P>
+		 * <p>
 		 * For example: if ITEMLIST is the list property, ITEM the property of that
 		 * list's elements and ITEM_STRING_FIELD a specific property of a single ITEM,
 		 * the given {@link RowAccessor} can be used to bind a {@link TextField} to
@@ -224,7 +232,7 @@ public final class BindableGrid<RowType, ModelType> extends Composite {
 		 * inside the item and combine them in a {@link Component} build by
 		 * {@link ComponentFactory} to meet a more unique specification; just note that
 		 * in this case, there is no binding.
-		 * <P>
+		 * <p>
 		 * NOTE: This method is <b>called once per lifetime of an item inside the
 		 * table</b>, so it can not be used in hope that it will be called again after
 		 * some item data has changed.
@@ -242,7 +250,7 @@ public final class BindableGrid<RowType, ModelType> extends Composite {
 	/**
 	 * A configuration that can be used any time an {@link PropertyColumn}'s
 	 * relation to a {@link BindableGrid} has to be changed.
-	 * <P>
+	 * <p>
 	 * NOTE: If the same {@link PropertyColumn} instance is also added to a
 	 * different {@link BindableGrid}, changes made to this
 	 * {@link PropertyColumnConfiguration} do <b>not</b> have any effect on the
@@ -253,163 +261,191 @@ public final class BindableGrid<RowType, ModelType> extends Composite {
 	 */
 	public static final class PropertyColumnConfiguration<TableRowType> {
 
-		private final Column<? extends Wrapper<TableRowType>, Component> column;
+		private final Column<? extends Wrapper<TableRowType>, ?> column;
 
-		private PropertyColumnConfiguration(Column<? extends Wrapper<TableRowType>, Component> column) {
+		private PropertyColumnConfiguration(Column<? extends Wrapper<TableRowType>, ?> column) {
 			this.column = column;
 		}
 
 		/**
 		 * Sets the column's caption to the given one.
-		 * <P>
+		 * <p>
 		 * Use of a message id is allowed here to use auto-localization via
 		 * {@link WebEnv}.
 		 * 
 		 * @param captionMsgId
 		 *            The caption (or localizable caption message id) to set; might be
 		 *            null.
+		 * @return this
 		 */
-		public void setCaption(String captionMsgId) {
+		public PropertyColumnConfiguration<TableRowType> setCaption(String captionMsgId) {
 			this.column.setCaption(WebEnv.localize(captionMsgId));
+			return this;
 		}
 
 		/**
-		 * Sets the column hidable by the user.
+		 * Factory method that sets the column hidable by the user.
 		 * 
 		 * @param hidable
 		 *            Whether the column should be hidable or not. Default is false.
+		 * @return this
 		 */
-		public void setHidable(boolean hidable) {
+		public PropertyColumnConfiguration<TableRowType> setHidable(boolean hidable) {
 			this.column.setHidable(hidable);
+			return this;
 		}
 
 		/**
-		 * Hides the column.
+		 * Factory method that hides the column.
 		 * 
 		 * @param hidden
 		 *            Whether the column should be hidden or not. Default is false.
+		 * @return this
 		 */
-		public void setHidden(boolean hidden) {
+		public PropertyColumnConfiguration<TableRowType> setHidden(boolean hidden) {
 			this.column.setHidden(hidden);
+			return this;
 		}
 
 		/**
-		 * Sets the caption to use on the hiding toggle to the given one if hidable=true
-		 * and hidden=true.
-		 * <P>
+		 * Factory method that sets the caption to use on the hiding toggle to the given
+		 * one if hidable=true and hidden=true.
+		 * <p>
 		 * Use of a message id is allowed here to use auto-localization via
 		 * {@link WebEnv}.
 		 * 
 		 * @param hidingToggleCaptionMsgId
 		 *            The caption (or localizable caption message id) to set.
+		 * @return this
 		 */
-		public void setHidingToggleCaption(String hidingToggleCaptionMsgId) {
+		public PropertyColumnConfiguration<TableRowType> setHidingToggleCaption(String hidingToggleCaptionMsgId) {
 			this.column.setHidingToggleCaption(WebEnv.localize(hidingToggleCaptionMsgId));
+			return this;
 		}
 
 		/**
-		 * Sets the width of the column to the given exact pixel value, which actively
-		 * forbids it to resize.
+		 * Factory method that sets the width of the column to the given exact pixel
+		 * value, which actively forbids it to resize.
 		 * 
 		 * @param widthPx
 		 *            The pixel value to set the width to.
+		 * @return this
 		 */
-		public void setWidth(int widthPx) {
+		public PropertyColumnConfiguration<TableRowType> setWidth(int widthPx) {
 			this.column.setWidth(widthPx);
+			return this;
 		}
 
 		/**
-		 * Sets the width of the column to undefined, which allows it to resize
-		 * autonomously.
+		 * Factory method that sets the width of the column to undefined, which allows
+		 * it to resize autonomously.
+		 * 
+		 * @return this
 		 */
-		public void setWidthUndefined() {
+		public PropertyColumnConfiguration<TableRowType> setWidthUndefined() {
 			this.column.setWidthUndefined();
+			return this;
 		}
 
 		/**
-		 * Sets the expand ratio of the column when compared to other columns. Has
-		 * effect on how the column is resized compared to others when there is
-		 * less/more space than the column's natural size.
-		 * <P>
+		 * Factory method that sets the expand ratio of the column when compared to
+		 * other columns. Has effect on how the column is resized compared to others
+		 * when there is less/more space than the column's natural size.
+		 * <p>
 		 * NOTE: This only has effect if the column's width is undefined.
 		 * 
 		 * @param expandRatio
 		 *            The expand ratio to set.
+		 * @return this
 		 */
-		public void setExpandRatio(int expandRatio) {
+		public PropertyColumnConfiguration<TableRowType> setExpandRatio(int expandRatio) {
 			this.column.setExpandRatio(expandRatio);
+			return this;
 		}
 
 		/**
-		 * Sets the minimum width the column will not shrink under.
-		 * <P>
+		 * Factory method that sets the minimum width the column will not shrink under.
+		 * <p>
 		 * NOTE: This only has effect if the column's width is undefined.
 		 * 
 		 * @param widthPx
 		 *            The pixel value to minimally shrink to.
+		 * @return this
 		 */
-		public void setMinimumWidth(int widthPx) {
+		public PropertyColumnConfiguration<TableRowType> setMinimumWidth(int widthPx) {
 			this.column.setMinimumWidth(widthPx);
+			return this;
 		}
 
 		/**
-		 * Instructs the column to use its content as the minimal width to consider when
-		 * shrinking.
-		 * <P>
+		 * Factory method that instructs the column to use its content as the minimal
+		 * width to consider when shrinking.
+		 * <p>
 		 * NOTE: This only has effect if the column's width is undefined.
 		 * 
 		 * @param minimumWidthFromContent
 		 *            Whether the column should consider its content when shrinking.
 		 *            Default is true.
+		 * @return this
 		 */
-		public void setMinimumWidthFromContent(boolean minimumWidthFromContent) {
+		public PropertyColumnConfiguration<TableRowType> setMinimumWidthFromContent(boolean minimumWidthFromContent) {
 			this.column.setMinimumWidthFromContent(minimumWidthFromContent);
+			return this;
 		}
 
 		/**
-		 * Sets the maximum width the column will not grow over.
-		 * <P>
+		 * Factory method that sets the maximum width the column will not grow over.
+		 * <p>
 		 * NOTE: This only has effect if the column's width is undefined.
 		 * 
 		 * @param widthPx
 		 *            The pixel value to maximally grow to.
+		 * @return this
 		 */
-		public void setMaximumWidth(int widthPx) {
+		public PropertyColumnConfiguration<TableRowType> setMaximumWidth(int widthPx) {
 			this.column.setMaximumWidth(widthPx);
+			return this;
 		}
 
 		/**
-		 * Sets the column resizable by the user.
+		 * Factory method that sets the column resizable by the user.
 		 * 
 		 * @param resizable
 		 *            Whether the column should be resizable or not. Default is true.
+		 * @return this
 		 */
-		public void setResizable(boolean resizable) {
+		public PropertyColumnConfiguration<TableRowType> setResizable(boolean resizable) {
 			this.column.setResizable(resizable);
+			return this;
 		}
 
 		/**
-		 * Sets the column sortable by the user.
+		 * Factory method that sets the column sortable by the user.
 		 * 
 		 * @param sortable
 		 *            Whether the column should be sortable or not. Default is true.
+		 * @return this
 		 */
-		public void setSortable(boolean sortable) {
+		public PropertyColumnConfiguration<TableRowType> setSortable(boolean sortable) {
 			this.column.setSortable(sortable);
+			return this;
 		}
 
 		/**
-		 * Sets the {@link Comparator} to use when the column is sorted.
+		 * Factory method that sets the {@link Comparator} to use when the column is
+		 * sorted.
 		 * 
 		 * @param comparator
 		 *            The comparator to use; might <b>not</b> be null.
+		 * @return this
 		 */
-		public void setSortComparator(Comparator<TableRowType> comparator) {
+		public PropertyColumnConfiguration<TableRowType> setSortComparator(Comparator<TableRowType> comparator) {
 			if (comparator == null) {
 				throw new WebException(HttpErrorCodes.HTTP901_ILLEGAL_ARGUMENT_ERROR, "Cannot set a null comparator.");
 			}
 
 			this.column.setComparator((wrapper, wrapper2) -> comparator.compare(wrapper.item, wrapper2.item));
+			return this;
 		}
 	}
 
@@ -436,14 +472,13 @@ public final class BindableGrid<RowType, ModelType> extends Composite {
 
 	private final ModelBinder<ModelType> parent;
 	private final ListedProperty<ModelType, RowType> listedProperty;
-	private final BindableHasValue hasValue = new BindableHasValue();
 
 	private final Injector injector;
 
 	private final IdentityHashMap<RowType, Integer> itemRegistry = new IdentityHashMap<>();
 	private final List<RowWrapper> itemCollection = new ArrayList<>();
 	private final ListDataProvider<RowWrapper> dataProvider = new ListDataProvider<>(this.itemCollection);
-	private final IdentityHashMap<PropertyColumn<ModelType>, String> columnRegistry = new IdentityHashMap<>();
+	private final IdentityHashMap<PropertyColumn<?>, String> columnRegistry = new IdentityHashMap<>();
 	private final Grid<RowWrapper> grid = new Grid<>(this.dataProvider);
 
 	private final SelectionListener<RowWrapper> gridSelectionListener = new MultiModeSelectionListener();
@@ -465,8 +500,61 @@ public final class BindableGrid<RowType, ModelType> extends Composite {
 		this.grid.addSelectionListener(gridSelectionListener);
 	}
 
-	HasValue<List<RowType>> getBindable() {
-		return this.hasValue;
+	void setValue(List<RowType> value) {
+		IdentityHashMap<RowType, Integer> newRegistry = new IdentityHashMap<>();
+		List<RowWrapper> newCollection = new ArrayList<>();
+
+		if (value != null) {
+			int i = 0;
+			RowWrapper wrapper;
+			for (RowType item : value) {
+				if (this.itemRegistry.containsKey(item)) {
+					wrapper = this.itemCollection.get(this.itemRegistry.get(item));
+					this.itemRegistry.remove(item);
+				} else {
+					wrapper = injectItem(item, i);
+				}
+
+				newRegistry.put(item, i);
+				newCollection.add(i, wrapper);
+				i++;
+			}
+		}
+
+		Set<Integer> selectIndeces = getSelectedIndeces();
+		Set<RowType> abandoned = new HashSet<>();
+		for (Integer destoryableIndex : this.itemRegistry.values()) {
+			RowType destroyed = destroyItem(this.itemCollection.get(destoryableIndex));
+			if (selectIndeces.contains(destoryableIndex)) {
+				abandoned.add(destroyed);
+			}
+		}
+
+		this.itemRegistry.clear();
+		this.itemRegistry.putAll(newRegistry);
+		this.itemCollection.clear();
+		this.itemCollection.addAll(newCollection);
+
+		this.dataProvider.refreshAll();
+
+		if (!abandoned.isEmpty()) {
+			fireSelectionEvent(new BindableTableSelectionEvent<RowType>(this, abandoned));
+		}
+	}
+
+	private RowWrapper injectItem(RowType item, int index) {
+		IndexContext context = IndexContext.of(PropertyIndex.of(this.listedProperty, index));
+
+		@SuppressWarnings("unchecked")
+		RowAccessor<ModelType> accessor = this.injector
+				.instantiate(Blueprint.of(RowAccessor.class, context.asSingleton()));
+
+		return new RowWrapper(item, accessor);
+	}
+
+	private RowType destroyItem(RowWrapper wrapper) {
+		this.injector.destroy(wrapper.accessor);
+		return wrapper.item;
 	}
 
 	// ######################################################################################################################################
@@ -476,6 +564,9 @@ public final class BindableGrid<RowType, ModelType> extends Composite {
 	private int columnCounter = 0;
 
 	/**
+	 * Convenience method for using {@link #addColumn(PropertyRenderedColumn)} when
+	 * the property should simply be rendered as text.
+	 * <p>
 	 * Adds a column to this {@link BindableGrid} that is bound to the given
 	 * property.
 	 * 
@@ -488,54 +579,35 @@ public final class BindableGrid<RowType, ModelType> extends Composite {
 	 */
 	public <PropertyType> PropertyColumnConfiguration<RowType> addColumn(
 			ReadableProperty<ModelType, PropertyType> property) {
-		return addColumn(rowAccessor -> rowAccessor.bindLabelForProperty(property));
+		return addColumn(PropertyRenderedColumn.of(property, DEFAULT_RENDERER));
 	}
 
 	/**
+	 * Convenience method for using {@link #addColumn(PropertyRenderedColumn)} when
+	 * the property should simply be rendered as text.
+	 * <p>
 	 * Adds a column to this {@link BindableGrid} that is bound to the given
 	 * property.
 	 * 
 	 * @param <PropertyType>
 	 *            The type of the property to bind.
+	 * @param <RenderType>
+	 *            The type to convert the property value to so it can be rendered.
 	 * @param property
 	 *            The property to bind the column to; might <b>not</b> be null.
-	 * @param renderer
-	 *            The {@link StringRenderer} to render the bound property with;
+	 * @param converter
+	 *            The {@link ValueProvider} to convert the bound property with;
 	 *            might <b>not</b> be null.
 	 * @return A {@link PropertyColumnConfiguration} to configure the registration
 	 *         of the given column in this grid with.
 	 */
-	public <PropertyType> PropertyColumnConfiguration<RowType> addColumn(
-			ReadableProperty<ModelType, PropertyType> property, StringRenderer<PropertyType> renderer) {
-		return addColumn(rowAccessor -> rowAccessor.bindLabelForProperty(property, renderer));
+	public <PropertyType, RenderType> PropertyColumnConfiguration<RowType> addColumn(
+			ReadableProperty<ModelType, PropertyType> property, ValueProvider<PropertyType, RenderType> converter) {
+		return addColumn(PropertyRenderedColumn.of(property, converter, DEFAULT_RENDERER));
 	}
 
 	/**
-	 * Adds a column to this {@link BindableGrid} that is bound to the given
-	 * property.
-	 * 
-	 * @param <PropertyType>
-	 *            The type of the property to bind.
-	 * @param property
-	 *            property The property to bind the column to; might <b>not</b> be
-	 *            null.
-	 * @param renderer
-	 *            The {@link StringRenderer} to render the bound property with;
-	 *            might <b>not</b> be null.
-	 * @param configurator
-	 *            The configurator to use on the given columns registration; might
-	 *            be null.
-	 * @return A {@link PropertyColumnConfiguration} to configure the registration
-	 *         of the given column in this grid with.
-	 */
-	public <PropertyType> PropertyColumnConfiguration<RowType> addColumn(
-			ReadableProperty<ModelType, PropertyType> property, StringRenderer<PropertyType> renderer,
-			PropertyColumnConfigurator<RowType> configurator) {
-		return addColumn(rowAccessor -> rowAccessor.bindLabelForProperty(property, renderer), configurator);
-	}
-
-	/**
-	 * Adds the given {@link PropertyColumn} to this {@link BindableGrid}.
+	 * Adds the given {@link PropertyRenderedColumn} to this {@link BindableGrid}.
 	 * 
 	 * @param column
 	 *            The column to add; might <b>not</b> be null, might not be already
@@ -543,21 +615,74 @@ public final class BindableGrid<RowType, ModelType> extends Composite {
 	 * @return A {@link PropertyColumnConfiguration} to configure the registration
 	 *         of the given column in this grid with.
 	 */
-	public PropertyColumnConfiguration<RowType> addColumn(PropertyColumn<ModelType> column) {
-		if (column == null) {
-			throw new WebException(HttpErrorCodes.HTTP901_ILLEGAL_ARGUMENT_ERROR,
-					"A column to add to a table can never be null.");
+	public <RenderType> PropertyColumnConfiguration<RowType> addColumn(
+			PropertyRenderedColumn<ModelType, RenderType> column) {
+		String columnId = registerColumn(column);
+
+		Column<RowWrapper, RenderType> gridColumn = this.grid.addColumn(new ValueProvider<RowWrapper, RenderType>() {
+
+			private static final long serialVersionUID = 1L;
+
+			@Override
+			public RenderType apply(RowWrapper source) {
+				if (!source.columnUpdaters.contains(columnId)) {
+					source.accessor.bindToProperty(
+							new ReadOnlyHasValue<>(propertyValue -> BindableGrid.this.dataProvider.refreshItem(source)),
+							column.property);
+					source.columnUpdaters.add(columnId);
+				}
+
+				return column.getRenderableValue(source.accessor);
+			}
+		}, column.renderer);
+
+		gridColumn.setId(columnId);
+
+		return new PropertyColumnConfiguration<RowType>(gridColumn);
+	}
+
+	/**
+	 * Adds the given {@link PropertyRenderedColumn} to this {@link BindableGrid}.
+	 * <p>
+	 * Also passes the generated {@link PropertyColumnConfiguration} to the given
+	 * {@link PropertyColumnConfigurator}.
+	 * <p>
+	 * This method makes it possible for a column to be self-configuring, by using a
+	 * type that implements {@link PropertyColumn} and
+	 * {@link PropertyColumnConfigurator} and then call this method with an instance
+	 * of that type as both arguments.
+	 * 
+	 * @param column
+	 *            The column to add; might <b>not</b> be null, might not be already
+	 *            added.
+	 * @param configurator
+	 *            The configurator to use on the given columns registration; might
+	 *            be null.
+	 * @return A {@link PropertyColumnConfiguration} to configure the registration
+	 *         of the given column in this grid with.
+	 */
+	public <RenderType> PropertyColumnConfiguration<RowType> addColumn(
+			PropertyRenderedColumn<ModelType, RenderType> column, PropertyColumnConfigurator<RowType> configurator) {
+		PropertyColumnConfiguration<RowType> config = addColumn(column);
+		if (configurator != null) {
+			configurator.configure(config);
 		}
+		return config;
+	}
 
-		final String columnId = String.valueOf(columnCounter++);
-		this.columnRegistry.put(column, columnId);
+	/**
+	 * Adds the given {@link PropertyComponentColumn} to this {@link BindableGrid}.
+	 * 
+	 * @param column
+	 *            The column to add; might <b>not</b> be null, might not be already
+	 *            added.
+	 * @return A {@link PropertyColumnConfiguration} to configure the registration
+	 *         of the given column in this grid with.
+	 */
+	public PropertyColumnConfiguration<RowType> addColumn(PropertyComponentColumn<ModelType> column) {
+		String columnId = registerColumn(column);
 
-		if (this.grid.getColumn(columnId) != null) {
-			throw new WebException(HttpErrorCodes.HTTP902_ILLEGAL_STATE_ERROR,
-					"The given column instance is already added to the grid");
-		}
-
-		Column<RowWrapper, Component> gridColumn = BindableGrid.this.grid
+		Column<RowWrapper, Component> gridColumn = this.grid
 				.addComponentColumn(new ValueProvider<RowWrapper, Component>() {
 
 					private static final long serialVersionUID = 1L;
@@ -565,13 +690,7 @@ public final class BindableGrid<RowType, ModelType> extends Composite {
 					@Override
 					public final Component apply(RowWrapper source) {
 						if (!source.columnComponents.containsKey(columnId)) {
-							Component boundComponent = column.createBoundComponent(source.accessor);
-							if (boundComponent instanceof HasValue) {
-								((HasValue<?>) boundComponent).setReadOnly(BindableGrid.this.hasValue.isReadOnly);
-								((HasValue<?>) boundComponent).setRequiredIndicatorVisible(
-										BindableGrid.this.hasValue.isRequiredIndicatorVisible);
-							}
-							source.columnComponents.put(columnId, boundComponent);
+							source.columnComponents.put(columnId, column.createBoundComponent(source.accessor));
 						}
 						return source.columnComponents.get(columnId);
 					}
@@ -583,11 +702,11 @@ public final class BindableGrid<RowType, ModelType> extends Composite {
 	}
 
 	/**
-	 * Adds the given {@link PropertyColumn} to this {@link BindableGrid}.
-	 * <P>
+	 * Adds the given {@link PropertyComponentColumn} to this {@link BindableGrid}.
+	 * <p>
 	 * Also passes the generated {@link PropertyColumnConfiguration} to the given
 	 * {@link PropertyColumnConfigurator}.
-	 * <P>
+	 * <p>
 	 * This method makes it possible for a column to be self-configuring, by using a
 	 * type that implements {@link PropertyColumn} and
 	 * {@link PropertyColumnConfigurator} and then call this method with an instance
@@ -602,7 +721,7 @@ public final class BindableGrid<RowType, ModelType> extends Composite {
 	 * @return A {@link PropertyColumnConfiguration} to configure the registration
 	 *         of the given column in this grid with; never null
 	 */
-	public PropertyColumnConfiguration<RowType> addColumn(PropertyColumn<ModelType> column,
+	public PropertyColumnConfiguration<RowType> addColumn(PropertyComponentColumn<ModelType> column,
 			PropertyColumnConfigurator<RowType> configurator) {
 		PropertyColumnConfiguration<RowType> config = addColumn(column);
 		if (configurator != null) {
@@ -611,13 +730,28 @@ public final class BindableGrid<RowType, ModelType> extends Composite {
 		return config;
 	}
 
+	private String registerColumn(PropertyColumn<ModelType> column) {
+		if (column == null) {
+			throw new WebException(HttpErrorCodes.HTTP901_ILLEGAL_ARGUMENT_ERROR,
+					"A column to add to a table can never be null.");
+		} else if (this.columnRegistry.containsKey(column)) {
+			throw new WebException(HttpErrorCodes.HTTP902_ILLEGAL_STATE_ERROR,
+					"The given column instance is already added to the grid");
+		}
+
+		final String columnId = String.valueOf(this.columnCounter++);
+		this.columnRegistry.put(column, columnId);
+
+		return columnId;
+	}
+
 	/**
 	 * Removes the given column from this {@link BindableGrid}.
 	 * 
 	 * @param column
 	 *            The column to remove; might <b>not</b> be null.
 	 */
-	public void removeColumn(PropertyColumn<ModelType> column) {
+	public void removeColumn(PropertyColumn<?> column) {
 		if (column == null) {
 			throw new WebException(HttpErrorCodes.HTTP901_ILLEGAL_ARGUMENT_ERROR,
 					"A column to remove from a table can never be null.");
@@ -714,7 +848,7 @@ public final class BindableGrid<RowType, ModelType> extends Composite {
 
 	/**
 	 * Returns the index of the currently selected item.
-	 * <P>
+	 * <p>
 	 * Convenience method for {@link SelectionMode}.SINGLE_SELECTION; if used in
 	 * MULTI_SELECTION mode, the index of the first item is returned.
 	 * 
@@ -744,7 +878,7 @@ public final class BindableGrid<RowType, ModelType> extends Composite {
 
 	/**
 	 * Returns the currently selected item.
-	 * <P>
+	 * <p>
 	 * Convenience method for {@link SelectionMode}.SINGLE_SELECTION; if used in
 	 * MULTI_SELECTION mode, the first selected item is returned.
 	 * 
@@ -921,7 +1055,7 @@ public final class BindableGrid<RowType, ModelType> extends Composite {
 
 		/**
 		 * Determines the type of the selection.
-		 * <P>
+		 * <p>
 		 * For example, if the table is in {@link SelectionMode}.SINGLE_SELECTION, the
 		 * types could occur as follows:<br>
 		 * - On the first item selection, it is {@link SelectionEventType}.SELECTION<br>
