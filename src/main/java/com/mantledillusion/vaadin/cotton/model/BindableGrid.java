@@ -54,7 +54,6 @@ public final class BindableGrid<RowType, ModelType> extends Composite {
 	private static final long serialVersionUID = 1L;
 
 	private static final String TABLE_DATA_SOURCE_SINGLETON_ID = "tableDataSource";
-	private static final AbstractRenderer<Object, Object> DEFAULT_RENDERER = new TextRenderer();
 
 	private abstract static class Wrapper<T> {
 		final T item;
@@ -579,7 +578,7 @@ public final class BindableGrid<RowType, ModelType> extends Composite {
 	 */
 	public <PropertyType> PropertyColumnConfiguration<RowType> addColumn(
 			ReadableProperty<ModelType, PropertyType> property) {
-		return addColumn(PropertyRenderedColumn.of(property, DEFAULT_RENDERER));
+		return addColumn(PropertyRenderedColumn.of(property, new TextRenderer()));
 	}
 
 	/**
@@ -603,7 +602,7 @@ public final class BindableGrid<RowType, ModelType> extends Composite {
 	 */
 	public <PropertyType, RenderType> PropertyColumnConfiguration<RowType> addColumn(
 			ReadableProperty<ModelType, PropertyType> property, ValueProvider<PropertyType, RenderType> converter) {
-		return addColumn(PropertyRenderedColumn.of(property, converter, DEFAULT_RENDERER));
+		return addColumn(PropertyRenderedColumn.of(property, converter, new TextRenderer()));
 	}
 
 	/**
@@ -626,9 +625,8 @@ public final class BindableGrid<RowType, ModelType> extends Composite {
 			@Override
 			public RenderType apply(RowWrapper source) {
 				if (!source.columnUpdaters.contains(columnId)) {
-					source.accessor.bindToProperty(
-							new ReadOnlyHasValue<>(propertyValue -> BindableGrid.this.dataProvider.refreshItem(source)),
-							column.property);
+					source.accessor.listenToProperty(
+							propertyValue -> BindableGrid.this.dataProvider.refreshItem(source), column.property);
 					source.columnUpdaters.add(columnId);
 				}
 
