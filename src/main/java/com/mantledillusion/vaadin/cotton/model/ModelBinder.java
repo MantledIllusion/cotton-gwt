@@ -15,6 +15,7 @@ import com.mantledillusion.vaadin.cotton.component.ComponentFactory.OptionPatter
 import com.vaadin.data.HasValue;
 import com.vaadin.data.HasValue.ValueChangeEvent;
 import com.vaadin.data.HasValue.ValueChangeListener;
+import com.vaadin.data.ValueProvider;
 import com.vaadin.server.CompositeErrorMessage;
 import com.vaadin.server.ErrorMessage;
 import com.vaadin.shared.Registration;
@@ -328,7 +329,7 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 	@SafeVarargs
 	public final <PropertyType> Label bindLabelForProperty(ReadableProperty<ModelType, PropertyType> property,
 			OptionPattern<? super Label>... patterns) {
-		return bindLabelForProperty(property, StringRenderer.defaultRenderer(), patterns);
+		return bindLabelForProperty(property, value -> value != null ? value.toString() : null, patterns);
 	}
 
 	/**
@@ -351,7 +352,7 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 	 */
 	@SafeVarargs
 	public final <PropertyType> Label bindLabelForProperty(ReadableProperty<ModelType, PropertyType> property,
-			StringRenderer<PropertyType> renderer, OptionPattern<? super Label>... patterns) {
+			ValueProvider<PropertyType, String> renderer, OptionPattern<? super Label>... patterns) {
 		if (renderer == null) {
 			throw new IllegalArgumentException("Cannot apply a null renderer.");
 		}
@@ -365,7 +366,7 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 
 			@Override
 			public String toField(PropertyType value) {
-				return renderer.render(value);
+				return renderer.apply(value);
 			}
 		};
 		return buildAndBind(provider, property, converter, patterns);
@@ -894,7 +895,7 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 	public final <T> BindableGrid<T, ModelType> bindGridForProperty(ListedProperty<ModelType, T> property,
 			OptionPattern<? super BindableGrid<?, ?>>... patterns) {
 		BindableGrid<T, ModelType> table = new BindableGrid<T, ModelType>(this, property);
-		bindToProperty(table.getBindable(), property);
+		bindToProperty(new ReadOnlyHasValue<>(value -> table.setValue(value)), property);
 		return ComponentFactory.apply(table, patterns);
 	}
 }
