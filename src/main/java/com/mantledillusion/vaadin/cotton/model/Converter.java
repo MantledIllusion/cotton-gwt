@@ -21,16 +21,8 @@ import com.vaadin.server.SerializableFunction;
  * @param <PropertyType>
  *            The type of the property.
  */
-public interface Converter<FieldValueType, PropertyType> extends InputValidator<FieldValueType> {
-
-	/**
-	 * Converts the property value to the field's value type.
-	 * 
-	 * @param value
-	 *            The value to convert; might be null if the property is null
-	 * @return The converted value; might be null
-	 */
-	FieldValueType toField(PropertyType value);
+public interface Converter<FieldValueType, PropertyType>
+		extends Mapper<FieldValueType, PropertyType>, InputValidator<FieldValueType> {
 
 	/**
 	 * Convertes the field value to the properties' value type.
@@ -44,6 +36,39 @@ public interface Converter<FieldValueType, PropertyType> extends InputValidator<
 
 	default Collection<ValidationError> validateInput(FieldValueType value) {
 		return null;
+	}
+
+	/**
+	 * Wraps an existing {@link Mapper} so it can be re-used as a {@link Converter}.
+	 * <p>
+	 * The resulting converter is unable to map from field to property type.
+	 * 
+	 * @param <FieldValueType>
+	 *            The value type of the field.
+	 * @param <PropertyType>
+	 *            The type of the property.
+	 * @param mapper
+	 *            The mapper to wrap; might <b>not</b> be null.
+	 * @return A {@link Converter}, wrapping the given mapper
+	 */
+	public static <FieldValueType, PropertyType> Converter<FieldValueType, PropertyType> wrap(
+			Mapper<FieldValueType, PropertyType> mapper) {
+		if (mapper == null) {
+			throw new WebException(HttpErrorCodes.HTTP901_ILLEGAL_ARGUMENT_ERROR, "Cannot wrap a null mapper.");
+		}
+		return new Converter<FieldValueType, PropertyType>() {
+
+			@Override
+			public FieldValueType toField(PropertyType value) {
+				return mapper.toField(value);
+			}
+
+			@Override
+			public PropertyType toProperty(FieldValueType value) {
+				throw new WebException(HttpErrorCodes.HTTP903_NOT_IMPLEMENTED_ERROR,
+						"A wrapped mapper cannot convert from field to property type.");
+			}
+		};
 	}
 
 	/**

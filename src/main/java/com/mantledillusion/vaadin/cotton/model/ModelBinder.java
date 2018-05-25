@@ -12,12 +12,15 @@ import com.mantledillusion.data.epiphy.interfaces.ReadableProperty;
 import com.mantledillusion.data.epiphy.interfaces.WriteableProperty;
 import com.mantledillusion.vaadin.cotton.component.ComponentFactory;
 import com.mantledillusion.vaadin.cotton.component.ComponentFactory.OptionPattern;
+import com.mantledillusion.vaadin.cotton.exception.WebException;
+import com.mantledillusion.vaadin.cotton.exception.WebException.HttpErrorCodes;
 import com.vaadin.data.HasValue;
 import com.vaadin.data.HasValue.ValueChangeEvent;
 import com.vaadin.data.HasValue.ValueChangeListener;
 import com.vaadin.data.ValueProvider;
 import com.vaadin.server.CompositeErrorMessage;
 import com.vaadin.server.ErrorMessage;
+import com.vaadin.server.SerializableConsumer;
 import com.vaadin.shared.Registration;
 import com.vaadin.ui.AbstractComponent;
 import com.vaadin.ui.CheckBox;
@@ -39,6 +42,20 @@ import com.vaadin.ui.TextField;
  *            bind ui components to.
  */
 abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
+	
+	private class ReadOnlyHasValue<V> extends com.vaadin.data.ReadOnlyHasValue<V> {
+
+		private static final long serialVersionUID = 1L;
+
+		ReadOnlyHasValue(SerializableConsumer<V> valueProcessor) {
+			super(valueProcessor);
+		}
+
+		@Override
+		public void setReadOnly(boolean readOnly) {
+			// This is always read only; ignore call
+		}
+	}
 
 	private interface HasValueProvider<FieldType extends Component & HasValue<FieldValueType>, FieldValueType> {
 
@@ -276,6 +293,24 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 	public abstract <FieldType extends HasValue<PropertyType>, PropertyType> FieldType bindToProperty(FieldType field,
 			ReadableProperty<ModelType, PropertyType> property, InputValidator<PropertyType> inputValidator);
 
+	/**
+	 * Binds the given consumer to the given property.
+	 * 
+	 * @param <PropertyType>
+	 *            The type of data the property refers to.
+	 * @param consumer
+	 *            The consumer to bind; might <b>not</b> be null.
+	 * @param property
+	 *            The property to bind to; might <b>not</b> be null.
+	 */
+	public final <PropertyType> void listenToProperty(SerializableConsumer<PropertyType> consumer,
+			ReadableProperty<ModelType, PropertyType> property) {
+		if (consumer == null) {
+			throw new WebException(HttpErrorCodes.HTTP901_ILLEGAL_ARGUMENT_ERROR, "Cannot bind a null consumer.");
+		}
+		bindToProperty(new ReadOnlyHasValue<>(consumer), property);
+	}
+
 	private <FieldType extends Component & HasValue<FieldValueType>, FieldValueType, PropertyType> FieldType buildAndBind(
 			HasValueProvider<FieldType, FieldValueType> provider, ReadableProperty<ModelType, PropertyType> property,
 			Converter<FieldValueType, PropertyType> converter,
@@ -306,6 +341,27 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 	public abstract <FieldType extends HasValue<FieldValueType>, FieldValueType, PropertyType> FieldType bindToProperty(
 			FieldType field, ReadableProperty<ModelType, PropertyType> property,
 			Converter<FieldValueType, PropertyType> converter);
+
+	/**
+	 * Binds the given consumer to the given property.
+	 * 
+	 * @param <PropertyType>
+	 *            The type of data the property refers to.
+	 * @param consumer
+	 *            The consumer to bind; might <b>not</b> be null.
+	 * @param property
+	 *            The property to bind to; might <b>not</b> be null.
+	 * @param mapper
+	 *            The mapper needed for map from the properties' value type to the
+	 *            consumer's value type; might <b>not</b> be null.
+	 */
+	public final <FieldValueType, PropertyType> void listenToProperty(SerializableConsumer<FieldValueType> consumer,
+			ReadableProperty<ModelType, PropertyType> property, Mapper<FieldValueType, PropertyType> mapper) {
+		if (consumer == null) {
+			throw new WebException(HttpErrorCodes.HTTP901_ILLEGAL_ARGUMENT_ERROR, "Cannot bind a null consumer.");
+		}
+		bindToProperty(new ReadOnlyHasValue<>(consumer), property, Converter.wrap(mapper));
+	}
 
 	// ##############################################################################################################
 	// ################################################## LABEL #####################################################
@@ -895,7 +951,7 @@ abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
 	public final <T> BindableGrid<T, ModelType> bindGridForProperty(ListedProperty<ModelType, T> property,
 			OptionPattern<? super BindableGrid<?, ?>>... patterns) {
 		BindableGrid<T, ModelType> table = new BindableGrid<T, ModelType>(this, property);
-		bindToProperty(new ReadOnlyHasValue<>(value -> table.setValue(value)), property);
+		listenToProperty(value -> table.setValue(value), property);
 		return ComponentFactory.apply(table, patterns);
 	}
 }
