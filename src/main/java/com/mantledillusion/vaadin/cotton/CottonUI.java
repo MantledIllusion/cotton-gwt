@@ -137,8 +137,6 @@ final class CottonUI extends com.vaadin.ui.UI {
 			}
 
 			handleRequest(request);
-			
-			handleRequest(request);
 		} catch (Exception e) {
 			this.internalErrorHandler.error(new com.vaadin.server.ErrorEvent(e));
 			close();
