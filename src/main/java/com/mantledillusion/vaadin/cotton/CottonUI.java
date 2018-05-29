@@ -74,7 +74,7 @@ final class CottonUI extends com.vaadin.ui.UI {
 	private final Map<String, LocalizationResource> resourceBundleRegistry;
 
 	// LOGIN
-	private final TypedBlueprint<? extends LoginView> loginViewBlueprint;
+	private final LoginProvider loginProvider;
 
 	// ERROR HANDLING
 	private final InternalErrorHandler internalErrorHandler;
@@ -96,7 +96,7 @@ final class CottonUI extends com.vaadin.ui.UI {
 		this.defaultLang = config.getDefaultLang();
 		this.resourceBundleRegistry = config.getResourceBundleRegistry();
 
-		this.loginViewBlueprint = config.getLoginViewBlueprint();
+		this.loginProvider = config.getLoginProvider();
 
 		this.internalErrorHandler = config.getInternalErrorHandler();
 		this.isInternalErrorHandler = true;
@@ -326,8 +326,8 @@ final class CottonUI extends com.vaadin.ui.UI {
 					if (cause instanceof WebException
 							&& ((WebException) cause).getErrorCode() == HttpErrorCodes.HTTP403_FORBIDDEN
 							&& this.user == null) {
-						if (this.loginViewBlueprint != null) {
-							showlogIn();
+						if (this.loginProvider != null) {
+							triggerlogIn();
 						} else {
 							throw new WebException(HttpErrorCodes.HTTP403_FORBIDDEN, "The requested registration at '"
 									+ urlPath
@@ -555,13 +555,13 @@ final class CottonUI extends com.vaadin.ui.UI {
 
 	// ########## Internally Usable ##########
 
-	final void showlogIn() {
-		if (this.loginViewBlueprint == null) {
+	final void triggerlogIn() {
+		if (this.loginProvider == null) {
 			throw new WebException(HttpErrorCodes.HTTP902_ILLEGAL_STATE_ERROR,
-					"No default login view type has been configured at the UI, so auto login is not possible.");
+					"No default login provider has been configured, so auto login is not possible.");
 		}
-		appendToLog(SessionLogEntry.of(SessionLogContext.USER, SessionLogType.INFO, "Login shown."));
-		setContent(this.injector.instantiate(this.loginViewBlueprint));
+		this.loginProvider.login(this.injector);
+		appendToLog(SessionLogEntry.of(SessionLogContext.USER, SessionLogType.INFO, "Triggered login."));
 	}
 
 	final boolean logIn(User user) {

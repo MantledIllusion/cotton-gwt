@@ -30,7 +30,7 @@ public final class WebEnv {
 	// #########################################################################################################################################
 	// ############################################################## NAVIGATION ###############################################################
 	// #########################################################################################################################################
-	
+
 	/**
 	 * Returns whether there is a redirect on the given URL.
 	 * 
@@ -42,7 +42,7 @@ public final class WebEnv {
 	public boolean hasRedirectAt(String urlPath) {
 		return CottonUI.current().getUrlRegistry().hasRedirectAt(urlPath);
 	}
-	
+
 	/**
 	 * Returns whether there is a view resource registered for the given URL.
 	 * 
@@ -204,6 +204,8 @@ public final class WebEnv {
 	 * Depending on the current language's {@link Locale}, the given message
 	 * parameters may also be localized during insertion into the message.
 	 * 
+	 * @param <T>
+	 *            The message parameter type
 	 * @param msgId
 	 *            The message id to localize; may be null or not even a message id.
 	 * @param messageParameters
@@ -222,10 +224,10 @@ public final class WebEnv {
 	// #########################################################################################################################################
 
 	/**
-	 * Will show the log in page and, after logging in, reload the current page.
+	 * Will trigger the configured {@link LoginProvider} to provide login.
 	 */
-	public static void showlogIn() {
-		CottonUI.current().showlogIn();
+	public static void triggerlogIn() {
+		CottonUI.current().triggerlogIn();
 	}
 
 	/**
