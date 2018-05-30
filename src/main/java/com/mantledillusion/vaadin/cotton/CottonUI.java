@@ -578,8 +578,8 @@ final class CottonUI extends com.vaadin.ui.UI {
 				throw new WebException(HttpErrorCodes.HTTP902_ILLEGAL_STATE_ERROR,
 						"There is already a user logged in!");
 			}
-			CottonUI.LOGGER.info("User '" + this.user + "' logged in.");
 			this.user = user;
+			CottonUI.LOGGER.info("User '" + this.user + "' logged in.");
 			appendToLog(
 					SessionLogEntry.of(SessionLogContext.USER, SessionLogType.INFO, "User '" + user + "' logged in."));
 			if (allow == UserChangeAllowance.REFRESH) {
