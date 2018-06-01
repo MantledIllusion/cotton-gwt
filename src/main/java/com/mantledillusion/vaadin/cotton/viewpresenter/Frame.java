@@ -1,6 +1,7 @@
 package com.mantledillusion.vaadin.cotton.viewpresenter;
 
 import java.lang.reflect.Constructor;
+import java.util.EventObject;
 
 import com.mantledillusion.injection.hura.Processor.Phase;
 import com.mantledillusion.injection.hura.annotation.Process;
@@ -20,6 +21,9 @@ import com.vaadin.ui.Window;
  * Note that since the {@link Frame} will be embedded into a {@link Window}, it
  * cannot be added as a child to a different parent {@link Component}; doing so
  * will result in a {@link WebException}.
+ * <p>
+ * The frame fires events like {@link FrameShownEvent} and
+ * {@link FrameClosedEvent} using {@link Frame#FRAME_COMPONENT_ID}.
  */
 public abstract class Frame extends View {
 
@@ -88,7 +92,7 @@ public abstract class Frame extends View {
 		this.allowSetParent = false;
 
 		Component ui = super.setupUI(reg);
-		reg.registerActiveComponent(FRAME_COMPONENT_ID, this.window);
+		reg.registerActiveComponent(FRAME_COMPONENT_ID, this);
 
 		return ui;
 	}
@@ -109,7 +113,7 @@ public abstract class Frame extends View {
 					+ " types cannot be added to any other component than their own window.");
 		}
 	}
-	
+
 	@Process(Phase.DESTROY)
 	private void detachWindowFromUI() {
 		this.window.close();
@@ -120,10 +124,35 @@ public abstract class Frame extends View {
 	// #########################################################################################################################################
 
 	/**
+	 * Event that occurs when a {@link Frame} is shown.
+	 */
+	public static final class FrameShownEvent extends EventObject {
+
+		private static final long serialVersionUID = 1L;
+
+		private FrameShownEvent(Frame source) {
+			super(source);
+		}
+	}
+
+	/**
 	 * Adds this frame to the current {@link UI} to show it.
 	 */
 	protected final void show() {
 		UI.getCurrent().addWindow(this.window);
+		fireEvent(new FrameShownEvent(this));
+	}
+
+	/**
+	 * Event that occurs when a {@link Frame} is closed.
+	 */
+	public static final class FrameClosedEvent extends EventObject {
+
+		private static final long serialVersionUID = 1L;
+
+		private FrameClosedEvent(Frame source) {
+			super(source);
+		}
 	}
 
 	/**
@@ -131,6 +160,7 @@ public abstract class Frame extends View {
 	 */
 	protected final void close() {
 		this.window.close();
+		fireEvent(new FrameClosedEvent(this));
 	}
 
 	// #########################################################################################################################################
