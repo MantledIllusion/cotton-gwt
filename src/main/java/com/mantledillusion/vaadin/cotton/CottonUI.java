@@ -293,7 +293,8 @@ final class CottonUI extends com.vaadin.ui.UI {
 			urlPath = redirectedPath;
 		}
 
-		if (isNavigationAllowed(navigationType, navigationInitiator)) {
+		navigationType = redetermineNavigationType(navigationType, navigationInitiator);
+		if (navigationType != null) {
 			if (keepLanguageParam && !params.containsKey(QUERY_PARAM_KEY_LANGUAGE)
 					&& this.currentParams.containsKey(QUERY_PARAM_KEY_LANGUAGE)) {
 				params.put(QUERY_PARAM_KEY_LANGUAGE, this.currentParams.get(QUERY_PARAM_KEY_LANGUAGE));
@@ -377,10 +378,18 @@ final class CottonUI extends com.vaadin.ui.UI {
 		return view;
 	}
 
-	private boolean isNavigationAllowed(NavigationType navigationChangeType, NavigationInitiator navigationInitiator) {
+	private NavigationType redetermineNavigationType(NavigationType navigationChangeType, NavigationInitiator navigationInitiator) {
 		NavigationAnnouncementEvent event = new NavigationAnnouncementEvent(navigationChangeType, navigationInitiator);
 		this.eventBus.dispatch(event, null);
-		return event.doAccept();
+		if (event.doAccept()) {
+			if (navigationChangeType == NavigationType.QUERY_PARAM_CHANGE && event.doRefresh()) {
+				return NavigationType.SEGMENT_CHANGE;
+			} else {
+				return navigationChangeType;
+			}
+		} else {
+			return null;
+		}
 	}
 
 	// ########## Internally Usable ##########
