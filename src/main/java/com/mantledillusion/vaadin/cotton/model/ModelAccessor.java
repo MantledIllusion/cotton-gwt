@@ -199,9 +199,21 @@ public class ModelAccessor<ModelType> extends ModelBinder<ModelType> {
 	}
 
 	@Override
+	public <PropertyType> Integer removeProperty(ListedProperty<ModelType, PropertyType> property,
+			PropertyType element) {
+		return this.parent.removeProperty(property, element, this.indexContext);
+	}
+	
+	@Override
 	public final <PropertyType> PropertyType removeProperty(ListedProperty<ModelType, PropertyType> property,
 			IndexContext indexContext) {
 		return this.parent.removeProperty(property, this.indexContext.union(indexContext));
+	}
+
+	@Override
+	public <PropertyType> Integer removeProperty(ListedProperty<ModelType, PropertyType> property, PropertyType element,
+			IndexContext indexContext) {
+		return this.parent.removeProperty(property, element, this.indexContext.union(indexContext));
 	}
 
 	// ######################################################################################################################################

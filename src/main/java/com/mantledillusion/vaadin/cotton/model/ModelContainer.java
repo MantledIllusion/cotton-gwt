@@ -251,6 +251,12 @@ public final class ModelContainer<ModelType> extends ModelProxy<ModelType> {
 	}
 
 	@Override
+	public <PropertyType> Integer removeProperty(ListedProperty<ModelType, PropertyType> property,
+			PropertyType element) {
+		return removeProperty(property, element, IndexContext.EMPTY);
+	}
+
+	@Override
 	public <PropertyType> PropertyType removeProperty(ListedProperty<ModelType, PropertyType> property,
 			IndexContext indexContext) {
 		indexContext = ObjectUtils.defaultIfNull(indexContext, IndexContext.EMPTY);
@@ -263,6 +269,25 @@ public final class ModelContainer<ModelType> extends ModelProxy<ModelType> {
 		updatePropertyBoundFieldsOfChildren(property, indexContext.intersection(Collections.singleton(property)));
 
 		return value;
+	}
+
+	@Override
+	public <PropertyType> Integer removeProperty(ListedProperty<ModelType, PropertyType> property, PropertyType element,
+			IndexContext indexContext) {
+		indexContext = ObjectUtils.defaultIfNull(indexContext, IndexContext.EMPTY);
+		Integer index = property.remove(this.dataModel, element, indexContext);
+
+		if (index != null) {
+			indexContext = indexContext.union(PropertyIndex.of(property, index));
+
+			registerPropertyChange(property, indexContext);
+
+			updatePropertyIndexOfChildren(property, indexContext, -1);
+
+			updatePropertyBoundFieldsOfChildren(property, indexContext.intersection(Collections.singleton(property)));
+		}
+
+		return index;
 	}
 
 	private void registerPropertyChange(ReadableProperty<ModelType, ?> property, IndexContext indexContext) {
