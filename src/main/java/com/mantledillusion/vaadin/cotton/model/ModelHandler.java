@@ -333,5 +333,5 @@ public interface ModelHandler<ModelType> {
 	 *         property is null
 	 */
 	<PropertyType> Integer removeProperty(ListedProperty<ModelType, PropertyType> property, PropertyType element,
-			IndexContext indexContext);
+			IndexContext context);
 }
