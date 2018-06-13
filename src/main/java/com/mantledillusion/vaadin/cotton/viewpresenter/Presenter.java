@@ -20,12 +20,11 @@ import com.vaadin.ui.AbstractComponent;
  * life cycles.
  * <P>
  * Instances of sub types of {@link Presenter} will be instantiated
- * automatically during injection for every {@link View} implementation
- * that requires controlling by an @{@link Presented} annotation on that view
- * type.
+ * automatically during injection for every {@link View} implementation that
+ * requires controlling by an @{@link Presented} annotation on that view type.
  * <P>
- * The {@link Presenter} will automatically be connected to the view it
- * belongs to, that view can be retrieved by calling {@link #getView()}.
+ * The {@link Presenter} will automatically be connected to the view it belongs
+ * to, that view can be retrieved by calling {@link #getView()}.
  * <P>
  * All {@link Method}s of this {@link Presenter} implementation that are
  * annotated with @{@link Listen} will receive specifiable events of
@@ -33,22 +32,21 @@ import com.vaadin.ui.AbstractComponent;
  * active component to the {@link TemporalActiveComponentRegistry} during the
  * view's UI build; see the documentation of @{@link Listen} for details.
  * <P>
- * Since {@link Presenter} extends {@link EventBusSubscriber},
- * all {@link Method}s of an {@link Presenter} implementation that are
- * annotated with @{@link Subscribe} will receive specifiable events of other
- * {@link EventBusSubscriber}s; see the documentation
- * of @{@link Subscribe} for reference.
+ * Since {@link Presenter} extends {@link EventBusSubscriber}, all
+ * {@link Method}s of an {@link Presenter} implementation that are annotated
+ * with @{@link Subscribe} will receive specifiable events of other
+ * {@link EventBusSubscriber}s; see the documentation of @{@link Subscribe} for
+ * reference.
  *
  * @param <T>
- *            The type of {@link View} this {@link Presenter}
- *            can control.
+ *            The type of {@link View} this {@link Presenter} can control.
  */
 public abstract class Presenter<T extends View> extends EventBusSubscriber {
-	
+
 	// #########################################################################################################################################
 	// ################################################################ LISTEN #################################################################
 	// #########################################################################################################################################
-	
+
 	static class ListenValidator implements AnnotationValidator<Listen, Method> {
 
 		@Override
@@ -68,17 +66,17 @@ public abstract class Presenter<T extends View> extends EventBusSubscriber {
 			} else if (annotatedElement.getParameterCount() > 1) {
 				throw new WebException(HttpErrorCodes.HTTP904_ILLEGAL_ANNOTATION_USE,
 						"Methods annotated with @" + Listen.class.getSimpleName()
-								+ " are only allowed to have 0 or 1 parameters. The method " + annotatedElement.getName()
-								+ " of the type '" + listeningType.getSimpleName() + "' however has "
-								+ annotatedElement.getParameterCount());
+								+ " are only allowed to have 0 or 1 parameters. The method "
+								+ annotatedElement.getName() + " of the type '" + listeningType.getSimpleName()
+								+ "' however has " + annotatedElement.getParameterCount());
 			}
 		}
 	}
-	
+
 	// #########################################################################################################################################
 	// ############################################################### SUBSCRIBE ###############################################################
 	// #########################################################################################################################################
-	
+
 	static class SubscribeValidator implements AnnotationValidator<Subscribe, Method> {
 
 		@Override
@@ -92,29 +90,39 @@ public abstract class Presenter<T extends View> extends EventBusSubscriber {
 								+ subscribingType.getSimpleName() + "' however is not.");
 			} else if (Modifier.isStatic(annotatedElement.getModifiers())) {
 				throw new WebException(HttpErrorCodes.HTTP904_ILLEGAL_ANNOTATION_USE,
-						"The method '" + annotatedElement.getName() + "' of the type '" + subscribingType.getSimpleName()
-								+ "' annotated with @" + Subscribe.class.getSimpleName()
-								+ " is static, which is not allowed.");
-			} else if (annotatedElement.getParameterCount() != 1) {
+						"The method '" + annotatedElement.getName() + "' of the type '"
+								+ subscribingType.getSimpleName() + "' annotated with @"
+								+ Subscribe.class.getSimpleName() + " is static, which is not allowed.");
+			} else if (annotatedElement.getParameterCount() == 0 && annotationInstance.anonymousEvents().length == 0) {
+				throw new WebException(HttpErrorCodes.HTTP904_ILLEGAL_ANNOTATION_USE, "Methods annotated with "
+						+ Subscribe.class.getSimpleName()
+						+ " are only allowed to have no parameter if there is at least one anonymous event type set; the method '"
+						+ annotatedElement.getName() + "' of the type '" + subscribingType.getSimpleName()
+						+ "' however has 0 of both.F");
+			} else if (annotatedElement.getParameterCount() > 1) {
 				throw new WebException(HttpErrorCodes.HTTP904_ILLEGAL_ANNOTATION_USE,
 						"Methods annotated with " + Subscribe.class.getSimpleName()
-								+ " are only allowed to have 1 parameter; the method '" + annotatedElement.getName()
-								+ "' of the type '" + subscribingType.getSimpleName() + "' however has "
-								+ annotatedElement.getParameterCount());
+								+ " are only allowed to have a maximum of 1 parameter; the method '"
+								+ annotatedElement.getName() + "' of the type '" + subscribingType.getSimpleName()
+								+ "' however has " + annotatedElement.getParameterCount());
 			}
 
-			Class<?> eventType = annotatedElement.getParameterTypes()[0];
+			if (annotatedElement.getParameterCount() > 0) {
+				Class<?> eventType = annotatedElement.getParameterTypes()[0];
 
-			if (!BusEvent.class.isAssignableFrom(eventType)) {
-				throw new WebException(HttpErrorCodes.HTTP904_ILLEGAL_ANNOTATION_USE, "Methods annotated with "
-						+ Subscribe.class.getSimpleName() + " are only allowed to have 1 parameter that is a sub type of "
-						+ BusEvent.class.getSimpleName() + "; the method '" + annotatedElement.getName()
-						+ "' of the type '" + subscribingType.getSimpleName() + "' however has 1 parameter of the type '"
-						+ eventType.getSimpleName() + "' which is not.");
+				if (!BusEvent.class.isAssignableFrom(eventType)) {
+					throw new WebException(HttpErrorCodes.HTTP904_ILLEGAL_ANNOTATION_USE,
+							"Methods annotated with " + Subscribe.class.getSimpleName()
+									+ " are only allowed to have 1 parameter that is a sub type of "
+									+ BusEvent.class.getSimpleName() + "; the method '" + annotatedElement.getName()
+									+ "' of the type '" + subscribingType.getSimpleName()
+									+ "' however has 1 parameter of the type '" + eventType.getSimpleName()
+									+ "' which is not.");
+				}
 			}
 		}
 	}
-	
+
 	// #########################################################################################################################################
 	// ################################################################## TYPE #################################################################
 	// #########################################################################################################################################
