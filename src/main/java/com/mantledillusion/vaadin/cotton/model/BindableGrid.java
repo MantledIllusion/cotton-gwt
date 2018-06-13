@@ -23,19 +23,21 @@ import com.mantledillusion.vaadin.cotton.WebEnv;
 import com.mantledillusion.vaadin.cotton.component.ComponentFactory;
 import com.mantledillusion.vaadin.cotton.exception.WebException;
 import com.mantledillusion.vaadin.cotton.exception.WebException.HttpErrorCodes;
-import com.mantledillusion.vaadin.cotton.model.BindableGrid.BindableTableSelectionEvent.SelectionEventType;
+import com.mantledillusion.vaadin.cotton.model.BindableGrid.BindableGridSelectionEvent.SelectionEventType;
 import com.vaadin.data.ValueProvider;
 import com.vaadin.data.provider.ListDataProvider;
 import com.vaadin.event.selection.MultiSelectionEvent;
 import com.vaadin.event.selection.SelectionEvent;
 import com.vaadin.event.selection.SelectionListener;
 import com.vaadin.event.selection.SingleSelectionEvent;
+import com.vaadin.shared.Registration;
 import com.vaadin.ui.Component;
 import com.vaadin.ui.Composite;
 import com.vaadin.ui.Grid;
 import com.vaadin.ui.Grid.Column;
 import com.vaadin.ui.TextField;
 import com.vaadin.ui.renderers.AbstractRenderer;
+import com.vaadin.ui.renderers.ClickableRenderer;
 import com.vaadin.ui.renderers.TextRenderer;
 
 /**
@@ -91,7 +93,8 @@ public final class BindableGrid<RowType, ModelType> extends Composite {
 	}
 
 	/**
-	 * 
+	 * Base type of {@link ModelProperty} based columns that can be added to a
+	 * {@link BindableGrid}.
 	 * <p>
 	 * A single {@link PropertyColumn} instance can be added to multiple
 	 * {@link BindableGrid}s without any problem, as the raw implementation is
@@ -146,8 +149,10 @@ public final class BindableGrid<RowType, ModelType> extends Composite {
 		 * @param property
 		 *            The {@link ModelProperty} to render; might <b>not</b> be null.
 		 * @param renderer
-		 *            The {@link AbstractRenderer} to render with; might <b>not</b> be
-		 *            null.
+		 *            The {@link AbstractRenderer} to render with. If the renderer is a
+		 *            {@link ClickableRenderer}, the column will automatically cause the
+		 *            {@link BindableGrid} to throw {@link BindableGridClickEvent}s.
+		 *            Might <b>not</b> be null.
 		 * @return A new {@link PropertyRenderedColumn} instance, never null
 		 */
 		public static <ModelType, RenderType> PropertyRenderedColumn<ModelType, RenderType> of(
@@ -181,8 +186,10 @@ public final class BindableGrid<RowType, ModelType> extends Composite {
 		 *            The {@link ValueProvider} to convert to the render type with;
 		 *            might <b>not</b> be null.
 		 * @param renderer
-		 *            The {@link AbstractRenderer} to render with; might <b>not</b> be
-		 *            null.
+		 *            The {@link AbstractRenderer} to render with. If the renderer is a
+		 *            {@link ClickableRenderer}, the column will automatically cause the
+		 *            {@link BindableGrid} to throw {@link BindableGridClickEvent}s.
+		 *            Might <b>not</b> be null.
 		 * @return A new {@link PropertyRenderedColumn} instance, never null
 		 */
 		public static <ModelType, PropertyType, RenderType> PropertyRenderedColumn<ModelType, RenderType> of(
@@ -480,8 +487,10 @@ public final class BindableGrid<RowType, ModelType> extends Composite {
 	private final IdentityHashMap<PropertyColumn<?>, String> columnRegistry = new IdentityHashMap<>();
 	private final Grid<RowWrapper> grid = new Grid<>(this.dataProvider);
 
-	private final SelectionListener<RowWrapper> gridSelectionListener = new MultiModeSelectionListener();
-	private final Set<BindableTableSelectionEventListener<RowType>> selectionListeners = new HashSet<>();
+	private final MultiModeSelectionListener gridSelectionListener = new MultiModeSelectionListener();
+	private final Set<BindableGridSelectionEventListener<RowType>> selectionListeners = new HashSet<>();
+	private final IdentityHashMap<PropertyColumn<?>, Registration> clickRegistrations = new IdentityHashMap<>();
+	private final IdentityHashMap<PropertyColumn<?>, Set<BindableGridClickEventListener<RowType>>> clickListeners = new IdentityHashMap<>();
 
 	BindableGrid(ModelBinder<ModelType> parent, ListedProperty<ModelType, RowType> listedProperty) {
 		if (parent == null) {
@@ -520,14 +529,18 @@ public final class BindableGrid<RowType, ModelType> extends Composite {
 			}
 		}
 
+		this.gridSelectionListener.isActive = false;
 		Set<Integer> selectIndeces = getSelectedIndeces();
 		Set<RowType> abandoned = new HashSet<>();
 		for (Integer destoryableIndex : this.itemRegistry.values()) {
-			RowType destroyed = destroyItem(this.itemCollection.get(destoryableIndex));
+			RowWrapper wrapper = this.itemCollection.get(destoryableIndex);
+			RowType destroyed = destroyItem(wrapper);
 			if (selectIndeces.contains(destoryableIndex)) {
 				abandoned.add(destroyed);
+				this.grid.getSelectionModel().deselect(wrapper);
 			}
 		}
+		this.gridSelectionListener.isActive = true;
 
 		this.itemRegistry.clear();
 		this.itemRegistry.putAll(newRegistry);
@@ -537,7 +550,7 @@ public final class BindableGrid<RowType, ModelType> extends Composite {
 		this.dataProvider.refreshAll();
 
 		if (!abandoned.isEmpty()) {
-			fireSelectionEvent(new BindableTableSelectionEvent<RowType>(this, abandoned));
+			fireSelectionEvent(new BindableGridSelectionEvent<RowType>(this, abandoned));
 		}
 	}
 
@@ -633,6 +646,14 @@ public final class BindableGrid<RowType, ModelType> extends Composite {
 				return column.getRenderableValue(source.accessor);
 			}
 		}, column.renderer);
+
+		if (column.renderer instanceof ClickableRenderer) {
+			@SuppressWarnings("unchecked")
+			Registration reg = ((ClickableRenderer<?, ?>) column.renderer).addClickListener(
+					clickEvent -> BindableGrid.this.fireClickEvent(column, new BindableGridClickEvent<>(
+							BindableGrid.this, column.property, ((RowWrapper) clickEvent.getItem()).item)));
+			this.clickRegistrations.put(column, reg);
+		}
 
 		gridColumn.setId(columnId);
 
@@ -754,7 +775,15 @@ public final class BindableGrid<RowType, ModelType> extends Composite {
 			throw new WebException(HttpErrorCodes.HTTP901_ILLEGAL_ARGUMENT_ERROR,
 					"A column to remove from a table can never be null.");
 		}
+
+		if (this.clickRegistrations.containsKey(column)) {
+			this.clickRegistrations.get(column).remove();
+		}
+
 		String columnId = this.columnRegistry.remove(column);
+		this.clickRegistrations.remove(column);
+		this.clickListeners.remove(column);
+
 		this.grid.removeColumn(columnId);
 	}
 
@@ -766,35 +795,39 @@ public final class BindableGrid<RowType, ModelType> extends Composite {
 
 		private static final long serialVersionUID = 1L;
 
+		private boolean isActive = true;
+		
 		@Override
 		public void selectionChange(SelectionEvent<RowWrapper> event) {
-			Set<RowType> deselected;
-			Set<RowType> selected;
-			if (event instanceof SingleSelectionEvent) {
-				SingleSelectionEvent<RowWrapper> ssEvent = (SingleSelectionEvent<RowWrapper>) event;
-				deselected = ssEvent.getOldValue() != null ? Collections.singleton(ssEvent.getOldValue().item)
-						: Collections.emptySet();
-				selected = ssEvent.getSelectedItem().isPresent()
-						? Collections.singleton(ssEvent.getSelectedItem().get().item)
-						: Collections.emptySet();
-			} else {
-				MultiSelectionEvent<RowWrapper> msEvent = (MultiSelectionEvent<RowWrapper>) event;
-				deselected = msEvent.getRemovedSelection().stream().map((wrapper) -> wrapper.item)
-						.collect(Collectors.toSet());
-				selected = msEvent.getAddedSelection().stream().map((wrapper) -> wrapper.item)
-						.collect(Collectors.toSet());
-			}
+			if (this.isActive) {
+				Set<RowType> deselected;
+				Set<RowType> selected;
+				if (event instanceof SingleSelectionEvent) {
+					SingleSelectionEvent<RowWrapper> ssEvent = (SingleSelectionEvent<RowWrapper>) event;
+					deselected = ssEvent.getOldValue() != null ? Collections.singleton(ssEvent.getOldValue().item)
+							: Collections.emptySet();
+					selected = ssEvent.getSelectedItem().isPresent()
+							? Collections.singleton(ssEvent.getSelectedItem().get().item)
+							: Collections.emptySet();
+				} else {
+					MultiSelectionEvent<RowWrapper> msEvent = (MultiSelectionEvent<RowWrapper>) event;
+					deselected = msEvent.getRemovedSelection().stream().map((wrapper) -> wrapper.item)
+							.collect(Collectors.toSet());
+					selected = msEvent.getAddedSelection().stream().map((wrapper) -> wrapper.item)
+							.collect(Collectors.toSet());
+				}
 
-			SelectionEventType eventType;
-			if (selected.isEmpty()) {
-				eventType = SelectionEventType.DESELECTION;
-			} else if (deselected.isEmpty()) {
-				eventType = SelectionEventType.SELECTION;
-			} else {
-				eventType = SelectionEventType.SWITCH;
-			}
+				SelectionEventType eventType;
+				if (selected.isEmpty()) {
+					eventType = SelectionEventType.DESELECTION;
+				} else if (deselected.isEmpty()) {
+					eventType = SelectionEventType.SELECTION;
+				} else {
+					eventType = SelectionEventType.SWITCH;
+				}
 
-			fireSelectionEvent(new BindableTableSelectionEvent<>(BindableGrid.this, eventType, selected, deselected));
+				fireSelectionEvent(new BindableGridSelectionEvent<>(BindableGrid.this, eventType, selected, deselected));
+			}
 		}
 	}
 
@@ -843,6 +876,15 @@ public final class BindableGrid<RowType, ModelType> extends Composite {
 	// ######################################################################################################################################
 	// ######################################################### ITEM SELECTION #############################################################
 	// ######################################################################################################################################
+
+	/**
+	 * Returns whether there are selected items.
+	 * 
+	 * @return True if there is at least one selected item, false otherwise
+	 */
+	public boolean hasSelectedItems() {
+		return !this.grid.getSelectedItems().isEmpty();
+	}
 
 	/**
 	 * Returns the index of the currently selected item.
@@ -954,11 +996,11 @@ public final class BindableGrid<RowType, ModelType> extends Composite {
 	// ############################################################## EVENT #################################################################
 	// ######################################################################################################################################
 
-	private static abstract class BindableTableEvent extends EventObject {
+	private static abstract class BindableGridEvent extends EventObject {
 
 		private static final long serialVersionUID = 1L;
 
-		private BindableTableEvent(BindableGrid<?, ?> source) {
+		private BindableGridEvent(BindableGrid<?, ?> source) {
 			super(source);
 		}
 	}
@@ -968,12 +1010,12 @@ public final class BindableGrid<RowType, ModelType> extends Composite {
 	/**
 	 * Event that occurs on selection changes.
 	 */
-	public static final class BindableTableSelectionEvent<RowType> extends BindableTableEvent {
+	public static final class BindableGridSelectionEvent<RowType> extends BindableGridEvent {
 
 		private static final long serialVersionUID = 1L;
 
 		/**
-		 * Describes the type of {@link BindableTableSelectionEvent}.
+		 * Describes the type of {@link BindableGridSelectionEvent}.
 		 */
 		public static enum SelectionEventType {
 
@@ -1004,7 +1046,7 @@ public final class BindableGrid<RowType, ModelType> extends Composite {
 		private final Set<RowType> deselected;
 		private final Set<RowType> abandoned;
 
-		private BindableTableSelectionEvent(BindableGrid<RowType, ?> source, SelectionEventType eventType,
+		private BindableGridSelectionEvent(BindableGrid<RowType, ?> source, SelectionEventType eventType,
 				Set<RowType> selected, Set<RowType> deselected) {
 			super(source);
 			this.eventType = eventType;
@@ -1013,7 +1055,7 @@ public final class BindableGrid<RowType, ModelType> extends Composite {
 			this.abandoned = Collections.emptySet();
 		}
 
-		private BindableTableSelectionEvent(BindableGrid<RowType, ?> source, Set<RowType> abandoned) {
+		private BindableGridSelectionEvent(BindableGrid<RowType, ?> source, Set<RowType> abandoned) {
 			super(source);
 			this.eventType = SelectionEventType.ABANDON;
 			this.selected = Collections.emptySet();
@@ -1023,7 +1065,7 @@ public final class BindableGrid<RowType, ModelType> extends Composite {
 
 		/**
 		 * Returns the items whose selection is the reason for this
-		 * {@link BindableTableSelectionEvent} to occur.
+		 * {@link BindableGridSelectionEvent} to occur.
 		 * 
 		 * @return The newly selected items; might be empty.
 		 */
@@ -1033,7 +1075,7 @@ public final class BindableGrid<RowType, ModelType> extends Composite {
 
 		/**
 		 * Returns the items whose deselection is the reason for this
-		 * {@link BindableTableSelectionEvent} to occur.
+		 * {@link BindableGridSelectionEvent} to occur.
 		 * 
 		 * @return The now deselected items; might be empty.
 		 */
@@ -1043,7 +1085,7 @@ public final class BindableGrid<RowType, ModelType> extends Composite {
 
 		/**
 		 * Returns the removed items whose depleted selection is the reason for this
-		 * {@link BindableTableSelectionEvent} to occur.
+		 * {@link BindableGridSelectionEvent} to occur.
 		 * 
 		 * @return The abandoned items; might be empty.
 		 */
@@ -1072,48 +1114,134 @@ public final class BindableGrid<RowType, ModelType> extends Composite {
 	}
 
 	/**
-	 * Listener for {@link BindableTableSelectionEvent}s.
+	 * Listener for {@link BindableGridSelectionEvent}s.
 	 */
-	public interface BindableTableSelectionEventListener<RowType> {
+	public interface BindableGridSelectionEventListener<RowType> {
 
 		/**
-		 * Has to handle a occurring {@link BindableTableSelectionEvent}.
+		 * Has to handle a occurring {@link BindableGridSelectionEvent}.
 		 * 
 		 * @param event
 		 *            The occurring event.
 		 */
-		public void onSelectionChange(BindableTableSelectionEvent<RowType> event);
+		public void onSelectionChange(BindableGridSelectionEvent<RowType> event);
 	}
 
-	private void fireSelectionEvent(BindableTableSelectionEvent<RowType> event) {
-		for (BindableTableSelectionEventListener<RowType> listener : this.selectionListeners) {
+	private void fireSelectionEvent(BindableGridSelectionEvent<RowType> event) {
+		for (BindableGridSelectionEventListener<RowType> listener : this.selectionListeners) {
 			listener.onSelectionChange(event);
 		}
 		fireEvent(event);
 	}
 
 	/**
-	 * Adds the given {@link BindableTableSelectionEventListener} to listen for
-	 * {@link BindableTableSelectionEvent}s.
+	 * Adds the given {@link BindableGridSelectionEventListener} to listen for
+	 * {@link BindableGridSelectionEvent}s.
 	 * 
 	 * @param listener
 	 *            The listener to add; might <b>not</b> be null.
+	 * @return The {@link Registration} allowing to unhook the given listener later;
+	 *         never null
 	 */
-	public void addSelectionListener(BindableTableSelectionEventListener<RowType> listener) {
+	public Registration addSelectionListener(BindableGridSelectionEventListener<RowType> listener) {
 		if (listener == null) {
 			throw new WebException(HttpErrorCodes.HTTP901_ILLEGAL_ARGUMENT_ERROR, "Cannot add a null listener.");
 		}
 
 		this.selectionListeners.add(listener);
+		return () -> this.selectionListeners.remove(listener);
+	}
+
+	// CLICK
+
+	public static final class BindableGridClickEvent<RowType> extends BindableGridEvent {
+
+		private static final long serialVersionUID = 1L;
+
+		private final ReadableProperty<?, ?> property;
+		private final RowType clicked;
+
+		private BindableGridClickEvent(BindableGrid<RowType, ?> source, ReadableProperty<?, ?> property,
+				RowType clicked) {
+			super(source);
+			this.property = property;
+			this.clicked = clicked;
+		}
+
+		/**
+		 * Returns the property of the {@link PropertyRenderedColumn} this event
+		 * occurred on.
+		 * 
+		 * @return The property; never null
+		 */
+		public ReadableProperty<?, ?> getProperty() {
+			return property;
+		}
+
+		/**
+		 * Returns the item of the row on which a column was clicked.
+		 * 
+		 * @return The row item; might be null
+		 */
+		public RowType getClicked() {
+			return clicked;
+		}
 	}
 
 	/**
-	 * Remove the given {@link BindableTableSelectionEventListener}.
+	 * Listener for {@link BindableGridClickEvent}s.
+	 */
+	public interface BindableGridClickEventListener<RowType> {
+
+		/**
+		 * Has to handle a occurring {@link BindableGridClickEvent}.
+		 * 
+		 * @param event
+		 *            The occurring event.
+		 */
+		public void onClick(BindableGridClickEvent<RowType> event);
+	}
+
+	private <PropertyType> void fireClickEvent(PropertyRenderedColumn<ModelType, ?> column,
+			BindableGridClickEvent<RowType> event) {
+		if (this.clickListeners.containsKey(column)) {
+			for (BindableGridClickEventListener<RowType> listener : this.clickListeners.get(column)) {
+				listener.onClick(event);
+			}
+		}
+		fireEvent(event);
+	}
+
+	/**
+	 * Adds the given {@link BindableGridClickEventListener} to listen for
+	 * {@link BindableGridClickEvent}s of the given column.
 	 * 
 	 * @param listener
-	 *            The listener to remove.
+	 *            The listener to add; might <b>not</b> be null.
+	 * @return The {@link Registration} allowing to unhook the given listener later;
+	 *         never null
 	 */
-	public void removeSelectionListener(BindableTableSelectionEventListener<RowType> listener) {
-		this.selectionListeners.remove(listener);
+	public Registration addClickListener(BindableGridClickEventListener<RowType> listener,
+			PropertyRenderedColumn<ModelType, ?> column) {
+		if (listener == null) {
+			throw new WebException(HttpErrorCodes.HTTP901_ILLEGAL_ARGUMENT_ERROR, "Cannot add a null listener.");
+		} else if (column == null) {
+			throw new WebException(HttpErrorCodes.HTTP901_ILLEGAL_ARGUMENT_ERROR,
+					"Cannot add a listener for a null column.");
+		} else if (!this.columnRegistry.containsKey(column)) {
+			throw new WebException(HttpErrorCodes.HTTP901_ILLEGAL_ARGUMENT_ERROR,
+					"Cannot add a listener for a column that is not added to this grid.");
+		}
+
+		if (!this.clickListeners.containsKey(column)) {
+			this.clickListeners.put(column, new HashSet<>());
+		}
+		this.clickListeners.get(column).add(listener);
+
+		return () -> {
+			if (this.clickListeners.containsKey(column)) {
+				this.clickListeners.get(column).remove(listener);
+			}
+		};
 	}
 }
