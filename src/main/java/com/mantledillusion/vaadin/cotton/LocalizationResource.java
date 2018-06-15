@@ -37,6 +37,10 @@ final class LocalizationResource {
 							.toArray()));
 		}
 	}
+	
+	boolean hasLocalization(String msgId) {
+		return this.bundles.containsKey(msgId);
+	}
 
 	String renderMessage(String msgId, Object... params) {
 		if (this.bundles.containsKey(msgId)) {

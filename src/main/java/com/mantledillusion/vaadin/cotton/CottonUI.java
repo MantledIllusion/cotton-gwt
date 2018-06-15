@@ -528,6 +528,16 @@ final class CottonUI extends com.vaadin.ui.UI {
 			refresh();
 		}
 	}
+	
+	final boolean canLocalize(String msgId) {
+		if (msgId != null) {
+			String lang = getCurrentLocale().getISO3Language();
+			if (this.resourceBundleRegistry.containsKey(lang)) {
+				return this.resourceBundleRegistry.get(lang).hasLocalization(msgId);
+			}
+		}
+		return false;
+	}
 
 	final String localize(String msgId, Object... messageParameters) {
 		if (msgId != null) {
