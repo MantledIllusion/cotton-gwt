@@ -4,6 +4,7 @@ import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.Set;
 
@@ -209,6 +210,8 @@ public final class WebEnv {
 	 * Localizes the given message identifier with the current session's locale
 	 * using the {@link ResourceBundle}s configured at the {@link CottonServlet} for
 	 * that language.
+	 * <p>
+	 * No message parameters will be injected.
 	 * <P>
 	 * Depending on the current language's {@link Locale}, the given message
 	 * parameters may also be localized during insertion into the message.
@@ -222,13 +225,44 @@ public final class WebEnv {
 	 *         localization was not possible
 	 */
 	public static <T> String localize(String msgId) {
-		return localize(msgId);
+		return CottonUI.current().localize(msgId, Collections.emptyMap());
 	}
 
 	/**
 	 * Localizes the given message identifier with the current session's locale
 	 * using the {@link ResourceBundle}s configured at the {@link CottonServlet} for
 	 * that language.
+	 * <p>
+	 * The given message parameters will be injected by their index, so a
+	 * <code>{0}</code> block in the message will be replaced with the first given
+	 * parameter.
+	 * <P>
+	 * Depending on the current language's {@link Locale}, the given message
+	 * parameters may also be localized during insertion into the message.
+	 * 
+	 * @param <T>
+	 *            The message parameter type
+	 * @param msgId
+	 *            The message id to localize; may be null or not even a message id.
+	 * @param indexedMessageParameters
+	 *            The parameters to inject into the localized message. Will only be
+	 *            used if the message id could be localized.
+	 * @return A localized and parameter filled message, or the given msgId if
+	 *         localization was not possible
+	 */
+	@SafeVarargs
+	public static <T> String localize(String msgId, T... indexedMessageParameters) {
+		return CottonUI.current().localize(msgId, Collections.emptyMap(), indexedMessageParameters);
+	}
+
+	/**
+	 * Localizes the given message identifier with the current session's locale
+	 * using the {@link ResourceBundle}s configured at the {@link CottonServlet} for
+	 * that language.
+	 * <p>
+	 * The given message parameters will be injected by their name, so a
+	 * <code>{foobar}</code> block in the message will be replaced with the message
+	 * parameter whose key is 'foobar'.
 	 * <P>
 	 * Depending on the current language's {@link Locale}, the given message
 	 * parameters may also be localized during insertion into the message.
@@ -243,9 +277,9 @@ public final class WebEnv {
 	 * @return A localized and parameter filled message, or the given msgId if
 	 *         localization was not possible
 	 */
-	@SafeVarargs
-	public static <T> String localize(String msgId, T... messageParameters) {
-		return CottonUI.current().localize(msgId, messageParameters);
+	@SuppressWarnings("unchecked")
+	public static <T> String localize(String msgId, Map<String, T> messageParameters) {
+		return CottonUI.current().localize(msgId, (Map<String, Object>) messageParameters);
 	}
 
 	// #########################################################################################################################################

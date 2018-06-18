@@ -30,6 +30,7 @@ import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -539,11 +540,11 @@ final class CottonUI extends com.vaadin.ui.UI {
 		return false;
 	}
 
-	final String localize(String msgId, Object... messageParameters) {
+	final String localize(String msgId, Map<String, Object> namedMsgParameters, Object... indexedMsgParameters) {
 		if (msgId != null) {
 			String lang = getCurrentLocale().getISO3Language();
 			if (this.resourceBundleRegistry.containsKey(lang)) {
-				return this.resourceBundleRegistry.get(lang).renderMessage(msgId, messageParameters);
+				return this.resourceBundleRegistry.get(lang).renderMessage(msgId, namedMsgParameters, indexedMsgParameters);
 			} else if (msgId.matches(REGEX_TYPICAL_MESSAGE_ID)) {
 				CottonUI.LOGGER.warn("Unable to localize '" + msgId + "'; no bundle for language '" + lang + "'.");
 			}
