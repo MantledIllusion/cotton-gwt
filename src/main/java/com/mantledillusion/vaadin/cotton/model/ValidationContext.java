@@ -15,9 +15,9 @@ import org.apache.commons.lang3.tuple.Pair;
 
 import com.mantledillusion.essentials.reflection.TypeEssentials;
 import com.mantledillusion.injection.hura.AnnotationValidator;
-import com.mantledillusion.injection.hura.annotation.Inject.SingletonMode;
 import com.mantledillusion.injection.hura.Injector;
 import com.mantledillusion.injection.hura.Predefinable.Singleton;
+import com.mantledillusion.injection.hura.annotation.Global.SingletonMode;
 import com.mantledillusion.vaadin.cotton.exception.WebException;
 import com.mantledillusion.vaadin.cotton.exception.WebException.HttpErrorCodes;
 

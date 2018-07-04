@@ -3,7 +3,7 @@ package com.mantledillusion.vaadin.cotton;
 import com.mantledillusion.injection.hura.Blueprint;
 import com.mantledillusion.injection.hura.Predefinable;
 import com.mantledillusion.injection.hura.Blueprint.TypedBlueprint;
-import com.mantledillusion.injection.hura.annotation.Inject;
+import com.mantledillusion.injection.hura.annotation.Global.SingletonMode;
 import com.mantledillusion.vaadin.cotton.environment.views.ErrorHandlingDecider;
 import com.mantledillusion.vaadin.cotton.environment.views.ErrorView;
 import com.mantledillusion.vaadin.cotton.exception.WebException;
@@ -483,7 +483,7 @@ public abstract class CottonServlet extends VaadinServlet {
 
 		/**
 		 * Registers the given {@link Predefinable}s (such as
-		 * {@link Predefinable.Property}s or {@link Inject.SingletonMode#GLOBAL}
+		 * {@link Predefinable.Property}s or {@link SingletonMode#GLOBAL}
 		 * {@link Predefinable.Singleton}s) to be available in every injected
 		 * {@link View} (and its injected beans).
 		 *

@@ -88,7 +88,8 @@ public @interface Subscribe {
 	 * A method annotated with @{@link Subscribe} might be parameterless if at least
 	 * one anonymous event is set.
 	 * 
-	 * @return
+	 * @return The {@link BusEvent} types that might trigger the annotated method
+	 *         without being a parameter; never null, empty by default
 	 */
 	Class<? extends BusEvent>[] anonymousEvents() default {};
 }

@@ -17,8 +17,8 @@ import com.mantledillusion.data.epiphy.interfaces.ReadableProperty;
 import com.mantledillusion.injection.hura.Blueprint;
 import com.mantledillusion.injection.hura.Injector;
 import com.mantledillusion.injection.hura.Predefinable.Singleton;
+import com.mantledillusion.injection.hura.annotation.Global;
 import com.mantledillusion.injection.hura.annotation.Inject;
-import com.mantledillusion.injection.hura.annotation.Inject.SingletonMode;
 import com.mantledillusion.vaadin.cotton.WebEnv;
 import com.mantledillusion.vaadin.cotton.component.ComponentFactory;
 import com.mantledillusion.vaadin.cotton.exception.WebException;
@@ -86,8 +86,7 @@ public final class BindableGrid<RowType, ModelType> extends Composite {
 	 */
 	public static final class RowAccessor<ModelType> extends ModelAccessor<ModelType> {
 
-		private RowAccessor(
-				@Inject(value = TABLE_DATA_SOURCE_SINGLETON_ID, singletonMode = SingletonMode.GLOBAL) ModelProxy<ModelType> parentContainer) {
+		private RowAccessor(@Inject(TABLE_DATA_SOURCE_SINGLETON_ID) @Global ModelProxy<ModelType> parentContainer) {
 			super(parentContainer);
 		}
 	}
@@ -175,7 +174,7 @@ public final class BindableGrid<RowType, ModelType> extends Composite {
 		 * @param <ModelType>
 		 *            The root type of the data model the
 		 *            {@link PropertyRenderedColumn}'s row item's list is contained in.
-		 * @param <RenderType>
+		 * @param <PropertyType>
 		 *            The property type that needs to be converted in order to be
 		 *            rendered.
 		 * @param <RenderType>
@@ -621,6 +620,8 @@ public final class BindableGrid<RowType, ModelType> extends Composite {
 	/**
 	 * Adds the given {@link PropertyRenderedColumn} to this {@link BindableGrid}.
 	 * 
+	 * @param <RenderType>
+	 *            The type that is rendered by the column.
 	 * @param column
 	 *            The column to add; might <b>not</b> be null, might not be already
 	 *            added.
@@ -671,6 +672,8 @@ public final class BindableGrid<RowType, ModelType> extends Composite {
 	 * {@link PropertyColumnConfigurator} and then call this method with an instance
 	 * of that type as both arguments.
 	 * 
+	 * @param <RenderType>
+	 *            The type that is rendered by the column.
 	 * @param column
 	 *            The column to add; might <b>not</b> be null, might not be already
 	 *            added.
@@ -796,7 +799,7 @@ public final class BindableGrid<RowType, ModelType> extends Composite {
 		private static final long serialVersionUID = 1L;
 
 		private boolean isActive = true;
-		
+
 		@Override
 		public void selectionChange(SelectionEvent<RowWrapper> event) {
 			if (this.isActive) {
@@ -826,7 +829,8 @@ public final class BindableGrid<RowType, ModelType> extends Composite {
 					eventType = SelectionEventType.SWITCH;
 				}
 
-				fireSelectionEvent(new BindableGridSelectionEvent<>(BindableGrid.this, eventType, selected, deselected));
+				fireSelectionEvent(
+						new BindableGridSelectionEvent<>(BindableGrid.this, eventType, selected, deselected));
 			}
 		}
 	}
@@ -1218,6 +1222,9 @@ public final class BindableGrid<RowType, ModelType> extends Composite {
 	 * 
 	 * @param listener
 	 *            The listener to add; might <b>not</b> be null.
+	 * @param column
+	 *            The column to add the click listener for; might <b>not</b> be
+	 *            null.
 	 * @return The {@link Registration} allowing to unhook the given listener later;
 	 *         never null
 	 */

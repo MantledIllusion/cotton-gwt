@@ -9,9 +9,9 @@ import org.apache.commons.lang3.reflect.MethodUtils;
 
 import com.mantledillusion.injection.hura.Injector;
 import com.mantledillusion.injection.hura.Processor.Phase;
+import com.mantledillusion.injection.hura.annotation.Global;
 import com.mantledillusion.injection.hura.annotation.Inject;
 import com.mantledillusion.injection.hura.annotation.Process;
-import com.mantledillusion.injection.hura.annotation.Inject.SingletonMode;
 import com.mantledillusion.vaadin.cotton.exception.WebException;
 import com.mantledillusion.vaadin.cotton.exception.WebException.HttpErrorCodes;
 import com.mantledillusion.vaadin.cotton.viewpresenter.Presenter;
@@ -139,7 +139,8 @@ public class EventBusSubscriber {
 		}
 	}
 
-	@Inject(value = EventBus.PRESENTER_EVENT_BUS_ID, singletonMode = SingletonMode.GLOBAL)
+	@Inject(EventBus.PRESENTER_EVENT_BUS_ID)
+	@Global
 	private EventBus bus;
 
 	@Process
