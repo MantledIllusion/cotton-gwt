@@ -30,6 +30,7 @@ import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -74,7 +75,7 @@ final class CottonUI extends com.vaadin.ui.UI {
 	private final Map<String, LocalizationResource> resourceBundleRegistry;
 
 	// LOGIN
-	private final TypedBlueprint<? extends LoginView> loginViewBlueprint;
+	private final LoginProvider loginProvider;
 
 	// ERROR HANDLING
 	private final InternalErrorHandler internalErrorHandler;
@@ -96,7 +97,7 @@ final class CottonUI extends com.vaadin.ui.UI {
 		this.defaultLang = config.getDefaultLang();
 		this.resourceBundleRegistry = config.getResourceBundleRegistry();
 
-		this.loginViewBlueprint = config.getLoginViewBlueprint();
+		this.loginProvider = config.getLoginProvider();
 
 		this.internalErrorHandler = config.getInternalErrorHandler();
 		this.isInternalErrorHandler = true;
@@ -136,8 +137,6 @@ final class CottonUI extends com.vaadin.ui.UI {
 						"Cannot initialize a UI using a null URL registry.");
 			}
 
-			handleRequest(request);
-			
 			handleRequest(request);
 		} catch (Exception e) {
 			this.internalErrorHandler.error(new com.vaadin.server.ErrorEvent(e));
@@ -295,7 +294,8 @@ final class CottonUI extends com.vaadin.ui.UI {
 			urlPath = redirectedPath;
 		}
 
-		if (isNavigationAllowed(navigationType, navigationInitiator)) {
+		navigationType = redetermineNavigationType(navigationType, navigationInitiator);
+		if (navigationType != null) {
 			if (keepLanguageParam && !params.containsKey(QUERY_PARAM_KEY_LANGUAGE)
 					&& this.currentParams.containsKey(QUERY_PARAM_KEY_LANGUAGE)) {
 				params.put(QUERY_PARAM_KEY_LANGUAGE, this.currentParams.get(QUERY_PARAM_KEY_LANGUAGE));
@@ -328,8 +328,8 @@ final class CottonUI extends com.vaadin.ui.UI {
 					if (cause instanceof WebException
 							&& ((WebException) cause).getErrorCode() == HttpErrorCodes.HTTP403_FORBIDDEN
 							&& this.user == null) {
-						if (this.loginViewBlueprint != null) {
-							showlogIn();
+						if (this.loginProvider != null) {
+							triggerlogIn();
 						} else {
 							throw new WebException(HttpErrorCodes.HTTP403_FORBIDDEN, "The requested registration at '"
 									+ urlPath
@@ -379,10 +379,18 @@ final class CottonUI extends com.vaadin.ui.UI {
 		return view;
 	}
 
-	private boolean isNavigationAllowed(NavigationType navigationChangeType, NavigationInitiator navigationInitiator) {
+	private NavigationType redetermineNavigationType(NavigationType navigationChangeType, NavigationInitiator navigationInitiator) {
 		NavigationAnnouncementEvent event = new NavigationAnnouncementEvent(navigationChangeType, navigationInitiator);
 		this.eventBus.dispatch(event, null);
-		return event.doAccept();
+		if (event.doAccept()) {
+			if (navigationChangeType == NavigationType.QUERY_PARAM_CHANGE && event.doRefresh()) {
+				return NavigationType.SEGMENT_CHANGE;
+			} else {
+				return navigationChangeType;
+			}
+		} else {
+			return null;
+		}
 	}
 
 	// ########## Internally Usable ##########
@@ -521,12 +529,22 @@ final class CottonUI extends com.vaadin.ui.UI {
 			refresh();
 		}
 	}
-
-	final String localize(String msgId, Object... messageParameters) {
+	
+	final boolean canLocalize(String msgId) {
 		if (msgId != null) {
 			String lang = getCurrentLocale().getISO3Language();
 			if (this.resourceBundleRegistry.containsKey(lang)) {
-				return this.resourceBundleRegistry.get(lang).renderMessage(msgId, messageParameters);
+				return this.resourceBundleRegistry.get(lang).hasLocalization(msgId);
+			}
+		}
+		return false;
+	}
+
+	final String localize(String msgId, Map<String, Object> namedMsgParameters, Object... indexedMsgParameters) {
+		if (msgId != null) {
+			String lang = getCurrentLocale().getISO3Language();
+			if (this.resourceBundleRegistry.containsKey(lang)) {
+				return this.resourceBundleRegistry.get(lang).renderMessage(msgId, namedMsgParameters, indexedMsgParameters);
 			} else if (msgId.matches(REGEX_TYPICAL_MESSAGE_ID)) {
 				CottonUI.LOGGER.warn("Unable to localize '" + msgId + "'; no bundle for language '" + lang + "'.");
 			}
@@ -557,13 +575,13 @@ final class CottonUI extends com.vaadin.ui.UI {
 
 	// ########## Internally Usable ##########
 
-	final void showlogIn() {
-		if (this.loginViewBlueprint == null) {
+	final void triggerlogIn() {
+		if (this.loginProvider == null) {
 			throw new WebException(HttpErrorCodes.HTTP902_ILLEGAL_STATE_ERROR,
-					"No default login view type has been configured at the UI, so auto login is not possible.");
+					"No default login provider has been configured, so auto login is not possible.");
 		}
-		appendToLog(SessionLogEntry.of(SessionLogContext.USER, SessionLogType.INFO, "Login shown."));
-		setContent(this.injector.instantiate(this.loginViewBlueprint));
+		this.loginProvider.login(this.injector);
+		appendToLog(SessionLogEntry.of(SessionLogContext.USER, SessionLogType.INFO, "Triggered login."));
 	}
 
 	final boolean logIn(User user) {
@@ -580,8 +598,8 @@ final class CottonUI extends com.vaadin.ui.UI {
 				throw new WebException(HttpErrorCodes.HTTP902_ILLEGAL_STATE_ERROR,
 						"There is already a user logged in!");
 			}
-			CottonUI.LOGGER.info("User '" + this.user + "' logged in.");
 			this.user = user;
+			CottonUI.LOGGER.info("User '" + this.user + "' logged in.");
 			appendToLog(
 					SessionLogEntry.of(SessionLogContext.USER, SessionLogType.INFO, "User '" + user + "' logged in."));
 			if (allow == UserChangeAllowance.REFRESH) {

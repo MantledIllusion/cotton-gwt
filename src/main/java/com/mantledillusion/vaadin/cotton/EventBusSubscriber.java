@@ -9,9 +9,9 @@ import org.apache.commons.lang3.reflect.MethodUtils;
 
 import com.mantledillusion.injection.hura.Injector;
 import com.mantledillusion.injection.hura.Processor.Phase;
+import com.mantledillusion.injection.hura.annotation.Global;
 import com.mantledillusion.injection.hura.annotation.Inject;
 import com.mantledillusion.injection.hura.annotation.Process;
-import com.mantledillusion.injection.hura.annotation.Inject.SingletonMode;
 import com.mantledillusion.vaadin.cotton.exception.WebException;
 import com.mantledillusion.vaadin.cotton.exception.WebException.HttpErrorCodes;
 import com.mantledillusion.vaadin.cotton.viewpresenter.Presenter;
@@ -139,7 +139,8 @@ public class EventBusSubscriber {
 		}
 	}
 
-	@Inject(value = EventBus.PRESENTER_EVENT_BUS_ID, singletonMode = SingletonMode.GLOBAL)
+	@Inject(EventBus.PRESENTER_EVENT_BUS_ID)
+	@Global
 	private EventBus bus;
 
 	@Process
@@ -147,8 +148,6 @@ public class EventBusSubscriber {
 		for (Method method : MethodUtils.getMethodsListWithAnnotation(getClass(), Subscribe.class, true, true)) {
 			// PRESENTER EVENT METHODS
 			if (method.isAnnotationPresent(Subscribe.class)) {
-				
-
 				if (!method.isAccessible()) {
 					try {
 						method.setAccessible(true);
@@ -161,12 +160,8 @@ public class EventBusSubscriber {
 					}
 				}
 
-				Class<?> eventType = method.getParameterTypes()[0];
-
 				Subscribe annotation = method.getAnnotation(Subscribe.class);
 
-				@SuppressWarnings("unchecked")
-				Class<? extends BusEvent> presenterEventType = (Class<? extends BusEvent>) eventType;
 
 				Map<String, String> properties = null;
 				if (annotation.value().length > 0) {
@@ -180,7 +175,18 @@ public class EventBusSubscriber {
 					}
 				}
 
-				this.bus.subscribe(presenterEventType, this, method, properties, annotation.isSelfObservant());
+				if (method.getParameterCount() > 0) {
+					Class<?> eventType = method.getParameterTypes()[0];
+					
+					@SuppressWarnings("unchecked")
+					Class<? extends BusEvent> parameterEventType = (Class<? extends BusEvent>) eventType;
+					
+					this.bus.subscribe(parameterEventType, this, method, true, properties, annotation.isSelfObservant());
+				}
+				
+				for (Class<? extends BusEvent> anonymousEventType: annotation.anonymousEvents()) {
+					this.bus.subscribe(anonymousEventType, this, method, false, properties, annotation.isSelfObservant());
+				}
 			}
 		}
 	}

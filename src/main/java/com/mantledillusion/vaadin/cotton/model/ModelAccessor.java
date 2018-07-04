@@ -16,7 +16,7 @@ import com.mantledillusion.injection.hura.annotation.Adjust;
 import com.mantledillusion.injection.hura.annotation.Adjust.MappingDef;
 import com.mantledillusion.injection.hura.annotation.Construct;
 import com.mantledillusion.injection.hura.annotation.Inject;
-import com.mantledillusion.injection.hura.annotation.Inject.InjectionMode;
+import com.mantledillusion.injection.hura.annotation.Optional;
 import com.mantledillusion.injection.hura.annotation.Process;
 import com.mantledillusion.vaadin.cotton.exception.WebException;
 import com.mantledillusion.vaadin.cotton.exception.WebException.HttpErrorCodes;
@@ -51,7 +51,8 @@ import com.vaadin.data.HasValue;
  */
 public class ModelAccessor<ModelType> extends ModelBinder<ModelType> {
 
-	@Inject(value = IndexContext.SINGLETON_ID, injectionMode = InjectionMode.EXPLICIT)
+	@Inject(IndexContext.SINGLETON_ID)
+	@Optional
 	private IndexContext indexContext = IndexContext.EMPTY;
 
 	private final ModelProxy<ModelType> parent;
@@ -199,9 +200,21 @@ public class ModelAccessor<ModelType> extends ModelBinder<ModelType> {
 	}
 
 	@Override
+	public <PropertyType> Integer removeProperty(ListedProperty<ModelType, PropertyType> property,
+			PropertyType element) {
+		return this.parent.removeProperty(property, element, this.indexContext);
+	}
+	
+	@Override
 	public final <PropertyType> PropertyType removeProperty(ListedProperty<ModelType, PropertyType> property,
 			IndexContext indexContext) {
 		return this.parent.removeProperty(property, this.indexContext.union(indexContext));
+	}
+
+	@Override
+	public <PropertyType> Integer removeProperty(ListedProperty<ModelType, PropertyType> property, PropertyType element,
+			IndexContext indexContext) {
+		return this.parent.removeProperty(property, element, this.indexContext.union(indexContext));
 	}
 
 	// ######################################################################################################################################

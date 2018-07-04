@@ -4,6 +4,7 @@ import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.Set;
 
@@ -30,7 +31,7 @@ public final class WebEnv {
 	// #########################################################################################################################################
 	// ############################################################## NAVIGATION ###############################################################
 	// #########################################################################################################################################
-	
+
 	/**
 	 * Returns whether there is a redirect on the given URL.
 	 * 
@@ -42,7 +43,7 @@ public final class WebEnv {
 	public boolean hasRedirectAt(String urlPath) {
 		return CottonUI.current().getUrlRegistry().hasRedirectAt(urlPath);
 	}
-	
+
 	/**
 	 * Returns whether there is a view resource registered for the given URL.
 	 * 
@@ -129,7 +130,7 @@ public final class WebEnv {
 	}
 
 	/**
-	 * Instructs the current {@link CottonUI} to navigate to the given target.
+	 * Instructs the {@link CottonServlet} to navigate to the given target.
 	 * 
 	 * @param target
 	 *            The target to navigate to; <b>not</b> allowed to be null.
@@ -159,8 +160,7 @@ public final class WebEnv {
 	// #########################################################################################################################################
 
 	/**
-	 * Returns whether the locale used by the current {@link CottonUI} instance is
-	 * the default one.
+	 * Returns whether the locale used in the current session is the default one.
 	 * 
 	 * @return True if the current locale is the default one, false otherwise
 	 */
@@ -169,8 +169,7 @@ public final class WebEnv {
 	}
 
 	/**
-	 * Returns the {@link Locale} the current {@link CottonUI} instance is working
-	 * with.
+	 * Returns the {@link Locale} the current session instance is working with.
 	 * 
 	 * @return The current locale; will always be a language-only {@link Locale}
 	 */
@@ -179,13 +178,12 @@ public final class WebEnv {
 	}
 
 	/**
-	 * Sets the {@link Locale} the current {@link CottonUI} instance has to work
-	 * with.
+	 * Sets the {@link Locale} the current session has to work with.
 	 * <P>
 	 * Will cause a reload so the new language can be used on all components.
 	 * <P>
-	 * If the given {@link Locale} is not available, the {@link CottonUI} will
-	 * switch to the default {@link Locale}.
+	 * If the given {@link Locale} is not available, the current session will switch
+	 * to the default {@link Locale}.
 	 * 
 	 * @param locale
 	 *            The {@link Locale} to set; might be null, which will cause a
@@ -197,13 +195,80 @@ public final class WebEnv {
 	}
 
 	/**
-	 * Localizes the given message identifier with the current {@link CottonUI}'s
-	 * locale using the {@link ResourceBundle}s configured at the current
-	 * {@link CottonUI} for that language.
+	 * Checks whether there is a localization present for the given msgId in the
+	 * {@link ResourceBundle} of the current session's locale.
+	 * 
+	 * @param msgId
+	 *            The message if to check; might be null
+	 * @return True if there is a localization for the given id, false otherwise
+	 */
+	public static boolean canLocalize(String msgId) {
+		return CottonUI.current().canLocalize(msgId);
+	}
+
+	/**
+	 * Localizes the given message identifier with the current session's locale
+	 * using the {@link ResourceBundle}s configured at the {@link CottonServlet} for
+	 * that language.
+	 * <p>
+	 * No message parameters will be injected.
 	 * <P>
 	 * Depending on the current language's {@link Locale}, the given message
 	 * parameters may also be localized during insertion into the message.
 	 * 
+	 * @param <T>
+	 *            The message parameter type
+	 * @param msgId
+	 *            The message id to localize; might be null or not even a message
+	 *            id.
+	 * @return A localized and parameter filled message, or the given msgId if
+	 *         localization was not possible
+	 */
+	public static <T> String localize(String msgId) {
+		return CottonUI.current().localize(msgId, Collections.emptyMap());
+	}
+
+	/**
+	 * Localizes the given message identifier with the current session's locale
+	 * using the {@link ResourceBundle}s configured at the {@link CottonServlet} for
+	 * that language.
+	 * <p>
+	 * The given message parameters will be injected by their index, so a
+	 * <code>{0}</code> block in the message will be replaced with the first given
+	 * parameter.
+	 * <P>
+	 * Depending on the current language's {@link Locale}, the given message
+	 * parameters may also be localized during insertion into the message.
+	 * 
+	 * @param <T>
+	 *            The message parameter type
+	 * @param msgId
+	 *            The message id to localize; may be null or not even a message id.
+	 * @param indexedMessageParameters
+	 *            The parameters to inject into the localized message. Will only be
+	 *            used if the message id could be localized.
+	 * @return A localized and parameter filled message, or the given msgId if
+	 *         localization was not possible
+	 */
+	@SafeVarargs
+	public static <T> String localize(String msgId, T... indexedMessageParameters) {
+		return CottonUI.current().localize(msgId, Collections.emptyMap(), indexedMessageParameters);
+	}
+
+	/**
+	 * Localizes the given message identifier with the current session's locale
+	 * using the {@link ResourceBundle}s configured at the {@link CottonServlet} for
+	 * that language.
+	 * <p>
+	 * The given message parameters will be injected by their name, so a
+	 * <code>{foobar}</code> block in the message will be replaced with the message
+	 * parameter whose key is 'foobar'.
+	 * <P>
+	 * Depending on the current language's {@link Locale}, the given message
+	 * parameters may also be localized during insertion into the message.
+	 * 
+	 * @param <T>
+	 *            The message parameter type
 	 * @param msgId
 	 *            The message id to localize; may be null or not even a message id.
 	 * @param messageParameters
@@ -212,9 +277,9 @@ public final class WebEnv {
 	 * @return A localized and parameter filled message, or the given msgId if
 	 *         localization was not possible
 	 */
-	@SafeVarargs
-	public static <T> String localize(String msgId, T... messageParameters) {
-		return CottonUI.current().localize(msgId, messageParameters);
+	@SuppressWarnings("unchecked")
+	public static <T> String localize(String msgId, Map<String, T> messageParameters) {
+		return CottonUI.current().localize(msgId, (Map<String, Object>) messageParameters);
 	}
 
 	// #########################################################################################################################################
@@ -222,10 +287,10 @@ public final class WebEnv {
 	// #########################################################################################################################################
 
 	/**
-	 * Will show the log in page and, after logging in, reload the current page.
+	 * Will trigger the configured {@link LoginProvider} to provide login.
 	 */
-	public static void showlogIn() {
-		CottonUI.current().showlogIn();
+	public static void triggerlogIn() {
+		CottonUI.current().triggerlogIn();
 	}
 
 	/**

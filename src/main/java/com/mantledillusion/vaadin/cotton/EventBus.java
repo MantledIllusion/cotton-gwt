@@ -28,10 +28,12 @@ final class EventBus {
 
 	private final class Subscribable {
 
+		final boolean methodRequiresEvent;
 		final boolean isSelfObservant;
 		final Map<String, String> properties;
 
-		private Subscribable(boolean isSelfObservant, Map<String, String> properties) {
+		private Subscribable(boolean methodRequiresEvent, boolean isSelfObservant, Map<String, String> properties) {
+			this.methodRequiresEvent = methodRequiresEvent;
 			this.isSelfObservant = isSelfObservant;
 			this.properties = properties;
 		}
@@ -43,14 +45,14 @@ final class EventBus {
 	}
 
 	synchronized void subscribe(Class<? extends BusEvent> eventType, EventBusSubscriber subscriber,
-			Method m, Map<String, String> properties, boolean isSelfObservant) {
+			Method m, boolean methodRequiresEvent, Map<String, String> properties, boolean isSelfObservant) {
 		if (!this.subscribers.containsKey(eventType)) {
 			this.subscribers.put(eventType, new IdentityHashMap<>());
 		}
 		if (!this.subscribers.get(eventType).containsKey(subscriber)) {
 			this.subscribers.get(eventType).put(subscriber, new Subscriber(subscriber));
 		}
-		this.subscribers.get(eventType).get(subscriber).methods.put(m, new Subscribable(isSelfObservant, properties));
+		this.subscribers.get(eventType).get(subscriber).methods.put(m, new Subscribable(methodRequiresEvent, isSelfObservant, properties));
 	}
 
 	synchronized void unsubscribe(EventBusSubscriber subscriber) {
@@ -90,7 +92,13 @@ final class EventBus {
 							}
 
 							try {
-								m.invoke(subscriber.subscriber, event);
+								if (subscribable.methodRequiresEvent) {
+									m.invoke(subscriber.subscriber, event);
+								} else if (m.getParameterCount() == 1) {
+									m.invoke(subscriber.subscriber, new Object[] {null});
+								} else {
+									m.invoke(subscriber.subscriber);
+								}
 							} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
 								throw new WebException(HttpErrorCodes.HTTP500_INTERNAL_SERVER_ERROR,
 										"Unable to dispatch event of type " + event.getClass().getSimpleName()

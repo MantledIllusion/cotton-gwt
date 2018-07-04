@@ -3,13 +3,13 @@ package com.mantledillusion.vaadin.cotton;
 import com.mantledillusion.injection.hura.Blueprint;
 import com.mantledillusion.injection.hura.Predefinable;
 import com.mantledillusion.injection.hura.Blueprint.TypedBlueprint;
-import com.mantledillusion.injection.hura.annotation.Inject;
+import com.mantledillusion.injection.hura.annotation.Global.SingletonMode;
 import com.mantledillusion.vaadin.cotton.environment.views.ErrorHandlingDecider;
 import com.mantledillusion.vaadin.cotton.environment.views.ErrorView;
-import com.mantledillusion.vaadin.cotton.environment.views.LoginView;
 import com.mantledillusion.vaadin.cotton.exception.WebException;
 import com.mantledillusion.vaadin.cotton.exception.WebException.HttpErrorCodes;
 import com.mantledillusion.vaadin.cotton.viewpresenter.Addressed;
+import com.mantledillusion.vaadin.cotton.viewpresenter.Restricted;
 import com.mantledillusion.vaadin.cotton.viewpresenter.View;
 import com.vaadin.annotations.PreserveOnRefresh;
 import com.vaadin.annotations.Push;
@@ -69,7 +69,7 @@ public abstract class CottonServlet extends VaadinServlet {
 		private final Map<String, LocalizationResource> resourceBundleRegistry = new HashMap<>();
 
 		// LOGIN
-		private Blueprint.TypedBlueprint<? extends LoginView> loginViewBlueprint;
+		private LoginProvider loginProvider;
 
 		// ERROR HANDLING
 		private final InternalErrorHandler internalErrorHandler;
@@ -175,7 +175,7 @@ public abstract class CottonServlet extends VaadinServlet {
 			this.transport = transport;
 			return this;
 		}
-		
+
 		/**
 		 * Registers the given {@link View} implementation at the URL in the
 		 * view's @{@link Addressed} annotation.
@@ -223,7 +223,7 @@ public abstract class CottonServlet extends VaadinServlet {
 			this.urlRegistry.registerGoneResource(urlPath);
 			return this;
 		}
-		
+
 		UrlResourceRegistry getUrlRegistry() {
 			return urlRegistry;
 		}
@@ -288,8 +288,8 @@ public abstract class CottonServlet extends VaadinServlet {
 		 *            null, empty or contain nulls.
 		 * @return this
 		 */
-		public TemporalCottonServletConfiguration registerLocalization(String baseName, String fileExtension, Charset charset, Locale locale,
-				Locale... locales) {
+		public TemporalCottonServletConfiguration registerLocalization(String baseName, String fileExtension,
+				Charset charset, Locale locale, Locale... locales) {
 			checkConfigurationAllowed();
 			if (StringUtils.isBlank(baseName)) {
 				throw new WebException(WebException.HttpErrorCodes.HTTP901_ILLEGAL_ARGUMENT_ERROR,
@@ -361,26 +361,22 @@ public abstract class CottonServlet extends VaadinServlet {
 		}
 
 		/**
-		 * Registers a {@link Blueprint.TypedBlueprint} that can be used to instantiate
-		 * an {@link LoginView} implementation that should be used for logins.
-		 * <P>
-		 * The given login view type will be instantiated when a login has to be done.
-		 * When a {@link LoginView} implementation is displayed, calling
-		 * {@link WebEnv#logIn(User)} will automatically shown a redirect to the last
-		 * visited view.
-		 *
-		 * @param loginViewType
-		 *            The login view type to set; might be null.
+		 * Registers the given {@link LoginProvider} to be used for automatic login; for
+		 * example when {@link WebEnv#triggerlogIn()} is called or a @{@link Restricted}
+		 * {@link View} is visited.
+		 * 
+		 * @param loginProvider
+		 *            The login provider to register; might be null
 		 * @return this
 		 */
-		public TemporalCottonServletConfiguration registerLoginView(Blueprint.TypedBlueprint<? extends LoginView> loginViewType) {
+		public TemporalCottonServletConfiguration registerLoginProvider(LoginProvider loginProvider) {
 			checkConfigurationAllowed();
-			this.loginViewBlueprint = loginViewType;
+			this.loginProvider = loginProvider;
 			return this;
 		}
 
-		Blueprint.TypedBlueprint<? extends LoginView> getLoginViewBlueprint() {
-			return this.loginViewBlueprint;
+		LoginProvider getLoginProvider() {
+			return loginProvider;
 		}
 
 		/**
@@ -403,8 +399,8 @@ public abstract class CottonServlet extends VaadinServlet {
 		 *            error type occurs; <b>not</b> allowed to be null.
 		 * @return this
 		 */
-		public <ErrorType extends Exception> TemporalCottonServletConfiguration registerErrorView(Class<ErrorType> errorType,
-				Blueprint.TypedBlueprint<? extends ErrorView<ErrorType>> viewBlueprint) {
+		public <ErrorType extends Exception> TemporalCottonServletConfiguration registerErrorView(
+				Class<ErrorType> errorType, Blueprint.TypedBlueprint<? extends ErrorView<ErrorType>> viewBlueprint) {
 			checkConfigurationAllowed();
 			if (viewBlueprint == null) {
 				throw new WebException(WebException.HttpErrorCodes.HTTP901_ILLEGAL_ARGUMENT_ERROR,
@@ -487,7 +483,7 @@ public abstract class CottonServlet extends VaadinServlet {
 
 		/**
 		 * Registers the given {@link Predefinable}s (such as
-		 * {@link Predefinable.Property}s or {@link Inject.SingletonMode#GLOBAL}
+		 * {@link Predefinable.Property}s or {@link SingletonMode#GLOBAL}
 		 * {@link Predefinable.Singleton}s) to be available in every injected
 		 * {@link View} (and its injected beans).
 		 *

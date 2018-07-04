@@ -9,7 +9,7 @@ import com.mantledillusion.data.epiphy.interfaces.WriteableProperty;
 /**
  * Interface for types that can hold a model and extract/change parts of it
  * using {@link ReadableProperty}s.
- * <P>
+ * <p>
  * The default implementations to use are:<BR>
  * - {@link ModelContainer}: To hold a model and allow access to it<BR>
  * - {@link ModelAccessor}: For indexed proxying to underneath a
@@ -49,10 +49,10 @@ public interface ModelHandler<ModelType> {
 	 * <p>
 	 * The result indicates whether it is safe to execute writing operations on the
 	 * property.
-	 * <P>
+	 * <p>
 	 * Note that if the path from the property model's root to the given property is
 	 * indexed, the used index context has an impact on the returned result.
-	 * <P>
+	 * <p>
 	 * For determination of existence, this handler's own index context is used.
 	 * 
 	 * @param <PropertyType>
@@ -75,10 +75,10 @@ public interface ModelHandler<ModelType> {
 	 * <p>
 	 * The result indicates whether it is safe to execute writing operations on the
 	 * property.
-	 * <P>
+	 * <p>
 	 * Note that if the path from the property model's root to the given property is
 	 * indexed, the used index context has an impact on the returned result.
-	 * <P>
+	 * <p>
 	 * For determination of existence, the given index context is used as an
 	 * extension to the handler's own index context.
 	 * 
@@ -101,10 +101,10 @@ public interface ModelHandler<ModelType> {
 
 	/**
 	 * Fetches the value from inside the model data the given property points to.
-	 * <P>
+	 * <p>
 	 * Note that if the path from the property model's root to the given property is
 	 * indexed, the used index context has an impact on the returned result.
-	 * <P>
+	 * <p>
 	 * For determining the correct property, this handler's own index context is
 	 * used.
 	 * 
@@ -120,10 +120,10 @@ public interface ModelHandler<ModelType> {
 
 	/**
 	 * Fetches the value from inside the model data the given property points to.
-	 * <P>
+	 * <p>
 	 * Note that if the path from the property model's root to the given property is
 	 * indexed, the used index context has an impact on the returned result.
-	 * <P>
+	 * <p>
 	 * For determining the correct property, the given index context is used as an
 	 * extension to the handler's own index context.
 	 * 
@@ -142,10 +142,10 @@ public interface ModelHandler<ModelType> {
 
 	/**
 	 * Sets the value inside the model data the given property points to.
-	 * <P>
+	 * <p>
 	 * Note that if the path from the property model's root to the given property is
 	 * indexed, the used index context has an impact on the execution's result.
-	 * <P>
+	 * <p>
 	 * For determining the correct property, this handler's own index context is
 	 * used.
 	 * 
@@ -161,10 +161,10 @@ public interface ModelHandler<ModelType> {
 
 	/**
 	 * Sets the value inside the model data the given property points to.
-	 * <P>
+	 * <p>
 	 * Note that if the path from the property model's root to the given property is
 	 * indexed, the used index context has an impact on the execution's result.
-	 * <P>
+	 * <p>
 	 * For determining the correct property, the given index context is used as an
 	 * extension to the handler's own index context.
 	 * 
@@ -184,12 +184,12 @@ public interface ModelHandler<ModelType> {
 
 	/**
 	 * Adds the value to a list inside the model data the given property points to.
-	 * <P>
+	 * <p>
 	 * Note that if the path from the property model's root to the given property is
 	 * indexed, the used index context has an impact on the execution's result. The
 	 * index of the given property also determines what will be the index of the
 	 * given value in the list after adding.
-	 * <P>
+	 * <p>
 	 * For determining the correct property, this handler's own index context is
 	 * used.
 	 * 
@@ -205,12 +205,12 @@ public interface ModelHandler<ModelType> {
 
 	/**
 	 * Adds an item to a list inside the model data the given property points to.
-	 * <P>
+	 * <p>
 	 * Note that if the path from the property model's root to the given property is
 	 * indexed, the used index context has an impact on the execution's result. The
 	 * index of the given property also determines what will be the index of the
 	 * given value in the list after adding.
-	 * <P>
+	 * <p>
 	 * For determining the correct property, the given index context is used as an
 	 * extension to the handler's own index context.
 	 * 
@@ -231,12 +231,14 @@ public interface ModelHandler<ModelType> {
 	/**
 	 * Removes an item from a list inside the model data the given property points
 	 * to.
-	 * <P>
+	 * <p>
+	 * For determining the right item, the item's index is used.
+	 * <p>
 	 * Note that if the path from the property model's root to the given property is
 	 * indexed, the used index context has an impact on the execution's result. The
 	 * index of the given property also determines what the index of the item will
 	 * be that is removed from the list.
-	 * <P>
+	 * <p>
 	 * For determining the correct property, this handler's own index context is
 	 * used.
 	 * 
@@ -253,12 +255,40 @@ public interface ModelHandler<ModelType> {
 	/**
 	 * Removes an item from a list inside the model data the given property points
 	 * to.
-	 * <P>
+	 * <p>
+	 * For determining the right item, the item's equality is used.
+	 * <p>
 	 * Note that if the path from the property model's root to the given property is
 	 * indexed, the used index context has an impact on the execution's result. The
 	 * index of the given property also determines what the index of the item will
 	 * be that is removed from the list.
-	 * <P>
+	 * <p>
+	 * For determining the correct property, this handler's own index context is
+	 * used.
+	 * 
+	 * @param <PropertyType>
+	 *            The type of the property to remove.
+	 * @param property
+	 *            The property to set inside the model; <b>not</b> allowed to be
+	 *            null.
+	 * @param element
+	 *            The element to check the item's equality against; might be null.
+	 * @return The item that has been removed from the list; might be null if the
+	 *         property is null
+	 */
+	<PropertyType> Integer removeProperty(ListedProperty<ModelType, PropertyType> property, PropertyType element);
+
+	/**
+	 * Removes an item from a list inside the model data the given property points
+	 * to.
+	 * <p>
+	 * For determining the right item, the item's index is used.
+	 * <p>
+	 * Note that if the path from the property model's root to the given property is
+	 * indexed, the used index context has an impact on the execution's result. The
+	 * index of the given property also determines what the index of the item will
+	 * be that is removed from the list.
+	 * <p>
 	 * For determining the correct property, the given index context is used as an
 	 * extension to the handler's own index context.
 	 * 
@@ -274,4 +304,34 @@ public interface ModelHandler<ModelType> {
 	 *         property is null
 	 */
 	<PropertyType> PropertyType removeProperty(ListedProperty<ModelType, PropertyType> property, IndexContext context);
+
+	/**
+	 * Removes an item from a list inside the model data the given property points
+	 * to.
+	 * <p>
+	 * For determining the right item, the item's equality is used.
+	 * <p>
+	 * Note that if the path from the property model's root to the given property is
+	 * indexed, the used index context has an impact on the execution's result. The
+	 * index of the given property also determines what the index of the item will
+	 * be that is removed from the list.
+	 * <p>
+	 * For determining the correct property, the given index context is used as an
+	 * extension to the handler's own index context.
+	 * 
+	 * @param <PropertyType>
+	 *            The type of the property to remove.
+	 * @param property
+	 *            The property to set inside the model; <b>not</b> allowed to be
+	 *            null.
+	 * @param element
+	 *            The element to check the item's equality against; might be null.
+	 * @param context
+	 *            The context which is used for determining the correct property;
+	 *            might be null.
+	 * @return The item that has been removed from the list; might be null if the
+	 *         property is null
+	 */
+	<PropertyType> Integer removeProperty(ListedProperty<ModelType, PropertyType> property, PropertyType element,
+			IndexContext context);
 }
