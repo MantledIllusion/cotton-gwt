@@ -19,9 +19,9 @@ import com.mantledillusion.vaadin.cotton.viewpresenter.Presenter.SubscribeValida
  * implementations that subscribe to the global {@link EventBusSubscriber}'s
  * event bus.
  * <P>
- * An annotated {@link Method} is expected to be a void and has to receive
- * exactly 1 {@link Parameter} of an {@link BusEvent} implementation, or have at
- * least one anonymous event type set.
+ * An annotated {@link Method} is expected to be a void {@link Method} and has
+ * to receive exactly 1 {@link Parameter} of a {@link BusEvent} implementation,
+ * or have at least one anonymous event type set.
  * <P>
  * The {@link Method} will be called for events of that {@link Parameter}'s type
  * and every sub type. Alternatively or additionally, it will be called for the

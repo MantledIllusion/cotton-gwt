@@ -7,14 +7,13 @@ import com.mantledillusion.vaadin.cotton.testsuites.viewpresenter.working.events
 import com.mantledillusion.vaadin.cotton.testsuites.viewpresenter.working.events.UniversalEvent;
 import com.mantledillusion.vaadin.cotton.testsuites.viewpresenter.working.events.ViewAComponentFiredEvent;
 import com.mantledillusion.vaadin.cotton.viewpresenter.Listen;
-import com.mantledillusion.vaadin.cotton.viewpresenter.Listen.ActiveComponent;
 import com.mantledillusion.vaadin.cotton.viewpresenter.Subscribe;
 import com.mantledillusion.vaadin.cotton.viewpresenter.Subscribe.EventProperty;
 import com.vaadin.ui.Button.ClickEvent;
 
 public class PresenterA extends AbstractLoggingPresenter<ViewA> {
 	
-	@Listen(@ActiveComponent(ViewA.COMPONENT_ID))
+	@Listen(ViewA.COMPONENT_ID)
 	private void listen(ClickEvent event) {
 		logAndDispatch(new ViewAComponentFiredEvent());
 	}

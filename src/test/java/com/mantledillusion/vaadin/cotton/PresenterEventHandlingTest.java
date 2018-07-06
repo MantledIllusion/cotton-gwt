@@ -18,6 +18,7 @@ import com.mantledillusion.vaadin.cotton.testsuites.viewpresenter.defective.Doub
 import com.mantledillusion.vaadin.cotton.testsuites.viewpresenter.defective.MultiParamListenMethodPresenterView;
 import com.mantledillusion.vaadin.cotton.testsuites.viewpresenter.defective.MultiParamSubscribeMethodSubscriber;
 import com.mantledillusion.vaadin.cotton.testsuites.viewpresenter.defective.NoComponentListenMethodPresenterView;
+import com.mantledillusion.vaadin.cotton.testsuites.viewpresenter.defective.NoParamListenMethodPresenterView;
 import com.mantledillusion.vaadin.cotton.testsuites.viewpresenter.defective.NoParamSubscribeMethodSubscriber;
 import com.mantledillusion.vaadin.cotton.testsuites.viewpresenter.defective.StaticListenMethodPresenterView;
 import com.mantledillusion.vaadin.cotton.testsuites.viewpresenter.defective.StaticSubscribeMethodSubscriber;
@@ -61,6 +62,11 @@ public final class PresenterEventHandlingTest {
 	@Test(expected=InjectionException.class)
 	public void testListenMethodChecking_NoComponent() {
 		this.suite.injectInSuiteContext(NoComponentListenMethodPresenterView.class);
+	}
+	
+	@Test(expected=ProcessorException.class)
+	public void testListenMethodChecking_NoEventType() {
+		this.suite.injectInSuiteContext(NoParamListenMethodPresenterView.class);
 	}
 	
 	@Test

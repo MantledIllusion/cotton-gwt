@@ -63,6 +63,12 @@ public abstract class Presenter<T extends View> extends EventBusSubscriber {
 						"The method '" + annotatedElement.getName() + "' of the type '" + listeningType.getSimpleName()
 								+ "' annotated with @" + Listen.class.getSimpleName()
 								+ " is static, which is not allowed.");
+			} else if (annotatedElement.getParameterCount() == 0 && annotationInstance.anonymousEvents().length == 0) {
+				throw new WebException(HttpErrorCodes.HTTP904_ILLEGAL_ANNOTATION_USE, "Methods annotated with @"
+						+ Listen.class.getSimpleName()
+						+ " are only allowed to have no parameter if there is at least one anonymous event type set; the method '"
+						+ annotatedElement.getName() + "' of the type '" + listeningType.getSimpleName()
+						+ "' however has 0 of both.");
 			} else if (annotatedElement.getParameterCount() > 1) {
 				throw new WebException(HttpErrorCodes.HTTP904_ILLEGAL_ANNOTATION_USE,
 						"Methods annotated with @" + Listen.class.getSimpleName()
@@ -98,7 +104,7 @@ public abstract class Presenter<T extends View> extends EventBusSubscriber {
 						+ Subscribe.class.getSimpleName()
 						+ " are only allowed to have no parameter if there is at least one anonymous event type set; the method '"
 						+ annotatedElement.getName() + "' of the type '" + subscribingType.getSimpleName()
-						+ "' however has 0 of both.F");
+						+ "' however has 0 of both.");
 			} else if (annotatedElement.getParameterCount() > 1) {
 				throw new WebException(HttpErrorCodes.HTTP904_ILLEGAL_ANNOTATION_USE,
 						"Methods annotated with " + Subscribe.class.getSimpleName()
@@ -162,8 +168,8 @@ public abstract class Presenter<T extends View> extends EventBusSubscriber {
 				if (annotation.value().length == 0) {
 					reg.addListener(null, eventType, this, method);
 				} else {
-					for (Listen.ActiveComponent activeComp : annotation.value()) {
-						reg.addListener(activeComp.value(), eventType, this, method);
+					for (String componentId : annotation.value()) {
+						reg.addListener(componentId, eventType, this, method);
 					}
 				}
 			}
