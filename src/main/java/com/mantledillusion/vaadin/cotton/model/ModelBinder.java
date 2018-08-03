@@ -42,7 +42,7 @@ import com.vaadin.ui.TextField;
  *            bind ui components to.
  */
 abstract class ModelBinder<ModelType> extends ModelProxy<ModelType> {
-
+	
 	private class ReadOnlyHasValue<V> extends com.vaadin.data.ReadOnlyHasValue<V> {
 
 		private static final long serialVersionUID = 1L;
