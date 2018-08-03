@@ -31,6 +31,7 @@ import com.vaadin.event.selection.SelectionEvent;
 import com.vaadin.event.selection.SelectionListener;
 import com.vaadin.event.selection.SingleSelectionEvent;
 import com.vaadin.shared.Registration;
+import com.vaadin.shared.ui.grid.HeightMode;
 import com.vaadin.ui.Component;
 import com.vaadin.ui.Composite;
 import com.vaadin.ui.Grid;
@@ -547,6 +548,10 @@ public final class BindableGrid<RowType, ModelType> extends Composite {
 		this.itemCollection.addAll(newCollection);
 
 		this.dataProvider.refreshAll();
+		
+		if (this.grid.getHeightMode() == HeightMode.ROW) {
+			this.grid.setHeightByRows(this.itemCollection.size());
+		}
 
 		if (!abandoned.isEmpty()) {
 			fireSelectionEvent(new BindableGridSelectionEvent<RowType>(this, abandoned));
@@ -1250,5 +1255,64 @@ public final class BindableGrid<RowType, ModelType> extends Composite {
 				this.clickListeners.get(column).remove(listener);
 			}
 		};
+	}
+
+	// ######################################################################################################################################
+	// ############################################################### MISC #################################################################
+	// ######################################################################################################################################
+
+	/**
+	 * Returns the {@link HeightMode} currently set.
+	 * 
+	 * @return The {@link HeightMode}, never null
+	 */
+	public HeightMode getHeightMode() {
+		return this.grid.getHeightMode();
+	}
+
+	/**
+	 * Defines the mode in which the Grid widget's height is calculated.
+	 * <p>
+	 * If {@link HeightMode#CSS} is given the {@link BindableGrid} will behave as a
+	 * traditional {@link Component} by respecting the height set.
+	 * <p>
+	 * If {@link HeightMode#ROW} is given the {@link BindableGrid} will always make
+	 * sure that all rows are displayed.
+	 *
+	 * @param heightMode
+	 *            the mode in to which Grid should be set; might <b>not</b> be null.
+	 */
+	public void setHeightMode(HeightMode heightMode) {
+		if (heightMode == null) {
+			throw new WebException(HttpErrorCodes.HTTP901_ILLEGAL_ARGUMENT_ERROR,
+					"The height mode to set cannot be null.");
+		}
+		this.grid.setHeightMode(heightMode);
+	}
+	
+	@Override
+	public void setHeightUndefined() {
+		super.setHeightUndefined();
+		refreshHeightMode();
+	}
+	
+	@Override
+	public void setHeight(String height) {
+		super.setHeight(height);
+		refreshHeightMode();
+	}
+	
+	@Override
+	public void setHeight(float height, Unit unit) {
+		super.setHeight(height, unit);
+		refreshHeightMode();
+	}
+	
+	private void refreshHeightMode() {
+		if (this.grid.getHeight() == -1 && this.grid.getHeightUnits() == Unit.PIXELS) {
+			this.grid.setHeightByRows(Math.max(this.itemCollection.size(), 1));
+		} else {
+			this.grid.setHeightMode(HeightMode.CSS);
+		}
 	}
 }
