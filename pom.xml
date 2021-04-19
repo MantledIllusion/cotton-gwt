@@ -35,7 +35,7 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
 		<!-- maven dependency versions -->
-		<com.vaadin.version>8.8.2</com.vaadin.version>
+		<com.vaadin.version>8.12.4</com.vaadin.version>
 		<injection.hura.version>1.0.1</injection.hura.version>
 		<data.epiphy.version>2.1.0</data.epiphy.version>
 		<slf4j.version>1.7.25</slf4j.version>
